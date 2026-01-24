@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -13,7 +13,7 @@ type LoginFormState = {
   password: string;
 };
 
-export default function LoginPage() {
+function LoginForm() {
   const form = useForm<LoginFormState>({
     defaultValues: {
       username: "",
@@ -51,53 +51,61 @@ export default function LoginPage() {
   });
 
   return (
+    <div className="w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm">
+      <h1 className="text-xl font-semibold">Sign in</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Use your username and password to continue.
+      </p>
+
+      <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <TextInputController
+          form={form}
+          name="username"
+          label="Username"
+          placeholder="Enter username"
+          required
+          componentProps={{
+            input: {
+              type: "text",
+              autoComplete: "username",
+              required: true,
+            },
+          }}
+        />
+
+        <TextInputController
+          form={form}
+          name="password"
+          label="Password"
+          placeholder="Enter password"
+          required
+          componentProps={{
+            input: {
+              type: "password",
+              autoComplete: "current-password",
+              required: true,
+            },
+          }}
+        />
+
+        {errorMessage && (
+          <p className="text-sm text-destructive">{errorMessage}</p>
+        )}
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in..." : "Sign in"}
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">Sign in</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Use your username and password to continue.
-        </p>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <TextInputController
-            form={form}
-            name="username"
-            label="Username"
-            placeholder="Enter username"
-            required
-            componentProps={{
-              input: {
-                type: "text",
-                autoComplete: "username",
-                required: true,
-              },
-            }}
-          />
-
-          <TextInputController
-            form={form}
-            name="password"
-            label="Password"
-            placeholder="Enter password"
-            required
-            componentProps={{
-              input: {
-                type: "password",
-                autoComplete: "current-password",
-                required: true,
-              },
-            }}
-          />
-
-          {errorMessage && (
-            <p className="text-sm text-destructive">{errorMessage}</p>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? "Signing in..." : "Sign in"}
-          </Button>
-        </form>
-      </div>
+      <Suspense fallback={<div className="w-full max-w-sm h-80 animate-pulse rounded-lg bg-muted" />}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
