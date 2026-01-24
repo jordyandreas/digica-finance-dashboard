@@ -1,0 +1,127 @@
+"use client";
+
+import Link from "next/link";
+import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
+import { Button } from "@/components/atoms/button";
+import { StatusBadge } from "@/components/atoms/status-badge";
+import { formatCurrency } from "@/utils/currency";
+import { formatDate } from "@/utils/date";
+import { Program } from "@/services/programs.service";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+
+interface ProgramsColumnsProps {
+  onEdit?: (program: Program) => void;
+  onDelete?: (program: Program) => void;
+}
+
+export function programsColumns({
+  onEdit,
+  onDelete,
+}: ProgramsColumnsProps): ColumnDef<Program>[] {
+  return [
+    {
+      accessorKey: "name",
+      header: "Name",
+      enableSorting: true,
+      cell: (program) => (
+        <span className="font-medium">
+          {program.name || "Untitled Program"}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "type",
+      header: "Type",
+      enableSorting: true,
+      cell: (program) => (
+        <span className="truncate capitalize">{program.type || "-"}</span>
+      ),
+    },
+    {
+      accessorKey: "start_date",
+      header: "Start Date",
+      enableSorting: true,
+      cell: (program) => formatDate(program.start_date),
+    },
+    {
+      accessorKey: "end_date",
+      header: "End Date",
+      enableSorting: true,
+      cell: (program) => formatDate(program.end_date),
+    },
+    {
+      accessorKey: "price",
+      header: "Price",
+      enableSorting: true,
+      className: "text-left",
+      cell: (program) => formatCurrency(program.price),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: true,
+      cell: (program) => <StatusBadge status={program.status || "draft"} />,
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      enableSorting: false,
+      cell: (program) => (
+        <div className="flex items-center gap-2">
+          {(() => {
+            const programId =
+              program.id ??
+              (program as { program_id?: string }).program_id ??
+              (program as { uuid?: string }).uuid;
+            const normalizedProgramId =
+              programId != null ? String(programId).trim() : "";
+            const isValidProgramId =
+              Boolean(normalizedProgramId) &&
+              normalizedProgramId !== "undefined" &&
+              normalizedProgramId !== "null";
+
+            if (!isValidProgramId) {
+              return (
+                <Button variant="ghost" size="icon" disabled className="h-8 w-8">
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">View program details</span>
+                </Button>
+              );
+            }
+
+            return (
+              <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+                <Link href={`/programs/${normalizedProgramId}/participants`}>
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">View program details</span>
+                </Link>
+              </Button>
+            );
+          })()}
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(program)}
+              className="h-8 w-8"
+            >
+              <Pencil className="h-4 w-4" />
+              <span className="sr-only">Edit program</span>
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(program)}
+              className="h-8 w-8 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="sr-only">Delete program</span>
+            </Button>
+          )}
+        </div>
+      ),
+    },
+  ];
+}
