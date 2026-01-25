@@ -9,6 +9,7 @@ import type {
 } from "@/services/payments.service";
 import { deletePayment } from "@/services/payments.service";
 import { useModal } from "@/hooks/use-modal";
+import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
 import { useForm } from "react-hook-form";
 import { paymentSchema } from "../../../../../../schemas/payment-schema";
 import {
@@ -124,20 +125,34 @@ export function useAddPayment({
     });
   };
 
-  const handleDelete = async (payment: Payment) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this payment? This action cannot be undone.",
-      )
-    ) {
-      try {
-        await deletePayment(payment.id);
-        await invalidatePayments();
-        await invalidateParticipants();
-      } catch (error) {
-        console.error("Error deleting payment:", error);
-        alert("Failed to delete payment. Please try again.");
-      }
+  const deleteConfirmation = useDeleteConfirmation<Payment>({
+    title: "Do you want to delete this payment?",
+    description: "You can't take it back when you delete it",
+  });
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleDelete = (payment: Payment) => {
+    deleteConfirmation.openConfirmation(
+      payment,
+      "Do you want to delete this payment?",
+      "You can't take it back when you delete it"
+    );
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation.item) return;
+
+    setIsDeleting(true);
+    try {
+      await deletePayment(deleteConfirmation.item.id);
+      await invalidatePayments();
+      await invalidateParticipants();
+      toast.success("Payment deleted successfully");
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      toast.error("Failed to delete payment. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -245,6 +260,14 @@ export function useAddPayment({
     participants,
     filteredParticipants,
     isParticipantsLoading,
+    deleteConfirmation: {
+      isOpen: deleteConfirmation.isOpen,
+      setOpen: deleteConfirmation.setOpen,
+      title: deleteConfirmation.title,
+      description: deleteConfirmation.description,
+      onConfirm: handleConfirmDelete,
+      isDeleting,
+    },
   };
 }
 

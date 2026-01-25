@@ -9,6 +9,7 @@ import type {
 } from "@/services/participants.service";
 import { deleteParticipant } from "@/services/participants.service";
 import { useModal } from "@/hooks/use-modal";
+import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
 import { useForm } from "react-hook-form";
 import {
   participantSchema,
@@ -98,19 +99,33 @@ export function useAddParticipant({
     });
   };
 
-  const handleDelete = async (participant: Participant) => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${participant.name ?? "this participant"}"? This action cannot be undone.`,
-      )
-    ) {
-      try {
-        await deleteParticipant(participant.id);
-        await invalidateParticipants();
-      } catch (error) {
-        console.error("Error deleting participant:", error);
-        alert("Failed to delete participant. Please try again.");
-      }
+  const deleteConfirmation = useDeleteConfirmation<Participant>({
+    title: "Do you want to delete a registered member account?",
+    description: "You can't take it back when you delete it",
+  });
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  const handleDelete = (participant: Participant) => {
+    deleteConfirmation.openConfirmation(
+      participant,
+      `Do you want to delete "${participant.name ?? "this participant"}"?`,
+      "You can't take it back when you delete it"
+    );
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation.item) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteParticipant(deleteConfirmation.item.id);
+      await invalidateParticipants();
+      toast.success("Participant deleted successfully");
+    } catch (error) {
+      console.error("Error deleting participant:", error);
+      toast.error("Failed to delete participant. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -206,5 +221,13 @@ export function useAddParticipant({
     handleAddClick,
     handleEdit,
     handleDelete,
+    deleteConfirmation: {
+      isOpen: deleteConfirmation.isOpen,
+      setOpen: deleteConfirmation.setOpen,
+      title: deleteConfirmation.title,
+      description: deleteConfirmation.description,
+      onConfirm: handleConfirmDelete,
+      isDeleting,
+    },
   };
 }

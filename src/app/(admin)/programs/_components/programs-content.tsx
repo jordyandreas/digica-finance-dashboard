@@ -1,11 +1,15 @@
 "use client"
 
+import * as React from "react"
 import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/ui/card";
+import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { useModal } from "@/hooks/use-modal";
+import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
 import { Program, deleteProgram } from "@/services/programs.service";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { programsQueryKey } from "../_hooks/use-programs";
 import { ProgramsTable } from "../_table";
@@ -17,6 +21,11 @@ interface ProgramsPageContentProps {
 export function ProgramsPageContent({ programs }: ProgramsPageContentProps) {
   const queryClient = useQueryClient()
   const programModal = useModal<ProgramModalProps>("programModal")
+  const deleteConfirmation = useDeleteConfirmation<Program>({
+    title: "Do you want to delete a registered program?",
+    description: "You can't take it back when you delete it",
+  })
+  const [isDeleting, setIsDeleting] = React.useState(false)
 
   const handleAddClick = () => {
     programModal.open({
@@ -32,19 +41,27 @@ export function ProgramsPageContent({ programs }: ProgramsPageContentProps) {
     })
   }
 
-  const handleDelete = async (program: Program) => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${program.name}"? This action cannot be undone.`
-      )
-    ) {
-      try {
-        await deleteProgram(program.id)
-        await queryClient.invalidateQueries({ queryKey: programsQueryKey })
-      } catch (error) {
-        console.error("Error deleting program:", error)
-        alert("Failed to delete program. Please try again.")
-      }
+  const handleDeleteClick = (program: Program) => {
+    deleteConfirmation.openConfirmation(
+      program,
+      `Do you want to delete "${program.name}"?`,
+      "You can't take it back when you delete it"
+    )
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmation.item) return
+    
+    setIsDeleting(true)
+    try {
+      await deleteProgram(deleteConfirmation.item.id)
+      await queryClient.invalidateQueries({ queryKey: programsQueryKey })
+      toast.success("Program deleted successfully")
+    } catch (error) {
+      console.error("Error deleting program:", error)
+      toast.error("Failed to delete program. Please try again.")
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -72,11 +89,19 @@ export function ProgramsPageContent({ programs }: ProgramsPageContentProps) {
             <ProgramsTable
               data={programs || []}
               onEdit={handleEdit}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick}
             />
         </Card>
       </div>
 
+      <DeleteConfirmationModal
+        open={deleteConfirmation.isOpen}
+        onOpenChange={deleteConfirmation.setOpen}
+        title={deleteConfirmation.title}
+        description={deleteConfirmation.description}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+      />
     </>
   )
 }

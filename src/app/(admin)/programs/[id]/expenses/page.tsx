@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { formatCurrency } from "@/utils/currency";
 import { useExpenses, useExpensesSummary } from "./_hooks/useExpenses";
 import { useAddExpense } from "./_hooks/use-add-expense";
@@ -22,7 +23,7 @@ export default function ExpensesPage() {
     error: summaryError,
     isLoading: isSummaryLoading,
   } = useExpensesSummary(programId);
-  const { handleAddClick, handleEdit, handleDelete } =
+  const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
     useAddExpense({ programId });
 
   const totalAmount = summary?.total || 0;
@@ -101,6 +102,15 @@ export default function ExpensesPage() {
           </Card>
         </>
       )}
+
+      <DeleteConfirmationModal
+        open={deleteConfirmation.isOpen}
+        onOpenChange={deleteConfirmation.setOpen}
+        title={deleteConfirmation.title}
+        description={deleteConfirmation.description}
+        onConfirm={deleteConfirmation.onConfirm}
+        isLoading={deleteConfirmation.isDeleting}
+      />
     </div>
   );
 }

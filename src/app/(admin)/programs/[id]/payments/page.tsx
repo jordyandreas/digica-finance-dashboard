@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { formatCurrency } from "@/utils/currency";
 import { usePayments, usePaymentsSummary } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
@@ -17,7 +18,7 @@ export default function PaymentsPage() {
   const { data: summary } = usePaymentsSummary(programId);
   const { data: participants } = useParticipants(programId);
 
-  const { handleAddClick, handleEdit, handleDelete } =
+  const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
     useAddPayment({ programId });
 
   const totalAmount = summary?.total || 0;
@@ -101,6 +102,14 @@ export default function PaymentsPage() {
         </>
       {/* )} */}
 
+      <DeleteConfirmationModal
+        open={deleteConfirmation.isOpen}
+        onOpenChange={deleteConfirmation.setOpen}
+        title={deleteConfirmation.title}
+        description={deleteConfirmation.description}
+        onConfirm={deleteConfirmation.onConfirm}
+        isLoading={deleteConfirmation.isDeleting}
+      />
     </div>
   );
 }
