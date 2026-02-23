@@ -49,7 +49,7 @@ export async function getParticipants(programId?: string): Promise<{
   let query = supabase
     .from("participants")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: true });
 
   if (programId) {
     query = query.eq("program_id", programId);

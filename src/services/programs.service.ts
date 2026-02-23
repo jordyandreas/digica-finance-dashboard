@@ -48,7 +48,7 @@ export async function getPrograms(): Promise<{
   const { data, error } = await supabase
     .from("programs")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("status", { ascending: true });
 
   return { data, error };
 }

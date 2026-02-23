@@ -25,14 +25,14 @@ export default function DashboardPage() {
       description: "Total revenue from all payments",
     },
     {
-      title: "Total Expense",
-      value: formatCurrency(totals.totalExpense),
-      description: "Total expenses across all programs",
-    },
-    {
       title: "Net Profit",
       value: formatCurrency(totals.netProfit),
       description: "Revenue minus expenses",
+    },
+    {
+      title: "Total Expense",
+      value: formatCurrency(totals.totalExpense),
+      description: "Total expenses across all programs",
     },
   ];
 

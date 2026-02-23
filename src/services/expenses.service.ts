@@ -42,7 +42,7 @@ export async function getExpenses(programId?: string): Promise<{
   let query = supabase
     .from("expenses")
     .select("*")
-    .order("expense_date", { ascending: false });
+    .order("created_at", { ascending: true });
 
   if (programId) {
     query = query.eq("program_id", programId);
