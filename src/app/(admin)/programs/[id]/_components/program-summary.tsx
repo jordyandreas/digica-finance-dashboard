@@ -22,14 +22,14 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
       description: "Total revenue from program payments",
     },
     {
-      title: "Total Expenses",
-      value: formatCurrency(totalExpense),
-      description: "Total expenses for this program",
-    },
-    {
       title: "Net Profit",
       value: formatCurrency(netProfit),
       description: "Revenue minus expenses",
+    },
+    {
+      title: "Total Expenses",
+      value: formatCurrency(totalExpense),
+      description: "Total expenses for this program",
     },
   ];
 
