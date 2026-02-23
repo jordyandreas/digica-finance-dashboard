@@ -23,16 +23,19 @@ export default function DashboardPage() {
       title: "Total Revenue",
       value: formatCurrency(totals.totalRevenue),
       description: "Total revenue from all payments",
-    },
-    {
-      title: "Net Profit",
-      value: formatCurrency(totals.netProfit),
-      description: "Revenue minus expenses",
+      valueClassName: totals.totalRevenue >= 0 ? "text-green-600" : "text-red-600",
     },
     {
       title: "Total Expense",
       value: formatCurrency(totals.totalExpense),
       description: "Total expenses across all programs",
+      valueClassName: "text-red-600",
+    },
+    {
+      title: "Net Profit",
+      value: formatCurrency(totals.netProfit),
+      description: "Revenue minus expenses",
+      valueClassName: "text-green-600",
     },
   ];
 
@@ -66,7 +69,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className={`text-2xl font-bold ${stat.valueClassName}`}>{stat.value}</div>
               <p className="text-xs text-muted-foreground">
                 {stat.description}
               </p>

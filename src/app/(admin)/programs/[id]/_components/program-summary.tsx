@@ -20,16 +20,19 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
       title: "Total Revenue",
       value: formatCurrency(totalRevenue),
       description: "Total revenue from program payments",
-    },
-    {
-      title: "Net Profit",
-      value: formatCurrency(netProfit),
-      description: "Revenue minus expenses",
+      valueClassName: totalRevenue >= 0 ? "text-green-600" : "text-red-600",
     },
     {
       title: "Total Expenses",
       value: formatCurrency(totalExpense),
       description: "Total expenses for this program",
+      valueClassName: "text-red-600",
+    },
+    {
+      title: "Net Profit",
+      value: formatCurrency(netProfit),
+      description: "Revenue minus expenses",
+      valueClassName: "text-green-600",
     },
   ];
 
@@ -56,7 +59,7 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
+              <div className={`text-2xl font-bold ${stat.valueClassName}`}>{stat.value}</div>
               <p className="text-xs text-muted-foreground">
                 {stat.description}
               </p>
