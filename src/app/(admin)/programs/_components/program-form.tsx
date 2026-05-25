@@ -1,6 +1,10 @@
 "use client";
 
-import { SelectController, TextInputController } from "@/components/controllers";
+import {
+  DatePickerController,
+  SelectController,
+  TextInputController,
+} from "@/components/controllers";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { UseFormReturn } from "react-hook-form";
 
@@ -45,26 +49,18 @@ export function ProgramForm({ form }: ProgramFormProps) {
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <TextInputController
+        <DatePickerController
           form={form}
           name="start_date"
           label="Start Date"
-          componentProps={{
-            input: {
-              type: "date",
-            },
-          }}
+          placeholder="Pick start date"
         />
 
-        <TextInputController
+        <DatePickerController
           form={form}
           name="end_date"
           label="End Date"
-          componentProps={{
-            input: {
-              type: "date",
-            },
-          }}
+          placeholder="Pick end date"
         />
       </div>
 

@@ -81,7 +81,7 @@ export default function PaymentsPage() {
               <CardTitle>Total Payments</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-700">
+              <div className="text-3xl font-bold text-brand-royal">
                 {formatCurrency(totalAmount)}
               </div>
               <p className="text-sm text-muted-foreground">

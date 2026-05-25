@@ -135,7 +135,7 @@ export function SelectController<
               </Typography>
             )}
 
-            <div className="flex items-end gap-1 w-full">
+            <div className="flex min-w-0 items-end gap-1 w-full">
               <Select
                 value={value}
                 onValueChange={(nextValue) => {

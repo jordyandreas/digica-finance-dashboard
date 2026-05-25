@@ -20,15 +20,16 @@ import { dashboardProgramSummaryQueryKey } from "@/app/(admin)/dashboard/_hooks/
 import type { AddPaymentModalProps } from "../_modals/add-payment";
 import type { EditPaymentModalProps } from "../_modals/edit-payment";
 import type { PaymentFormState } from "../_components/payment-form";
+import { formatDateTimeLocalString } from "@/lib/date-utils";
 import { paymentsQueryKey, paymentsSummaryQueryKey, usePayments } from "./use-payments";
 
 const defaultFormState = (programId: string): PaymentFormState => ({
   participant_id: "",
   amount: undefined,
-  payment_type: "",
+  payment_type: "full",
   tenor: "",
   status: "pending",
-  paid_at: "",
+  paid_at: formatDateTimeLocalString(new Date()),
   payment_method: "bank_transfer",
   reference_name: "none",
   program_id: programId,

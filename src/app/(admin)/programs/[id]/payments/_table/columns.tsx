@@ -3,7 +3,7 @@ import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 import { Payment } from "@/services/payments.service";
 import { StatusBadge } from "@/components/atoms/status-badge";
-import { emptyFallback } from "@/utils/string";
+import { emptyFallback, formatShortId } from "@/utils/string";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms";
 import { Pencil, Trash2 } from "lucide-react";
@@ -14,22 +14,25 @@ interface PaymentsColumnsProps {
   participantNamesById?: Record<string, string>;
 }
 
+function formatPaymentType(payment: Payment): string {
+  const type = payment.payment_type?.trim();
+  if (!type) {
+    return "";
+  }
+
+  if (type === "tenor" && payment.tenor != null) {
+    return `Tenor - ${payment.tenor}x`;
+  }
+
+  return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
 export function paymentsColumns({
   onEdit,
   onDelete,
   participantNamesById = {},
 }: PaymentsColumnsProps): ColumnDef<Payment>[] {
   return [
-    {
-      accessorKey: "id",
-      header: "ID",
-      enableSorting: true,
-      cell: (payment) => (
-        <Typography variant="body3" className="font-medium">
-          {emptyFallback(payment.id)}
-        </Typography>
-      ),
-    },
     {
       accessorKey: "participant_name",
       header: "Participant Name",
@@ -44,14 +47,14 @@ export function paymentsColumns({
       accessorKey: "amount",
       header: "Amount",
       enableSorting: true,
-      className: "text-right",
+      className: "text-left",
       cell: (payment) => {
         const amount =
           payment.amount === null || payment.amount === undefined
             ? null
             : formatCurrency(payment.amount);
         return (
-          <Typography variant="body3" className="font-medium text-green-700">
+          <Typography variant="body3" className="font-medium text-brand-royal">
             {emptyFallback(amount)}
           </Typography>
         );
@@ -63,26 +66,9 @@ export function paymentsColumns({
       enableSorting: true,
       cell: (payment) => (
         <Typography variant="body3" className="font-medium">
-          {emptyFallback(payment.payment_type)}
+          {emptyFallback(formatPaymentType(payment))}
         </Typography>
       ),
-    },
-    {
-      accessorKey: "tenor",
-      header: "Tenor",
-      enableSorting: true,
-      cell: (payment) => {
-        if (payment.payment_type !== "tenor") {
-          return (
-            <Typography variant="body3">{emptyFallback("")}</Typography>
-          );
-        }
-        return (
-          <Typography variant="body3" className="font-medium">
-            {emptyFallback(payment.tenor)}
-          </Typography>
-        );
-      },
     },
     {
       accessorKey: "status",
@@ -104,16 +90,6 @@ export function paymentsColumns({
             : "No referral";
         return <Typography variant="body3">{emptyFallback(referralName)}</Typography>;
       },
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created At",
-      enableSorting: true,
-      cell: (payment) => (
-        <Typography variant="body3">
-          {emptyFallback(payment.created_at ? formatDate(payment.created_at) : null)}
-        </Typography>
-      ),
     },
     {
       accessorKey: "paid_at",

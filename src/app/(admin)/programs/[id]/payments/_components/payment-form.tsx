@@ -1,6 +1,10 @@
 "use client";
 
-import { SelectController, TextInputController } from "@/components/controllers";
+import {
+  DateTimePickerController,
+  SelectController,
+  TextInputController,
+} from "@/components/controllers";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { Participant } from "@/services/participants.service";
 import { type UseFormReturn } from "react-hook-form";
@@ -51,7 +55,7 @@ export function PaymentFormFields({
   const referralParticipants = participantsSource.filter(
     (participant) => participant.id !== selectedParticipantId,
   );
-  
+
   const referralOptions = [
     { label: "No referral", value: "none" },
     ...referralParticipants.map((participant) => ({
@@ -65,13 +69,11 @@ export function PaymentFormFields({
       <SelectController
         form={form}
         name="participant_id"
-        label={
-          <>
-            Participant
-          </>
-        }
+        label={<>Participant</>}
         placeholder={
-          isParticipantsLoading ? "Loading participants..." : "Select participant"
+          isParticipantsLoading
+            ? "Loading participants..."
+            : "Select participant"
         }
         options={
           participantOptions.length
@@ -116,11 +118,7 @@ export function PaymentFormFields({
       <SelectController
         form={form}
         name="payment_type"
-        label={
-          <>
-            Payment Type
-          </>
-        }
+        label={<>Payment Type</>}
         placeholder="Select payment type"
         options={[
           { label: "Full", value: "full" },
@@ -142,11 +140,7 @@ export function PaymentFormFields({
         <SelectController
           form={form}
           name="tenor"
-          label={
-            <>
-              Tenor
-            </>
-          }
+          label={<>Tenor</>}
           placeholder="Select tenor"
           options={[
             { label: "2", value: "2" },
@@ -161,11 +155,7 @@ export function PaymentFormFields({
       <SelectController
         form={form}
         name="status"
-        label={
-          <>
-            Status
-          </>
-        }
+        label={<>Status</>}
         placeholder="Select status"
         options={[
           { label: "Pending", value: "pending" },
@@ -178,15 +168,11 @@ export function PaymentFormFields({
         }}
       />
 
-      <TextInputController
+      <DateTimePickerController
         form={form}
         name="paid_at"
         label="Paid At"
-        componentProps={{
-          input: {
-            type: "datetime-local",
-          },
-        }}
+        placeholder="Pick payment date and time"
       />
 
       <TextInputController

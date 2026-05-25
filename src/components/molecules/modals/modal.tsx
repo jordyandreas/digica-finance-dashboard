@@ -54,13 +54,15 @@ export function Modal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[min(90vh,100dvh)] w-[calc(100%-2rem)] flex-col gap-4 p-0 sm:max-w-xl">
+        <DialogHeader className="shrink-0 px-6 pt-6">
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <div className="py-4">{children}</div>
-        <DialogFooter>
+        <div className="scrollbar-hide min-h-0 min-w-0 flex-1 overflow-y-auto px-6 py-2">
+          <div className="max-w-full px-1">{children}</div>
+        </div>
+        <DialogFooter className="shrink-0 px-6 pb-6">
           <Button
             type="button"
             variant="outline"

@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/atoms/status-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
 import { Pencil, Trash2 } from "lucide-react";
-import { emptyFallback } from "@/utils/string";
+import { emptyFallback, formatShortId } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
 
@@ -19,65 +19,57 @@ export function participantsColumns({
 }: ParticipantsColumnsProps): ColumnDef<Participant>[] {
   return [
     {
-      accessorKey: "id",
-      header: "ID",
-      enableSorting: true,
-      cell: (participant) => (
-        <Typography variant="body3">{emptyFallback(participant.id)}</Typography>
-      ),
-    },
-    {
       accessorKey: "name",
-      header: "Name",
+      header: "Participant",
       enableSorting: true,
       cell: (participant) => (
-        <Typography variant="body3" className="font-medium capitalize">
-          {emptyFallback(participant.name)}
-        </Typography>
-      ),
-    },
-    {
-      accessorKey: "email",
-      header: "Email",
-      enableSorting: true,
-      cell: (participant) => (
-        <Typography variant="body3" className="lowercase">
-          {emptyFallback(participant.email)}
-        </Typography>
-      ),
-    },
-    {
-      accessorKey: "phone",
-      header: "Phone",
-      enableSorting: true,
-      cell: (participant) => (
-        <Typography variant="body3">{emptyFallback(participant.phone)}</Typography>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <Typography variant="body3" className="font-medium capitalize">
+            {emptyFallback(participant.name)}
+          </Typography>
+          {participant.email ? (
+            <Typography
+              variant="label"
+              className="normal-case lowercase text-muted-foreground"
+            >
+              {participant.email}
+            </Typography>
+          ) : null}
+          {participant.phone ? (
+            <Typography
+              variant="label"
+              className="normal-case text-muted-foreground"
+            >
+              {participant.phone}
+            </Typography>
+          ) : null}
+        </div>
       ),
     },
     {
       accessorKey: "occupation",
-      header: "Occupation",
+      header: "Work",
       enableSorting: true,
       cell: (participant) => {
         const occupationLabel = occupationOptions.find(
           (option) => option.value === participant.occupation,
         )?.label;
         return (
-          <Typography variant="body3" className="capitalize">
-            {emptyFallback(occupationLabel)}
-          </Typography>
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <Typography variant="body3" className="capitalize">
+              {emptyFallback(occupationLabel)}
+            </Typography>
+            {participant.organization ? (
+              <Typography
+                variant="label"
+                className="normal-case uppercase text-muted-foreground"
+              >
+                {participant.organization}
+              </Typography>
+            ) : null}
+          </div>
         );
       },
-    },
-    {
-      accessorKey: "organization",
-      header: "Organization",
-      enableSorting: true,
-      cell: (participant) => (
-        <Typography variant="body3" className="uppercase">
-          {emptyFallback(participant.organization)}
-        </Typography>
-      ),
     },
     {
       accessorKey: "status",

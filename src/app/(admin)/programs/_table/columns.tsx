@@ -22,7 +22,7 @@ export function programsColumns({
   return [
     {
       accessorKey: "name",
-      header: "Name",
+      header: "Program Name",
       enableSorting: true,
       cell: (program) => (
         <span className="font-medium">
@@ -42,15 +42,10 @@ export function programsColumns({
     },
     {
       accessorKey: "start_date",
-      header: "Start Date",
+      header: "Dates",
       enableSorting: true,
-      cell: (program) => formatDate(program.start_date),
-    },
-    {
-      accessorKey: "end_date",
-      header: "End Date",
-      enableSorting: true,
-      cell: (program) => formatDate(program.end_date),
+      cell: (program) =>
+        `${formatDate(program.start_date)} – ${formatDate(program.end_date)}`,
     },
     {
       accessorKey: "price",
@@ -58,18 +53,6 @@ export function programsColumns({
       enableSorting: true,
       className: "text-left",
       cell: (program) => formatCurrency(program.price),
-    },
-    {
-      accessorKey: "created_at",
-      header: "Created At",
-      enableSorting: true,
-      cell: (program) => formatDate(program.created_at),
-    },
-    {
-      accessorKey: "updated_at",
-      header: "Updated At",
-      enableSorting: true,
-      cell: (program) => formatDate(program.updated_at),
     },
     {
       accessorKey: "status",

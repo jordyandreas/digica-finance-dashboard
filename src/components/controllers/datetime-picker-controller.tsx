@@ -1,6 +1,5 @@
 import {
   type ComponentProps,
-  type HTMLAttributes,
   type PropsWithChildren,
   type ReactNode,
 } from "react";
@@ -14,14 +13,14 @@ import {
 } from "react-hook-form";
 
 import { Typography } from "@/components/atoms/typography";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 import { cn } from "@/lib/utils";
 
-export interface TextInputControllerProps<Schema extends FieldValues> {
+export interface DateTimePickerControllerProps<Schema extends FieldValues> {
   form: UseFormReturn<Schema>;
   name: FieldPath<Schema>;
   required?: boolean;
   placeholder?: string;
-  defaultValue?: HTMLAttributes<HTMLInputElement>["defaultValue"];
   label?: ReactNode;
   description?: string;
   error?: string;
@@ -29,37 +28,31 @@ export interface TextInputControllerProps<Schema extends FieldValues> {
     wrapper?: ComponentProps<"div">;
     label?: ComponentProps<"label">;
     labelTypography?: ComponentProps<typeof Typography>;
-    input?: ComponentProps<"input">;
+    dateTimePicker?: ComponentProps<typeof DateTimePicker>;
     description?: ComponentProps<"p">;
     error?: ComponentProps<"p">;
   };
 }
 
-const baseInputClassName =
-  "mt-2 flex h-9 min-w-0 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
-
-export function TextInputController<Schema extends FieldValues>({
+export function DateTimePickerController<Schema extends FieldValues>({
   form,
   name,
   label,
   description,
   required,
   error,
-  children,
   placeholder,
-  defaultValue,
   componentProps,
-}: PropsWithChildren<TextInputControllerProps<Schema>>) {
+}: PropsWithChildren<DateTimePickerControllerProps<Schema>>) {
   const {
     wrapper,
     label: labelProps,
     labelTypography,
-    input,
+    dateTimePicker,
     description: descriptionProps,
     error: errorProps,
   } = componentProps ?? {};
   const { className: wrapperClassName, ...wrapperRest } = wrapper ?? {};
-  const { className: inputClassName, onChange, ...inputRest } = input ?? {};
   const {
     className: labelClassName,
     children: labelChildren,
@@ -70,6 +63,12 @@ export function TextInputController<Schema extends FieldValues>({
   const { className: descriptionClassName, ...descriptionRest } =
     descriptionProps ?? {};
   const { className: errorClassName, ...errorRest } = errorProps ?? {};
+  const {
+    className: dateTimePickerClassName,
+    onChange,
+    id: dateTimePickerId,
+    ...dateTimePickerRest
+  } = dateTimePicker ?? {};
 
   return (
     <Controller
@@ -83,13 +82,10 @@ export function TextInputController<Schema extends FieldValues>({
         fieldState: ControllerFieldState;
       }) => {
         const fieldError = error ?? fieldState.error?.message;
-        const inputId = inputRest.id ?? field.name;
+        const inputId = dateTimePickerId ?? field.name;
 
         return (
-          <div
-            className={cn("w-full", wrapperClassName)}
-            {...wrapperRest}
-          >
+          <div className={cn("w-full", wrapperClassName)} {...wrapperRest}>
             {label && (
               <Typography
                 variant="label"
@@ -100,39 +96,26 @@ export function TextInputController<Schema extends FieldValues>({
                 )}
                 {...labelTypographyRest}
               >
-                <label
-                  htmlFor={inputId}
-                  className={labelClassName}
-                  {...labelRest}
-                >
+                <label htmlFor={inputId} className={labelClassName} {...labelRest}>
                   {labelChildren ?? label}
                   {required && (
-                    <span
-                      className={cn("ml-1 text-destructive")}
-                    >
-                      *
-                    </span>
+                    <span className={cn("ml-1 text-destructive")}>*</span>
                   )}
                 </label>
               </Typography>
             )}
 
-            <div className="flex min-w-0 items-end gap-1 w-full">
-              <input
-                {...field}
-                id={inputId}
-                placeholder={placeholder}
-                value={field.value ?? defaultValue ?? ""}
-                onChange={(event) => {
-                  field.onChange(event.target.value);
-                  onChange?.(event);
-                }}
-                className={cn(baseInputClassName, inputClassName)}
-                aria-invalid={Boolean(fieldError)}
-                {...inputRest}
-              />
-              {children}
-            </div>
+            <DateTimePicker
+              id={inputId}
+              value={field.value ?? ""}
+              placeholder={placeholder}
+              onChange={(nextValue) => {
+                field.onChange(nextValue);
+                onChange?.(nextValue);
+              }}
+              className={cn("mt-2", dateTimePickerClassName)}
+              {...dateTimePickerRest}
+            />
 
             {fieldError ? (
               <p
@@ -144,7 +127,10 @@ export function TextInputController<Schema extends FieldValues>({
             ) : (
               description && (
                 <p
-                  className={cn("mt-2 text-xs text-muted-foreground", descriptionClassName)}
+                  className={cn(
+                    "mt-2 text-xs text-muted-foreground",
+                    descriptionClassName,
+                  )}
                   {...descriptionRest}
                 >
                   {description}

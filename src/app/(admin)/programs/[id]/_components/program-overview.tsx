@@ -1,8 +1,11 @@
 'use client';
 
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { formatDate } from "@/utils/date";
 import { formatProgramType } from "@/utils/programs";
@@ -20,6 +23,7 @@ export function ProgramOverview({
 
   const { data: program, isLoading } = useProgram(programId);
   const title = isLoading ? "Loading..." : program?.name || "Program Details";
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="w-full space-y-4">
@@ -30,9 +34,24 @@ export function ProgramOverview({
       </p>
     </div>
     <Card>
-      <CardHeader>
-        <CardTitle>Overview</CardTitle>
+      <CardHeader className={cn("space-y-0", !isOpen && "pb-6")}>
+        <button
+          type="button"
+          onClick={() => setIsOpen((prev) => !prev)}
+          aria-expanded={isOpen}
+          className="flex w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+        >
+          <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+            Overview
+          </CardTitle>
+          {isOpen ? (
+            <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+          )}
+        </button>
       </CardHeader>
+      {isOpen && (
       <CardContent>
         <dl className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -99,6 +118,7 @@ export function ProgramOverview({
           
         </dl>
       </CardContent>
+      )}
     </Card>
     </div>
   );

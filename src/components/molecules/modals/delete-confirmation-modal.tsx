@@ -68,7 +68,7 @@ export function DeleteConfirmationModal({
             variant="secondary"
             onClick={handleCancel}
             disabled={isLoading}
-            className="flex-1 bg-gray-900 text-white hover:bg-gray-800"
+            className="flex-1"
           >
             {cancelLabel}
           </Button>

@@ -23,7 +23,7 @@ export default function DashboardPage() {
       title: "Total Revenue",
       value: formatCurrency(totals.totalRevenue),
       description: "Total revenue from all payments",
-      valueClassName: totals.totalRevenue >= 0 ? "text-green-600" : "text-red-600",
+      valueClassName: totals.totalRevenue >= 0 ? "text-brand-royal" : "text-red-600",
     },
     {
       title: "Total Expense",
@@ -35,7 +35,7 @@ export default function DashboardPage() {
       title: "Net Profit",
       value: formatCurrency(totals.netProfit),
       description: "Revenue minus expenses",
-      valueClassName: "text-green-600",
+      valueClassName: "text-brand-royal",
     },
   ];
 

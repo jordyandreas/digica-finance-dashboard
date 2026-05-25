@@ -20,7 +20,7 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
       title: "Total Revenue",
       value: formatCurrency(totalRevenue),
       description: "Total revenue from program payments",
-      valueClassName: totalRevenue >= 0 ? "text-green-600" : "text-red-600",
+      valueClassName: totalRevenue >= 0 ? "text-brand-royal" : "text-red-600",
     },
     {
       title: "Total Expenses",
@@ -32,7 +32,7 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
       title: "Net Profit",
       value: formatCurrency(netProfit),
       description: "Revenue minus expenses",
-      valueClassName: "text-green-600",
+      valueClassName: "text-brand-royal",
     },
   ];
 

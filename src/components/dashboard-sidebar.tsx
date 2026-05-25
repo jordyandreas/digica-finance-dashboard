@@ -18,15 +18,15 @@ export function DashboardSidebar({ onToggle }: DashboardSidebarProps) {
   const menus = useDashboardMenus();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-background p-6">
+    <aside className="flex h-screen w-64 flex-col border-r border-brand-periwinkle/60 bg-gradient-premium p-6">
       <div className="mb-6 flex items-center justify-between">
         <Link href="/dashboard" className="flex items-center">
           <Image
-            src="/logo/logo%20digica.png"
+            src="/logo/logo-digica.webp"
             alt="Digica Academy"
             width={160}
             height={40}
-            className="h-15 w-auto"
+            className="h-10 w-auto"
             priority
           />
         </Link>
@@ -39,7 +39,9 @@ export function DashboardSidebar({ onToggle }: DashboardSidebarProps) {
       </div>
       <nav className="flex-1 space-y-2">
         {menus.map((item) => {
-          const isActive = pathname === item.pathname;
+          const isActive =
+            pathname === item.pathname ||
+            pathname.startsWith(`${item.pathname}/`);
           return (
             <Link
               key={item.pathname}

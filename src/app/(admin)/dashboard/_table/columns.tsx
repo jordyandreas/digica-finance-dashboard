@@ -22,7 +22,7 @@ export const dashboardColumns: ColumnDef<DashboardProgramSummary>[] = [
     enableSorting: true,
     className: "text-left",
     cell: (summary) => (
-      <Typography variant="body3" className="text-green-700 font-bold">
+      <Typography variant="body3" className="font-bold text-brand-royal">
         {formatCurrency(summary.total_revenue)}
       </Typography>
     ),
@@ -47,7 +47,7 @@ export const dashboardColumns: ColumnDef<DashboardProgramSummary>[] = [
       <Typography
         variant="body3"
         className={`font-bold ${
-          summary.net_profit < 0 ? "text-red-700" : "text-green-700"
+          summary.net_profit < 0 ? "text-red-700" : "text-brand-royal"
         }`}
       >
         {formatCurrency(summary.net_profit)}

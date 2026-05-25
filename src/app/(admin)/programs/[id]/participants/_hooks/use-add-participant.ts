@@ -18,6 +18,8 @@ import {
 import type { AddParticipantModalProps } from "../_modals/add-participant";
 import type { EditParticipantModalProps } from "../_modals/edit-participant";
 import { participantsQueryKey } from "./use-participants";
+import { getLocalDateInputValue } from "@/utils/date";
+import { normalizeParticipantPhoneForSubmit } from "@/utils/phone";
 
 const defaultFormState = (programId: string): ParticipantFormState => ({
   name: "",
@@ -27,7 +29,7 @@ const defaultFormState = (programId: string): ParticipantFormState => ({
   organization: "",
   status: "active",
   payment_status: "pending",
-  joined_date: "",
+  joined_date: getLocalDateInputValue(),
   program_id: programId,
 });
 
@@ -165,9 +167,7 @@ export function useAddParticipant({
         const participantData: CreateParticipantInput = {
           name: values.name.toLowerCase(),
           email: values.email,
-          phone: values.phone.trim().startsWith("+62")
-            ? values.phone.trim()
-            : `+62${values.phone.trim()}`,
+          phone: normalizeParticipantPhoneForSubmit(values.phone),
           occupation: values.occupation || undefined,
           organization: values.organization?.toLowerCase() || undefined,
           status: values.status || undefined,

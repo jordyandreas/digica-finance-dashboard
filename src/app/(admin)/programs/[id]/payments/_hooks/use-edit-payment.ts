@@ -14,6 +14,7 @@ import {
   useParticipants,
 } from "../../participants/_hooks/use-participants";
 import { dashboardProgramSummaryQueryKey } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
+import { formatDateTimeLocalString } from "@/lib/date-utils";
 
 const buildFormState = (
   payment: Payment | null | undefined,
@@ -25,7 +26,7 @@ const buildFormState = (
   tenor: payment?.tenor?.toString() || "",
   status: payment?.status || "pending",
   paid_at: payment?.paid_at
-    ? new Date(payment.paid_at).toISOString().slice(0, 16)
+    ? formatDateTimeLocalString(new Date(payment.paid_at))
     : "",
   payment_method: payment?.payment_method || "",
   reference_name: payment?.reference_name || "none",

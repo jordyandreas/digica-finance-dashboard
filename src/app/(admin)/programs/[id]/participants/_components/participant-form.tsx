@@ -1,6 +1,10 @@
 "use client";
 
-import { SelectController, TextInputController } from "@/components/controllers";
+import {
+  DatePickerController,
+  SelectController,
+  TextInputController,
+} from "@/components/controllers";
 import { type UseFormReturn } from "react-hook-form";
 import {
   occupationOptions,
@@ -25,9 +29,7 @@ interface ParticipantFormFieldsProps {
   form: UseFormReturn<ParticipantFormState>;
 }
 
-export function ParticipantFormFields({
-  form,
-}: ParticipantFormFieldsProps) {
+export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
   return (
     <div className="space-y-4">
       <TextInputController
@@ -79,11 +81,7 @@ export function ParticipantFormFields({
           name="occupation"
           label="Occupation"
           placeholder="Select occupation"
-          options={[
-            { label: "Not set", value: "none" },
-            ...occupationOptions,
-          ]}
-          
+          options={[{ label: "Not set", value: "none" }, ...occupationOptions]}
           componentProps={{
             selectTrigger: { className: "mt-2", id: "occupation" },
             select: {
@@ -101,10 +99,10 @@ export function ParticipantFormFields({
           label="Organization"
           placeholder="Organization"
           componentProps={{
-          input: {
-            className: "uppercase",
-          },
-        }}
+            input: {
+              className: "uppercase",
+            },
+          }}
         />
       </div>
 
@@ -123,18 +121,13 @@ export function ParticipantFormFields({
             selectTrigger: { className: "mt-2", id: "status" },
           }}
         />
-        <TextInputController
-        form={form}
-        name="joined_date"
-        label="Joined Date"
-        required
-        componentProps={{
-          input: {
-            type: "date",
-            required: true,
-          },
-        }}
-      />
+        <DatePickerController
+          form={form}
+          name="joined_date"
+          label="Joined Date"
+          required
+          placeholder="Pick joined date"
+        />
         {/* <SelectController
           form={form}
           name="payment_status"
@@ -150,8 +143,6 @@ export function ParticipantFormFields({
           }}
         /> */}
       </div>
-
-      
     </div>
   );
 }

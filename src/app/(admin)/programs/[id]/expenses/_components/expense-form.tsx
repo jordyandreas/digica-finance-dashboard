@@ -1,6 +1,10 @@
 "use client";
 
-import { SelectController, TextInputController } from "@/components/controllers";
+import {
+  DatePickerController,
+  SelectController,
+  TextInputController,
+} from "@/components/controllers";
 import { useNumberInput } from "@/hooks/use-number-input";
 import { type UseFormReturn } from "react-hook-form";
 import { expenseSchema } from "@/schemas/expense-schema";
@@ -61,17 +65,12 @@ export function ExpenseFormFields({ form }: ExpenseFormFieldsProps) {
         }}
       />
 
-      <TextInputController
+      <DatePickerController
         form={form}
         name="expense_date"
         label="Expense Date"
         required
-        componentProps={{
-          input: {
-            type: "date",
-            required: true,
-          },
-        }}
+        placeholder="Pick expense date"
       />
 
       <TextInputController
