@@ -4,6 +4,7 @@ import {
   DatePickerController,
   SelectController,
   TextInputController,
+  TextareaController,
 } from "@/components/controllers";
 import { type UseFormReturn } from "react-hook-form";
 import {
@@ -22,6 +23,7 @@ export type ParticipantFormState = {
   status: string;
   payment_status: string;
   joined_date: string;
+  notes: string;
   program_id: string;
 };
 
@@ -121,6 +123,7 @@ export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
             selectTrigger: { className: "mt-2", id: "status" },
           }}
         />
+        
         <DatePickerController
           form={form}
           name="joined_date"
@@ -143,6 +146,13 @@ export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
           }}
         /> */}
       </div>
+
+      <TextareaController
+        form={form}
+        name="notes"
+        label="Notes"
+        placeholder="Optional notes"
+      />
     </div>
   );
 }

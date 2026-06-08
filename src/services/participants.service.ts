@@ -13,6 +13,7 @@ export interface Participant {
   status: string | null;
   payment_status: string | null;
   joined_date: string | null;
+  notes: string | null;
   created_at: string | null;
 }
 
@@ -25,8 +26,9 @@ export interface CreateParticipantInput {
   program_id: string;
   program_name?: string;
   status?: string;
-  // payment_status?: string;
+  payment_status?: string;
   joined_date?: string;
+  notes?: string;
 }
 
 export interface UpdateParticipantInput {
@@ -38,8 +40,9 @@ export interface UpdateParticipantInput {
   program_id?: string;
   program_name?: string;
   status?: string;
-  // payment_status?: string;
+  payment_status?: string;
   joined_date?: string;
+  notes?: string;
 }
 
 export async function getParticipants(programId?: string): Promise<{

@@ -11,7 +11,18 @@ export interface ColumnDef<T> {
   id?: string;
   accessorKey?: keyof T;
   header: string;
-  cell?: (value: T) => React.ReactNode;
+  cell?: (row: T) => React.ReactNode;
   enableSorting?: boolean;
   className?: string;
+  /** Default column width in pixels (TanStack Table) */
+  size?: number;
+  /** Minimum column width in pixels (TanStack Table) */
+  minSize?: number;
+  /** Maximum column width in pixels (TanStack Table) */
+  maxSize?: number;
+}
+
+export interface DataTableColumnMeta {
+  className?: string;
+  isActions?: boolean;
 }

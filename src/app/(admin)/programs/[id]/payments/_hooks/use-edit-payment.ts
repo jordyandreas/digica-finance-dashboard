@@ -24,12 +24,14 @@ const buildFormState = (
   amount: payment?.amount ?? undefined,
   payment_type: (payment?.payment_type as "tenor" | "full") || "",
   tenor: payment?.tenor?.toString() || "",
-  status: payment?.status || "pending",
+  paid_tenor: payment?.paid_tenor?.toString() || "",
+  status: payment?.status || "paid",
   paid_at: payment?.paid_at
     ? formatDateTimeLocalString(new Date(payment.paid_at))
     : "",
   payment_method: payment?.payment_method || "",
   reference_name: payment?.reference_name || "none",
+  notes: payment?.notes || "",
   program_id: payment?.program_id || programId,
 });
 
@@ -54,6 +56,7 @@ export function useEditPayment({
   const paymentType = form.watch("payment_type");
   const status = form.watch("status");
   const tenor = form.watch("tenor");
+  const paidTenor = form.watch("paid_tenor");
 
   React.useEffect(() => {
     if (isOpen) {
@@ -71,6 +74,10 @@ export function useEditPayment({
         values.payment_type === "tenor" && values.tenor
           ? parseInt(values.tenor, 10)
           : undefined,
+      paid_tenor:
+        values.payment_type === "tenor" && values.paid_tenor
+          ? parseInt(values.paid_tenor, 10)
+          : undefined,
       status: values.status,
       paid_at: values.paid_at || undefined,
       payment_method: values.payment_method || undefined,
@@ -78,6 +85,7 @@ export function useEditPayment({
         values.reference_name && values.reference_name !== "none"
           ? values.reference_name
           : undefined,
+      notes: values.notes,
     });
 
     if (!validation.success) {
@@ -114,6 +122,12 @@ export function useEditPayment({
           values.payment_type === "tenor" && values.tenor
             ? parseInt(values.tenor, 10)
             : undefined,
+        paid_tenor:
+          values.payment_type === "tenor"
+            ? values.paid_tenor
+              ? parseInt(values.paid_tenor, 10)
+              : null
+            : null,
         status: values.status || undefined,
         paid_at: values.paid_at || undefined,
         payment_method: values.payment_method || undefined,
@@ -121,9 +135,19 @@ export function useEditPayment({
           values.reference_name && values.reference_name !== "none"
             ? values.reference_name
             : undefined,
+        notes: values.notes?.trim() || undefined,
       };
 
       const result = await updatePayment(payment.id, paymentData);
+
+      if (!result.error && values.participant_id) {
+        const { updateParticipant } = await import(
+          "@/services/participants.service"
+        );
+        await updateParticipant(values.participant_id, {
+          payment_status: values.status || "pending",
+        });
+      }
 
       if (result.error) {
         console.error("Error saving payment:", result.error);
@@ -166,7 +190,7 @@ export function useEditPayment({
     amount === undefined ||
     !paymentType ||
     !status?.trim() ||
-    (paymentType === "tenor" && !tenor?.trim());
+    (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));
 
   return {
     isOpen,

@@ -2,6 +2,14 @@
 
 import * as React from "react";
 import {
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  type Column,
+  type SortingState,
+} from "@tanstack/react-table";
+import {
   Table,
   TableBody,
   TableCell,
@@ -9,14 +17,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/atoms/table";
-import {
-  ChevronsUpDown,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
+import { ChevronsUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SortConfig, ColumnDef } from "./data-table.types";
+import { ColumnDef, type DataTableColumnMeta } from "./data-table.types";
 import { DataTableEmptyPlaceholder } from "./data-table-empty-placeholder";
+import { toTanStackColumns } from "./data-table-columns";
 
 interface DataTableProps<T> {
   data: T[];
@@ -25,111 +30,115 @@ interface DataTableProps<T> {
   emptyPlaceholder?: React.ReactNode;
 }
 
+function getColumnMeta(meta: unknown): DataTableColumnMeta {
+  if (meta && typeof meta === "object") {
+    return meta as DataTableColumnMeta;
+  }
+  return {};
+}
+
+function getColumnSizingStyle<TData>(column: Column<TData, unknown>) {
+  const meta = getColumnMeta(column.columnDef.meta);
+  const { minSize, maxSize, size } = column.columnDef;
+
+  if (meta.isActions) {
+    return {
+      width: size,
+      minWidth: minSize,
+      maxWidth: maxSize,
+    };
+  }
+
+  return {
+    minWidth: minSize,
+    maxWidth: maxSize,
+  };
+}
+
 export function DataTable<T extends object>({
   data,
   columns,
   keyExtractor,
   emptyPlaceholder,
 }: DataTableProps<T>) {
-  const [sortConfig, setSortConfig] = React.useState<SortConfig<T>>({
-    key: null,
-    direction: null,
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+
+  const tanstackColumns = React.useMemo(
+    () => toTanStackColumns(columns),
+    [columns],
+  );
+
+  const table = useReactTable({
+    data,
+    columns: tanstackColumns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getRowId: (row) => String(keyExtractor(row)),
+    defaultColumn: {
+      size: 0,
+      minSize: 60,
+      maxSize: 480,
+    },
   });
 
-  const handleSort = (key: keyof T) => {
-    setSortConfig((prev) => {
-      if (prev.key === key) {
-        if (prev.direction === "asc") {
-          return { key, direction: "desc" };
-        } else if (prev.direction === "desc") {
-          return { key: null, direction: null };
-        }
-      }
-      return { key, direction: "asc" };
-    });
+  const getSortIcon = (isSorted: false | "asc" | "desc") => {
+    if (!isSorted) {
+      return <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0" />;
+    }
+    if (isSorted === "asc") {
+      return <ChevronUp className="ml-2 h-4 w-4 shrink-0" />;
+    }
+    return <ChevronDown className="ml-2 h-4 w-4 shrink-0" />;
   };
-
-  const sortedData = React.useMemo(() => {
-    if (!sortConfig.key || !sortConfig.direction) {
-      return data;
-    }
-
-    return [...data].sort((a, b) => {
-      const aValue = a[sortConfig.key!];
-      const bValue = b[sortConfig.key!];
-
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
-
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortConfig.direction === "asc"
-          ? aValue - bValue
-          : bValue - aValue;
-      }
-
-      const aString = String(aValue).toLowerCase();
-      const bString = String(bValue).toLowerCase();
-
-      if (sortConfig.direction === "asc") {
-        return aString.localeCompare(bString);
-      } else {
-        return bString.localeCompare(aString);
-      }
-    });
-  }, [data, sortConfig]);
-
-  const getSortIcon = (columnKey: keyof T) => {
-    if (sortConfig.key !== columnKey) {
-      return <ChevronsUpDown className="ml-2 h-4 w-4" />;
-    }
-    if (sortConfig.direction === "asc") {
-      return <ChevronUp className="ml-2 h-4 w-4" />;
-    }
-    if (sortConfig.direction === "desc") {
-      return <ChevronDown className="ml-2 h-4 w-4" />;
-    }
-    return <ChevronsUpDown className="ml-2 h-4 w-4" />;
-  };
-
-  const isActionsColumn = (column: ColumnDef<T>) =>
-    column.id === "actions" || column.accessorKey === "actions";
 
   return (
-    <div className="overflow-x-auto">
-      <Table className="w-full table-auto">
+    <div className="w-full overflow-x-auto">
+      <Table containerClassName="overflow-visible" className="w-full table-auto">
         <TableHeader>
-          <TableRow>
-            {columns.map((column, index) => {
-              const isSortable =
-                column.enableSorting !== false && column.accessorKey;
-              const isActions = isActionsColumn(column);
-              return (
-                <TableHead
-                  key={index}
-                  className={cn(
-                    column.className,
-                    isSortable &&
-                      "cursor-pointer select-none hover:bg-muted/50 transition-colors",
-                    isActions &&
-                      "sticky right-0 z-20 bg-background whitespace-nowrap shadow-[-12px_0_12px_-12px_rgba(0,0,0,0.12)]"
-                  )}
-                  onClick={() =>
-                    isSortable && column.accessorKey
-                      ? handleSort(column.accessorKey)
-                      : undefined
-                  }
-                >
-                  <div className="flex items-center">
-                    {column.header}
-                    {isSortable && getSortIcon(column.accessorKey!)}
-                  </div>
-                </TableHead>
-              );
-            })}
-          </TableRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow
+              key={headerGroup.id}
+              className="bg-muted/30 hover:bg-muted/30"
+            >
+              {headerGroup.headers.map((header) => {
+                const meta = getColumnMeta(header.column.columnDef.meta);
+                const canSort = header.column.getCanSort();
+
+                return (
+                  <TableHead
+                    key={header.id}
+                    style={getColumnSizingStyle(header.column)}
+                    className={cn(
+                      meta.isActions
+                        ? "sticky right-0 z-20 whitespace-nowrap bg-muted shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)]"
+                        : "w-0 whitespace-nowrap",
+                      meta.className,
+                      canSort &&
+                        "cursor-pointer select-none hover:bg-muted/50 transition-colors",
+                    )}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    <div className="flex items-center">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                      {canSort
+                        ? getSortIcon(header.column.getIsSorted())
+                        : null}
+                    </div>
+                  </TableHead>
+                );
+              })}
+            </TableRow>
+          ))}
         </TableHeader>
         <TableBody>
-          {sortedData.length === 0 ? (
+          {table.getRowModel().rows.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={columns.length}
@@ -141,23 +150,26 @@ export function DataTable<T extends object>({
               </TableCell>
             </TableRow>
           ) : (
-            sortedData.map((row) => (
-              <TableRow key={keyExtractor(row)}>
-                {columns.map((column, index) => {
-                  const value = column.accessorKey
-                    ? row[column.accessorKey]
-                    : null;
-                  const isActions = isActionsColumn(column);
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id} className="group">
+                {row.getVisibleCells().map((cell) => {
+                  const meta = getColumnMeta(cell.column.columnDef.meta);
+
                   return (
                     <TableCell
-                      key={index}
+                      key={cell.id}
+                      style={getColumnSizingStyle(cell.column)}
                       className={cn(
-                        column.className,
-                        isActions &&
-                          "sticky right-0 z-10 bg-background whitespace-nowrap w-[1%] shadow-[-12px_0_12px_-12px_rgba(0,0,0,0.12)]"
+                        meta.isActions
+                          ? "sticky right-0 z-10 whitespace-nowrap bg-background shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.08)] group-hover:bg-muted"
+                          : "w-0",
+                        meta.className,
                       )}
                     >
-                      {column.cell ? column.cell(row) : String(value ?? "-")}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   );
                 })}

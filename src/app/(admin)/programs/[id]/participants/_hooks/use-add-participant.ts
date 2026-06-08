@@ -30,6 +30,7 @@ const defaultFormState = (programId: string): ParticipantFormState => ({
   status: "active",
   payment_status: "pending",
   joined_date: getLocalDateInputValue(),
+  notes: "",
   program_id: programId,
 });
 
@@ -140,6 +141,7 @@ export function useAddParticipant({
         occupation: values.occupation,
         organization: values.organization,
         joined_date: values.joined_date,
+        notes: values.notes,
       });
 
       if (!validation.success) {
@@ -173,6 +175,7 @@ export function useAddParticipant({
           status: values.status || undefined,
           // payment_status: values.payment_status || undefined,
           joined_date: values.joined_date,
+          notes: values.notes?.trim() || undefined,
           program_id: values.program_id || resolvedProgramId,
         };
 

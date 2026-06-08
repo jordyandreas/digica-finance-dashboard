@@ -28,10 +28,12 @@ const defaultFormState = (programId: string): PaymentFormState => ({
   amount: undefined,
   payment_type: "full",
   tenor: "",
-  status: "pending",
+  paid_tenor: "",
+  status: "paid",
   paid_at: formatDateTimeLocalString(new Date()),
   payment_method: "bank_transfer",
   reference_name: "none",
+  notes: "",
   program_id: programId,
 });
 
@@ -59,6 +61,7 @@ export function useAddPayment({
   const paymentType = form.watch("payment_type");
   const status = form.watch("status");
   const tenor = form.watch("tenor");
+  const paidTenor = form.watch("paid_tenor");
   const { data: participants = [], isLoading: isParticipantsLoading } =
     useParticipants(resolvedProgramId);
   const { data: payments } = usePayments(resolvedProgramId);
@@ -145,7 +148,18 @@ export function useAddPayment({
 
     setIsDeleting(true);
     try {
-      await deletePayment(deleteConfirmation.item.id);
+      const deletedPayment = deleteConfirmation.item;
+      await deletePayment(deletedPayment.id);
+
+      if (deletedPayment.participant_id) {
+        const { updateParticipant } = await import(
+          "@/services/participants.service"
+        );
+        await updateParticipant(deletedPayment.participant_id, {
+          payment_status: "pending",
+        });
+      }
+
       await invalidatePayments();
       await invalidateParticipants();
       toast.success("Payment deleted successfully");
@@ -166,6 +180,10 @@ export function useAddPayment({
         values.payment_type === "tenor" && values.tenor
           ? parseInt(values.tenor, 10)
           : undefined,
+      paid_tenor:
+        values.payment_type === "tenor" && values.paid_tenor
+          ? parseInt(values.paid_tenor, 10)
+          : undefined,
       status: values.status,
       paid_at: values.paid_at || undefined,
       payment_method: values.payment_method || undefined,
@@ -173,6 +191,7 @@ export function useAddPayment({
         values.reference_name && values.reference_name !== "none"
           ? values.reference_name
           : undefined,
+      notes: values.notes,
     });
 
     if (!validation.success) {
@@ -204,6 +223,10 @@ export function useAddPayment({
           values.payment_type === "tenor" && values.tenor
             ? parseInt(values.tenor, 10)
             : undefined,
+        paid_tenor:
+          values.payment_type === "tenor" && values.paid_tenor
+            ? parseInt(values.paid_tenor, 10)
+            : undefined,
         status: values.status || undefined,
         paid_at: values.paid_at || undefined,
         payment_method: values.payment_method || undefined,
@@ -211,9 +234,19 @@ export function useAddPayment({
           values.reference_name && values.reference_name !== "none"
             ? values.reference_name
             : undefined,
+        notes: values.notes?.trim() || undefined,
       };
 
       const result = await createPayment(paymentData);
+
+      if (!result.error) {
+        const { updateParticipant } = await import(
+          "@/services/participants.service"
+        );
+        await updateParticipant(values.participant_id, {
+          payment_status: values.status || "pending",
+        });
+      }
 
       if (result.error) {
         console.error("Error saving payment:", result.error);
@@ -247,7 +280,7 @@ export function useAddPayment({
     amount === undefined ||
     !paymentType ||
     !status?.trim() ||
-    (paymentType === "tenor" && !tenor?.trim());
+    (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));
 
   return {
     isOpen: addPaymentModal.isOpen,

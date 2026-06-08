@@ -12,9 +12,11 @@ export interface Payment {
   payment_method: string | null;
   payment_type: string | null; // "tenor" or "full"
   tenor: number | null;
+  paid_tenor: number | null;
   status: string | null;
   reference_name: string | null;
   referral_name: string | null;
+  notes: string | null;
   created_at: string | null;
   paid_at: string | null;
 }
@@ -25,10 +27,12 @@ export interface CreatePaymentInput {
   program_id: string;
   payment_type: "tenor" | "full";
   tenor?: number; // Required if payment_type is "tenor"
+  paid_tenor?: number; // Required if payment_type is "tenor"
   status?: string;
   paid_at?: string;
   payment_method?: string;
   reference_name?: string;
+  notes?: string;
 }
 
 export interface UpdatePaymentInput {
@@ -37,10 +41,12 @@ export interface UpdatePaymentInput {
   program_id?: string;
   payment_type?: "tenor" | "full";
   tenor?: number;
+  paid_tenor?: number | null;
   status?: string;
   paid_at?: string;
   payment_method?: string;
   reference_name?: string;
+  notes?: string;
 }
 
 export async function getPayments(programId?: string): Promise<{

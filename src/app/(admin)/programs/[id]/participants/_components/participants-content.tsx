@@ -1,11 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/ui/card";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { type Participant } from "@/services/participants.service";
 import { Plus } from "lucide-react";
 import { useAddParticipant } from "../_hooks/use-add-participant";
+import { usePayments } from "../../payments/_hooks/use-payments";
+import { withPaymentStatusFromPayments } from "@/utils/payment-status";
 import { ParticipantsTable } from "../_table";
 
 interface ParticipantsContentProps {
@@ -19,6 +22,11 @@ export function ParticipantsContent({
 }: ParticipantsContentProps) {
   const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
     useAddParticipant({ programId });
+  const { data: payments = [] } = usePayments(programId);
+  const participantsWithPaymentStatus = useMemo(
+    () => withPaymentStatusFromPayments(participants, payments),
+    [participants, payments],
+  );
 
   return (
     <>
@@ -38,7 +46,7 @@ export function ParticipantsContent({
 
         <Card>
             <ParticipantsTable
-              data={participants || []}
+              data={participantsWithPaymentStatus}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

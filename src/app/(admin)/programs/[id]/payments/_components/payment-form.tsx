@@ -4,6 +4,7 @@ import {
   DateTimePickerController,
   SelectController,
   TextInputController,
+  TextareaController,
 } from "@/components/controllers";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { Participant } from "@/services/participants.service";
@@ -14,10 +15,12 @@ export type PaymentFormState = {
   amount: number | undefined;
   payment_type: "tenor" | "full" | "";
   tenor: string;
+  paid_tenor: string;
   status: string;
   paid_at: string;
   payment_method: string;
   reference_name: string;
+  notes: string;
   program_id: string;
 };
 
@@ -39,7 +42,15 @@ export function PaymentFormFields({
   const { formatNumberValue, createNumberInputHandler } = useNumberInput();
   const amount = form.watch("amount");
   const paymentType = form.watch("payment_type");
+  const selectedTenor = form.watch("tenor");
   const selectedParticipantId = form.watch("participant_id");
+
+  const paidTenorOptions = selectedTenor
+    ? Array.from({ length: Number.parseInt(selectedTenor, 10) }, (_, index) => {
+        const value = String(index + 1);
+        return { label: value, value };
+      })
+    : [];
   const participantsSource = participants ?? [];
   const participantCandidates = filteredParticipants ?? participantsSource;
 
@@ -130,6 +141,7 @@ export function PaymentFormFields({
             onValueChange: (value) => {
               if (value !== "tenor") {
                 form.setValue("tenor", "", { shouldDirty: true });
+                form.setValue("paid_tenor", "", { shouldDirty: true });
               }
             },
           },
@@ -137,19 +149,39 @@ export function PaymentFormFields({
       />
 
       {paymentType === "tenor" && (
-        <SelectController
-          form={form}
-          name="tenor"
-          label={<>Tenor</>}
-          placeholder="Select tenor"
-          options={[
-            { label: "2", value: "2" },
-            { label: "3", value: "3" },
-          ]}
-          componentProps={{
-            selectTrigger: { className: "mt-2", id: "tenor" },
-          }}
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <SelectController
+            form={form}
+            name="tenor"
+            label={<>Tenor</>}
+            placeholder="Select tenor"
+            options={[
+              { label: "2", value: "2" },
+              { label: "3", value: "3" },
+            ]}
+            componentProps={{
+              selectTrigger: { className: "mt-2", id: "tenor" },
+              select: {
+                onValueChange: () => {
+                  form.setValue("paid_tenor", "1", { shouldDirty: true });
+                },
+              },
+            }}
+          />
+          <SelectController
+            form={form}
+            name="paid_tenor"
+            label={<>Paid Tenor</>}
+            placeholder="Select paid tenor"
+            options={paidTenorOptions}
+            componentProps={{
+              selectTrigger: { className: "mt-2", id: "paid_tenor" },
+              select: {
+                disabled: paidTenorOptions.length === 0,
+              },
+            }}
+          />
+        </div>
       )}
 
       <SelectController
@@ -160,6 +192,7 @@ export function PaymentFormFields({
         options={[
           { label: "Pending", value: "pending" },
           { label: "Paid", value: "paid" },
+          { label: "On Progress", value: "on_progress" },
           { label: "Failed", value: "failed" },
           { label: "Refunded", value: "refunded" },
         ]}
@@ -175,7 +208,7 @@ export function PaymentFormFields({
         placeholder="Pick payment date and time"
       />
 
-      <TextInputController
+      {/* <TextInputController
         form={form}
         name="payment_method"
         label={"Payment Method"}
@@ -185,7 +218,7 @@ export function PaymentFormFields({
             value: "Bank Transfer" as const,
           },
         }}
-      />
+      /> */}
 
       <SelectController
         form={form}
@@ -201,6 +234,13 @@ export function PaymentFormFields({
             disabled: isParticipantsLoading,
           },
         }}
+      />
+
+      <TextareaController
+        form={form}
+        name="notes"
+        label="Notes"
+        placeholder="Optional notes"
       />
     </div>
   );
