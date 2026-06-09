@@ -16,6 +16,7 @@ import type { ProgramModalProps } from "../_modals/add-program";
 export type ProgramFormState = {
   name: string;
   type: ProgramType | "";
+  year: string;
   start_date: string;
   end_date: string;
   price: number | undefined;
@@ -27,6 +28,7 @@ const optionalString = (value: string) => (value ? value : undefined);
 const defaultFormState = (): ProgramFormState => ({
   name: "",
   type: "",
+  year: String(new Date().getFullYear()),
   start_date: "",
   end_date: "",
   price: undefined,
@@ -41,6 +43,7 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
   return {
     name: program.name || "",
     type: program.type || "",
+    year: program.year != null ? String(program.year) : "",
     start_date: program.start_date ? program.start_date.split("T")[0] : "",
     end_date: program.end_date ? program.end_date.split("T")[0] : "",
     price: program.price ?? undefined,
@@ -48,11 +51,17 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
   };
 };
 
+const parseYear = (value: string) => {
+  const year = Number.parseInt(value.trim(), 10);
+  return Number.isFinite(year) ? year : undefined;
+};
+
 const buildProgramInput = (
   values: ProgramFormState
 ): UpdateProgramInput => ({
   name: values.name.trim(),
   type: values.type || undefined,
+  year: parseYear(values.year),
   start_date: optionalString(values.start_date),
   end_date: optionalString(values.end_date),
   price: values.price ?? undefined,
@@ -66,6 +75,7 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
     defaultValues: defaultFormState(),
   });
   const name = form.watch("name");
+  const year = form.watch("year");
 
   React.useEffect(() => {
     form.reset(buildFormState(program));
@@ -117,7 +127,8 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
     }
   });
 
-  const applyDisabled = loading || !name?.trim();
+  const applyDisabled =
+    loading || !name?.trim() || !parseYear(year ?? "");
 
   return {
     isOpen,

@@ -1,23 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
+import {
+  DataTablePaginationControl,
+  DataTableSkeleton,
+} from "@/components/molecules/data-table";
+import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import { formatCurrency } from "@/utils/currency";
-import { useExpenses, useExpensesSummary } from "./_hooks/useExpenses";
+import { useExpensesPaginated, useExpensesSummary } from "./_hooks/useExpenses";
 import { useAddExpense } from "./_hooks/use-add-expense";
 import { ExpensesTable } from "./_table";
 
 export default function ExpensesPage() {
   const { id } = useParams<{ id?: string }>();
   const programId = Array.isArray(id) ? id[0] : id ?? "";
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const {
-    data: expenses,
+    data: expensesResult,
     error,
     isLoading: isExpensesLoading,
-  } = useExpenses(programId);
+  } = useExpensesPaginated(programId, page, limit);
   const {
     data: summary,
     error: summaryError,
@@ -42,19 +50,6 @@ export default function ExpensesPage() {
         </Button>
       </div>
 
-      {isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading expenses...</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Fetching expenses from Supabase.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
       {combinedError && !isLoading && (
         <Card className="border-destructive/50 bg-destructive/10">
           <CardHeader>
@@ -76,29 +71,54 @@ export default function ExpensesPage() {
         </Card>
       )}
 
-      {!combinedError && !isLoading && (
+      {!combinedError && (
         <>
           <Card>
             <CardHeader>
               <CardTitle>Total Expenses</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-red-700">
-                {formatCurrency(totalAmount)}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {summary?.count || 0} expense
-                {summary?.count !== 1 ? "s" : ""} recorded
-              </p>
+              {isSummaryLoading ? (
+                <>
+                  <div className="h-9 w-32 animate-pulse rounded bg-muted" />
+                  <div className="mt-2 h-4 w-28 animate-pulse rounded bg-muted" />
+                </>
+              ) : (
+                <>
+                  <div className="text-3xl font-bold text-red-700">
+                    {formatCurrency(totalAmount)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {summary?.count || 0} expense
+                    {summary?.count !== 1 ? "s" : ""} recorded
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
           <Card>
-            <ExpensesTable
-              data={expenses || []}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
+            {isExpensesLoading ? (
+              <DataTableSkeleton rows={limit} columns={5} />
+            ) : (
+              <>
+                <ExpensesTable
+                  data={expensesResult?.data ?? []}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+                <DataTablePaginationControl
+                  currentPage={expensesResult?.pagination.page ?? page}
+                  totalPages={expensesResult?.pagination.total_page ?? 1}
+                  onPageChange={setPage}
+                  pageSize={limit}
+                  onPageSizeChange={(nextLimit) => {
+                    setLimit(nextLimit);
+                    setPage(1);
+                  }}
+                />
+              </>
+            )}
           </Card>
         </>
       )}

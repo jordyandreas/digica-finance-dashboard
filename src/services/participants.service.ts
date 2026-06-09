@@ -1,5 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
+import {
+  buildPaginationMeta,
+  type ListParams,
+  type PaginatedResponse,
+} from "@/types/pagination";
+import { toOrIlikeFilter } from "@/utils/search";
 
 export interface Participant {
   id: string;
@@ -61,6 +68,49 @@ export async function getParticipants(programId?: string): Promise<{
   const { data, error } = await query;
 
   return { data, error };
+}
+
+export async function getParticipantsPaginated(
+  programId: string,
+  { page = 1, limit = 10, search, status }: ListParams = {},
+): Promise<{
+  data: PaginatedResponse<Participant> | null;
+  error: PostgrestError | null;
+}> {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+  const searchFilter = search
+    ? toOrIlikeFilter(["name", "email", "phone"], search)
+    : "";
+
+  let query = supabase
+    .from("participants")
+    .select("*", { count: "exact" })
+    .eq("program_id", programId);
+
+  if (searchFilter) {
+    query = query.or(searchFilter);
+  }
+
+  if (status && status !== PAYMENT_STATUS_ALL) {
+    query = query.eq("payment_status", status);
+  }
+
+  const { data, error, count } = await query
+    .order("created_at", { ascending: true })
+    .range(from, to);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return {
+    data: {
+      data: data ?? [],
+      pagination: buildPaginationMeta(count ?? 0, page, limit),
+    },
+    error: null,
+  };
 }
 
 export async function createParticipant(

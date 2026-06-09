@@ -1,12 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
+import {
+  DataTableFilters,
+  DataTablePaginationControl,
+  DataTableSkeleton,
+} from "@/components/molecules/data-table";
+import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
+import {
+  PAYMENT_STATUS_ALL,
+  PAYMENT_STATUS_FILTER_OPTIONS,
+} from "@/constants/payment-status";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency } from "@/utils/currency";
-import { usePayments, usePaymentsSummary } from "./_hooks/use-payments";
+import { usePaymentsPaginated, usePaymentsSummary } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
 import { useParticipants } from "../participants/_hooks/use-participants";
 import { PaymentsTable } from "./_table";
@@ -14,7 +26,28 @@ import { PaymentsTable } from "./_table";
 export default function PaymentsPage() {
   const { id } = useParams<{ id?: string }>();
   const programId = Array.isArray(id) ? id[0] : id ?? "";
-  const { data: payments } = usePayments(programId);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState(PAYMENT_STATUS_ALL);
+  const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, status]);
+
+  const {
+    data: paymentsResult,
+    isPending: isPaymentsPending,
+    isFetching: isPaymentsFetching,
+  } = usePaymentsPaginated(programId, {
+    page,
+    limit,
+    search: debouncedSearch,
+    status,
+  });
+  const payments = paymentsResult?.data ?? [];
+  const showPaymentsSkeleton = isPaymentsPending && payments.length === 0;
   const { data: summary } = usePaymentsSummary(programId);
   const { data: participants } = useParticipants(programId);
 
@@ -42,40 +75,7 @@ export default function PaymentsPage() {
         </Button>
       </div>
 
-      {/* {isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading payments...</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Fetching payments from Supabase.
-            </p>
-          </CardContent>
-        </Card>
-      )} */}
-
-      {/* {combinedError && !isLoading && (
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardHeader>
-            <CardTitle className="text-destructive">Error loading payments</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {combinedError instanceof Error
-                ? combinedError.message
-                : "Unknown error"}
-            </p>
-            <p className="mt-2 text-xs">
-              Please ensure your Supabase payments table exists and has the
-              correct schema.
-            </p>
-          </CardContent>
-        </Card>
-      )} */}
-
-      {/* {!combinedError && !isLoading && ( */}
-        <>
+      <>
           <Card>
             <CardHeader>
               <CardTitle>Total Payments</CardTitle>
@@ -91,16 +91,48 @@ export default function PaymentsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-              <PaymentsTable
-                data={payments || []}
-                participantNamesById={participantNamesById}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-          </Card>
-        </>
-      {/* )} */}
+          <div className="space-y-3">
+            <DataTableFilters
+              search={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Search participant name"
+              status={status}
+              onStatusChange={setStatus}
+              statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
+              statusPlaceholder="Status"
+            />
+            <Card
+              className={
+                isPaymentsFetching && !showPaymentsSkeleton
+                  ? "opacity-60 transition-opacity"
+                  : undefined
+              }
+            >
+              {showPaymentsSkeleton ? (
+                <DataTableSkeleton rows={limit} columns={9} />
+              ) : (
+                <>
+                  <PaymentsTable
+                    data={payments}
+                    participantNamesById={participantNamesById}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                  <DataTablePaginationControl
+                    currentPage={paymentsResult?.pagination.page ?? page}
+                    totalPages={paymentsResult?.pagination.total_page ?? 1}
+                    onPageChange={setPage}
+                    pageSize={limit}
+                    onPageSizeChange={(nextLimit) => {
+                      setLimit(nextLimit);
+                      setPage(1);
+                    }}
+                  />
+                </>
+              )}
+            </Card>
+          </div>
+      </>
 
       <DeleteConfirmationModal
         open={deleteConfirmation.isOpen}

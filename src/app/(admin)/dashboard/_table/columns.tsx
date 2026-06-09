@@ -17,6 +17,16 @@ export const dashboardColumns: ColumnDef<DashboardProgramSummary>[] = [
     ),
   },
   {
+    accessorKey: "program_year",
+    header: "Year",
+    enableSorting: true,
+    cell: (summary) => (
+      <Typography variant="body3">
+        {summary.program_year ?? "—"}
+      </Typography>
+    ),
+  },
+  {
     accessorKey: "total_revenue",
     header: "Revenue",
     enableSorting: true,

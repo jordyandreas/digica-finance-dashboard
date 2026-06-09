@@ -4,6 +4,11 @@ import * as React from "react"
 import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/ui/card";
+import { YearFilterSelect } from "@/components/molecules/year-filter-select";
+import {
+  formatYearFilterLabel,
+  type YearFilterValue,
+} from "@/constants/dashboard-year";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { useModal } from "@/hooks/use-modal";
 import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
@@ -13,12 +18,31 @@ import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import { programsQueryKey } from "../_hooks/use-programs";
 import { ProgramsTable } from "../_table";
+import { DataTablePaginationControl } from "@/components/molecules/data-table";
+import { type PaginationMeta } from "@/types/pagination";
 
 interface ProgramsPageContentProps {
-  programs: Program[]
+  programs: Program[];
+  pagination?: PaginationMeta;
+  page: number;
+  limit: number;
+  yearFilter: YearFilterValue;
+  onYearChange: (year: YearFilterValue) => void;
+  onPageChange: (page: number) => void;
+  onLimitChange: (limit: number) => void;
 }
 
-export function ProgramsPageContent({ programs }: ProgramsPageContentProps) {
+export function ProgramsPageContent({
+  programs,
+  pagination,
+  page,
+  limit,
+  yearFilter,
+  onYearChange,
+  onPageChange,
+  onLimitChange,
+}: ProgramsPageContentProps) {
+  const yearLabel = formatYearFilterLabel(yearFilter);
   const queryClient = useQueryClient()
   const programModal = useModal<ProgramModalProps>("programModal")
   const deleteConfirmation = useDeleteConfirmation<Program>({
@@ -72,25 +96,35 @@ export function ProgramsPageContent({ programs }: ProgramsPageContentProps) {
   return (
     <>
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Programs</h1>
             <p className="text-muted-foreground">
-              Manage your programs and initiatives
+              Total {pagination?.total ?? programs.length} programs in {yearLabel}
             </p>
           </div>
-          <Button onClick={handleAddClick}>
-            <Plus className="h-4 w-4" />
-            Add Program
-          </Button>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            <YearFilterSelect value={yearFilter} onChange={onYearChange} />
+            <Button onClick={handleAddClick} className="w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              Add Program
+            </Button>
+          </div>
         </div>
 
         <Card>
-            <ProgramsTable
-              data={programs || []}
-              onEdit={handleEdit}
-              onDelete={handleDeleteClick}
-            />
+          <ProgramsTable
+            data={programs || []}
+            onEdit={handleEdit}
+            onDelete={handleDeleteClick}
+          />
+          <DataTablePaginationControl
+            currentPage={pagination?.page ?? page}
+            totalPages={pagination?.total_page ?? 1}
+            onPageChange={onPageChange}
+            pageSize={limit}
+            onPageSizeChange={onLimitChange}
+          />
         </Card>
       </div>
 

@@ -33,20 +33,38 @@ export function ProgramForm({ form }: ProgramFormProps) {
         }}
       />
 
-      <SelectController
-        form={form}
-        name="type"
-        label="Type"
-        placeholder="Select program type"
-        options={[
-          { label: "Mini Bootcamp", value: "mini_bootcamp" },
-          { label: "Bootcamp", value: "bootcamp" },
-          { label: "Workshop", value: "workshop" },
-        ]}
-        componentProps={{
-          selectTrigger: { className: "mt-2", id: "type" },
-        }}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <SelectController
+          form={form}
+          name="type"
+          label="Type"
+          placeholder="Select program type"
+          options={[
+            { label: "Mini Bootcamp", value: "mini_bootcamp" },
+            { label: "Bootcamp", value: "bootcamp" },
+            { label: "Workshop", value: "workshop" },
+          ]}
+          componentProps={{
+            selectTrigger: { className: "mt-2", id: "type" },
+          }}
+        />
+
+        <TextInputController
+          form={form}
+          name="year"
+          label="Year"
+          required
+          placeholder="e.g. 2026"
+          componentProps={{
+            input: {
+              type: "number",
+              required: true,
+              min: 2000,
+              max: 2100,
+            },
+          }}
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <DatePickerController
