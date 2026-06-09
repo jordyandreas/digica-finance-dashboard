@@ -117,7 +117,7 @@ export async function getPaymentsPaginated(
   const select = searchPattern
     ? `
       *,
-      participants!inner!participant_id (
+      participants!participant_id!inner (
         name
       )
     `
