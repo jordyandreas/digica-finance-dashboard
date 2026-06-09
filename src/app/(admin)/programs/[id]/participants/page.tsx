@@ -1,59 +1,57 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useParticipants } from "./_hooks/use-participants";
+import { useParticipantsPaginated } from "./_hooks/use-participants";
 import { ParticipantsContent } from "./_components/participants-content";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
+import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 export default function ParticipantsPage() {
   const { id } = useParams<{ id: string }>();
   const programId = id ?? "";
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState(PAYMENT_STATUS_ALL);
+  const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, status]);
+
   const {
-    data: participants,
+    data: participantsResult,
     error,
-    isLoading,
-  } = useParticipants(programId);
+    isPending,
+    isFetching,
+  } = useParticipantsPaginated(programId, {
+    page,
+    limit,
+    search: debouncedSearch,
+    status,
+  });
 
   return (
-    <div className="space-y-8">
-       {isLoading && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Loading participants...</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Fetching participants from Supabase.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {error && !isLoading && (
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardHeader>
-            <CardTitle className="text-destructive">
-              Error loading participants
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {error instanceof Error ? error.message : "Unknown error"}
-            </p>
-            <p className="mt-2 text-xs">
-              Please ensure your Supabase &quot;participants&quot; table exists
-              and has the correct schema.
-            </p>
-          </CardContent>
-        </Card>
-      )}
-
-      {!error && !isLoading && (
-        <ParticipantsContent
-          participants={participants || []}
-          programId={programId}
-        />
-      )}
-    </div>
+    <ParticipantsContent
+      participants={participantsResult?.data ?? []}
+      pagination={participantsResult?.pagination}
+      programId={programId}
+      page={page}
+      limit={limit}
+      search={search}
+      status={status}
+      onSearchChange={setSearch}
+      onStatusChange={setStatus}
+      onPageChange={setPage}
+      onLimitChange={(nextLimit) => {
+        setLimit(nextLimit);
+        setPage(1);
+      }}
+      error={error}
+      isPending={isPending}
+      isFetching={isFetching}
+    />
   );
 }

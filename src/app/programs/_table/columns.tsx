@@ -38,6 +38,12 @@ export function programsColumns({
       ),
     },
     {
+      accessorKey: "year",
+      header: "Year",
+      enableSorting: true,
+      cell: (program) => program.year ?? "—",
+    },
+    {
       accessorKey: "start_date",
       header: "Start Date",
       enableSorting: true,

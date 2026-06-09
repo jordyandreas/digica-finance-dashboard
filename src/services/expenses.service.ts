@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
+import {
+  buildPaginationMeta,
+  type PaginatedResponse,
+  type PaginationParams,
+} from "@/types/pagination";
 
 export type ExpenseCategory =
   | "ads"
@@ -53,14 +58,53 @@ export async function getExpenses(programId?: string): Promise<{
   return { data, error };
 }
 
-export async function getExpensesSummary(programId?: string): Promise<{
+export async function getExpensesPaginated(
+  programId: string,
+  { page = 1, limit = 10 }: PaginationParams = {},
+): Promise<{
+  data: PaginatedResponse<Expense> | null;
+  error: PostgrestError | null;
+}> {
+  const from = (page - 1) * limit;
+  const to = from + limit - 1;
+
+  const { data, error, count } = await supabase
+    .from("expenses")
+    .select("*", { count: "exact" })
+    .eq("program_id", programId)
+    .order("created_at", { ascending: true })
+    .range(from, to);
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  return {
+    data: {
+      data: data ?? [],
+      pagination: buildPaginationMeta(count ?? 0, page, limit),
+    },
+    error: null,
+  };
+}
+
+export async function getExpensesSummary(
+  programId?: string,
+  programIds?: string[],
+): Promise<{
   data: { total: number; count: number } | null;
   error: PostgrestError | null;
 }> {
+  if (programIds && programIds.length === 0) {
+    return { data: { total: 0, count: 0 }, error: null };
+  }
+
   let query = supabase.from("expenses").select("amount");
 
   if (programId) {
     query = query.eq("program_id", programId);
+  } else if (programIds) {
+    query = query.in("program_id", programIds);
   }
 
   const { data, error } = await query;
