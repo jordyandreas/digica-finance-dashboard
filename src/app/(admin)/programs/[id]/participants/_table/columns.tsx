@@ -3,14 +3,24 @@ import { formatDate } from "@/utils/date";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Copy, Pencil, Trash2 } from "lucide-react";
 import { emptyFallback } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
+import { toast } from "sonner";
 
 interface ParticipantsColumnsProps {
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
+}
+
+async function copyEmail(email: string) {
+  try {
+    await navigator.clipboard.writeText(email);
+    toast.success("Email copied to clipboard");
+  } catch {
+    toast.error("Failed to copy email");
+  }
 }
 
 export function participantsColumns({
@@ -33,12 +43,20 @@ export function participantsColumns({
             {emptyFallback(participant.name)}
           </Typography>
           {participant.email ? (
-            <Typography
-              variant="label"
-              className="normal-case lowercase text-muted-foreground"
+            <button
+              type="button"
+              onClick={() => copyEmail(participant.email!)}
+              className="group inline-flex max-w-full items-center gap-1 text-left"
+              title="Copy email"
             >
-              {participant.email}
-            </Typography>
+              <Typography
+                variant="label"
+                className="truncate normal-case lowercase text-muted-foreground group-hover:text-primary"
+              >
+                {participant.email}
+              </Typography>
+              <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </button>
           ) : null}
           {participant.phone ? (
             <Typography
