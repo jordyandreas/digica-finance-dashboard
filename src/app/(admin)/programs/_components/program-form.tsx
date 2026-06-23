@@ -99,6 +99,22 @@ export function ProgramForm({ form }: ProgramFormProps) {
           }}
         />
 
+        <TextInputController
+          form={form}
+          name="session_count"
+          label="Sessions"
+          placeholder="e.g. 6"
+          componentProps={{
+            input: {
+              type: "number",
+              min: 0,
+              max: 52,
+            },
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
         <SelectController
           form={form}
           name="status"

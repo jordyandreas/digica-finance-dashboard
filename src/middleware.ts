@@ -30,7 +30,10 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isPublicRoute = publicPaths.has(pathname);
+  const isPublicRoute =
+    publicPaths.has(pathname) ||
+    pathname.startsWith("/check-in/") ||
+    pathname.startsWith("/api/check-in/");
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();

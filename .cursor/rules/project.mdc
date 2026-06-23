@@ -1,0 +1,13 @@
+---
+alwaysApply: true
+---
+
+# Project Rules
+
+- Use TypeScript.
+- Avoid `any`.
+- Follow existing project architecture and coding patterns.
+- Reuse existing components before creating new ones.
+- Prefer modifying existing files over creating new files.
+- Use TailwindCSS before custom CSS.
+- Use pnpm commands.

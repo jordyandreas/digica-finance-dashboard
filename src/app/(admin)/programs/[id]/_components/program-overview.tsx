@@ -109,6 +109,20 @@ export function ProgramOverview({
               tagName="dt"
               className="text-muted-foreground"
             >
+              Sessions
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.session_count != null && program.session_count > 0
+                ? program.session_count
+                : "—"}
+            </Typography>
+          </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
               End Date
             </Typography>
             <Typography variant="body2" tagName="dd">

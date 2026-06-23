@@ -54,6 +54,13 @@ export function programsColumns({
         `${formatDate(program.start_date)} – ${formatDate(program.end_date)}`,
     },
     {
+      accessorKey: "session_count",
+      header: "Sessions",
+      enableSorting: true,
+      cell: (program) =>
+        program.session_count > 0 ? program.session_count : "—",
+    },
+    {
       accessorKey: "price",
       header: "Price",
       enableSorting: true,

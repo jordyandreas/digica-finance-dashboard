@@ -24,6 +24,7 @@ export interface Program {
   start_date: string | null;
   end_date: string | null;
   price: number;
+  session_count: number;
   status: ProgramStatus;
   created_at: string;
   updated_at: string;
@@ -35,6 +36,7 @@ export interface CreateProgramInput {
   start_date?: string | null;
   end_date?: string | null;
   price: number;
+  session_count?: number;
   status?: ProgramStatus; // default 'draft'
 }
 
@@ -45,6 +47,7 @@ export interface UpdateProgramInput {
   start_date?: string | null;
   end_date?: string | null;
   price?: number;
+  session_count?: number;
   status?: ProgramStatus;
 }
 

@@ -9,6 +9,7 @@ const tabs = [
   { label: "Participants", segment: "participants" },
   { label: "Payments", segment: "payments" },
   { label: "Expenses", segment: "expenses" },
+  { label: "Attendance", segment: "attendance" },
 ];
 
 export function ProgramTabs({ programId }: { programId: string }) {
