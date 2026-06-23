@@ -168,8 +168,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           <CalendarX className="h-6 w-6" />
         </div>
         <p className="text-sm text-muted-foreground">
-          No class scheduled for check-in today. Contact your facilitator if you
-          think this is a mistake.
+          No class scheduled for check-in today. Contact your Administrator if you think
+          this is a mistake.
         </p>
       </div>
     );
@@ -196,9 +196,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           name="session_id"
           label="Session"
           placeholder={
-            isSessionSelectEnabled
-              ? "Select session"
-              : "Select your name first"
+            isSessionSelectEnabled ? "Select session" : "Select your name first"
           }
           description={
             isSessionSelectEnabled
@@ -223,7 +221,9 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
         <Button
           type="submit"
           className="w-full"
-          disabled={isSubmitting || !selectedParticipantId || !selectedSessionId}
+          disabled={
+            isSubmitting || !selectedParticipantId || !selectedSessionId
+          }
         >
           {isSubmitting ? "Checking in..." : "Check in"}
         </Button>
