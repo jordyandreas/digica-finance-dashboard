@@ -17,7 +17,7 @@ export interface Payment {
   program_id: string | null;
   program_name: string | null;
   payment_method: string | null;
-  payment_type: string | null; // "tenor" or "full"
+  payment_type: string | null; // "tenor", "full", or "scholarship"
   tenor: number | null;
   paid_tenor: number | null;
   status: string | null;
@@ -32,7 +32,7 @@ export interface CreatePaymentInput {
   amount: number;
   participant_id: string;
   program_id: string;
-  payment_type: "tenor" | "full";
+  payment_type: "tenor" | "full" | "scholarship";
   tenor?: number; // Required if payment_type is "tenor"
   paid_tenor?: number; // Required if payment_type is "tenor"
   status?: string;
@@ -46,7 +46,7 @@ export interface UpdatePaymentInput {
   amount?: number;
   participant_id?: string;
   program_id?: string;
-  payment_type?: "tenor" | "full";
+  payment_type?: "tenor" | "full" | "scholarship";
   tenor?: number;
   paid_tenor?: number | null;
   status?: string;

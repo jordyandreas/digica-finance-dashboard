@@ -11,7 +11,7 @@ import { deletePayment } from "@/services/payments.service";
 import { useModal } from "@/hooks/use-modal";
 import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
 import { useForm } from "react-hook-form";
-import { paymentSchema } from "../../../../../../schemas/payment-schema";
+import { paymentSchema, type PaymentType } from "../../../../../../schemas/payment-schema";
 import {
   participantsQueryKey,
   useParticipants,
@@ -175,7 +175,7 @@ export function useAddPayment({
     const validation = paymentSchema.safeParse({
       participant_id: values.participant_id,
       amount: values.amount ?? 0,
-      payment_type: values.payment_type as "tenor" | "full",
+      payment_type: values.payment_type as PaymentType,
       tenor:
         values.payment_type === "tenor" && values.tenor
           ? parseInt(values.tenor, 10)
@@ -218,7 +218,7 @@ export function useAddPayment({
         amount: values.amount as number,
         participant_id: values.participant_id,
         program_id: values.program_id || resolvedProgramId,
-        payment_type: values.payment_type as "tenor" | "full",
+        payment_type: values.payment_type as PaymentType,
         tenor:
           values.payment_type === "tenor" && values.tenor
             ? parseInt(values.tenor, 10)
@@ -278,6 +278,7 @@ export function useAddPayment({
     loading ||
     !participantId?.trim() ||
     amount === undefined ||
+    (paymentType !== "scholarship" && amount <= 0) ||
     !paymentType ||
     !status?.trim() ||
     (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));

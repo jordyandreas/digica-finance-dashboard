@@ -1,16 +1,25 @@
+const IDR_CURRENCY_FORMAT: Intl.NumberFormatOptions = {
+  style: "currency",
+  currency: "IDR",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 0,
+};
+
 export function formatCurrency(
   amount: number | null | undefined,
-  currency = "IDR"
+  currency = "IDR",
 ): string {
-  if (amount === null || amount === undefined) {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency,
-    }).format(0)
-  }
+  const options =
+    currency === "IDR"
+      ? IDR_CURRENCY_FORMAT
+      : {
+          style: "currency" as const,
+          currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        };
 
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency,
-  }).format(amount)
+  const value = amount ?? 0;
+
+  return new Intl.NumberFormat("id-ID", options).format(value);
 }

@@ -1,19 +1,133 @@
 "use client";
 
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   DateTimePickerController,
   SelectController,
   TextInputController,
   TextareaController,
 } from "@/components/controllers";
+import { Button } from "@/components/atoms/button";
 import { useNumberInput } from "@/hooks/use-number-input";
+import type { PaymentType } from "@/schemas/payment-schema";
 import type { Participant } from "@/services/participants.service";
+import { formatNumber } from "@/utils/number";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { type UseFormReturn } from "react-hook-form";
+
+const PRESET_AMOUNTS = [
+  149000, 179000, 199000, 249000, 299000, 349000, 399000, 449000, 499000,
+  749000, 799000, 999000,
+] as const;
+
+const PRESET_SCROLL_STEP = 160;
+
+interface PresetAmountScrollRowProps {
+  selectedAmount: number | undefined;
+  onSelect: (amount: number) => void;
+}
+
+function PresetAmountScrollRow({
+  selectedAmount,
+  onSelect,
+}: PresetAmountScrollRowProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = useCallback(() => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    const maxScrollLeft = element.scrollWidth - element.clientWidth;
+    setCanScrollLeft(element.scrollLeft > 0);
+    setCanScrollRight(element.scrollLeft < maxScrollLeft - 1);
+  }, []);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    updateScrollButtons();
+
+    const resizeObserver = new ResizeObserver(updateScrollButtons);
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollButtons]);
+
+  const scrollByStep = (direction: "left" | "right") => {
+    const element = scrollRef.current;
+    if (!element) {
+      return;
+    }
+
+    element.scrollBy({
+      left: direction === "left" ? -PRESET_SCROLL_STEP : PRESET_SCROLL_STEP,
+      behavior: "smooth",
+    });
+  };
+
+  return (
+    <div className="flex h-8 items-center gap-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-8 shrink-0 p-0"
+        disabled={!canScrollLeft}
+        onClick={() => scrollByStep("left")}
+        aria-label="Scroll preset amounts left"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+
+      <div
+        ref={scrollRef}
+        className="scrollbar-hide flex h-8 min-w-0 flex-1 items-center overflow-x-auto"
+        onScroll={updateScrollButtons}
+      >
+        <div className="flex items-center gap-2">
+          {PRESET_AMOUNTS.map((presetAmount) => (
+            <Button
+              key={presetAmount}
+              type="button"
+              variant={selectedAmount === presetAmount ? "default" : "outline"}
+              size="sm"
+              className="h-8 shrink-0"
+              onClick={() => onSelect(presetAmount)}
+            >
+              {formatNumber(presetAmount)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="h-8 w-8 shrink-0 p-0"
+        disabled={!canScrollRight}
+        onClick={() => scrollByStep("right")}
+        aria-label="Scroll preset amounts right"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 export type PaymentFormState = {
   participant_id: string;
   amount: number | undefined;
-  payment_type: "tenor" | "full" | "";
+  payment_type: PaymentType | "";
   tenor: string;
   paid_tenor: string;
   status: string;
@@ -81,6 +195,8 @@ export function PaymentFormFields({
         form={form}
         name="participant_id"
         label={<>Participant</>}
+        searchable
+        searchPlaceholder="Search participant..."
         placeholder={
           isParticipantsLoading
             ? "Loading participants..."
@@ -110,21 +226,50 @@ export function PaymentFormFields({
         }}
       />
 
-      <TextInputController
-        form={form}
-        name="amount"
-        label="Amount"
-        required
-        placeholder="Enter amount"
-        componentProps={{
-          input: {
-            type: "text",
-            required: true,
-            value: formatNumberValue(amount),
-            onChange: createNumberInputHandler(form, "amount", true),
-          },
-        }}
-      />
+      <div className="space-y-2">
+        <TextInputController
+          form={form}
+          name="amount"
+          label="Amount"
+          required
+          placeholder="Enter amount"
+          componentProps={{
+            input: {
+              type: "text",
+              required: true,
+              className: amount !== undefined ? "pr-9" : undefined,
+              value: formatNumberValue(amount),
+              onChange: createNumberInputHandler(form, "amount", true),
+            },
+          }}
+        >
+          {amount !== undefined && (
+            <button
+              type="button"
+              aria-label="Clear amount"
+              className="absolute right-2 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              onClick={() => {
+                form.setValue("amount", undefined, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          )}
+        </TextInputController>
+
+        <PresetAmountScrollRow
+          selectedAmount={amount}
+          onSelect={(presetAmount) => {
+            form.setValue("amount", presetAmount, {
+              shouldDirty: true,
+              shouldValidate: true,
+            });
+          }}
+        />
+      </div>
 
       <SelectController
         form={form}
@@ -134,6 +279,7 @@ export function PaymentFormFields({
         options={[
           { label: "Full", value: "full" },
           { label: "Tenor", value: "tenor" },
+          { label: "Scholarship", value: "scholarship" },
         ]}
         componentProps={{
           selectTrigger: { className: "mt-2", id: "payment_type" },
@@ -224,6 +370,8 @@ export function PaymentFormFields({
         form={form}
         name="reference_name"
         label="Referral"
+        searchable
+        searchPlaceholder="Search referral..."
         placeholder={
           isParticipantsLoading ? "Loading participants..." : "Select referral"
         }

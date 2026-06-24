@@ -12,11 +12,15 @@ export const PAYMENT_STATUSES = [
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+export const PAYMENT_TYPES = ["tenor", "full", "scholarship"] as const;
+
+export type PaymentType = (typeof PAYMENT_TYPES)[number];
+
 export const paymentSchema = z
   .object({
     participant_id: z.string().trim().min(1, "Participant is required"),
-    amount: z.number().positive("Amount must be greater than 0"),
-    payment_type: z.enum(["tenor", "full"], {
+    amount: z.number(),
+    payment_type: z.enum(PAYMENT_TYPES, {
       message: "Payment type is required",
     }),
     tenor: z.number().min(1).max(3).optional(),
@@ -67,5 +71,17 @@ export const paymentSchema = z
     {
       message: "Paid tenor cannot exceed the selected tenor",
       path: ["paid_tenor"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.payment_type === "scholarship") {
+        return data.amount >= 0;
+      }
+      return data.amount > 0;
+    },
+    {
+      message: "Amount must be greater than 0",
+      path: ["amount"],
     },
   );

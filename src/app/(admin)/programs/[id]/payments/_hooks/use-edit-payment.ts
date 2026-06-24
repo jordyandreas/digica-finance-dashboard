@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Payment, UpdatePaymentInput } from "@/services/payments.service";
 import { useModal } from "@/hooks/use-modal";
 import { useForm } from "react-hook-form";
-import { paymentSchema } from "../../../../../../schemas/payment-schema";
+import { paymentSchema, type PaymentType } from "../../../../../../schemas/payment-schema";
 import type { EditPaymentModalProps } from "../_modals/edit-payment";
 import type { PaymentFormState } from "../_components/payment-form";
 import {
@@ -22,7 +22,7 @@ const buildFormState = (
 ): PaymentFormState => ({
   participant_id: payment?.participant_id || "",
   amount: payment?.amount ?? undefined,
-  payment_type: (payment?.payment_type as "tenor" | "full") || "",
+  payment_type: (payment?.payment_type as PaymentType) || "",
   tenor: payment?.tenor?.toString() || "",
   paid_tenor: payment?.paid_tenor?.toString() || "",
   status: payment?.status || "paid",
@@ -69,7 +69,7 @@ export function useEditPayment({
     const validation = paymentSchema.safeParse({
       participant_id: values.participant_id,
       amount: values.amount ?? 0,
-      payment_type: values.payment_type as "tenor" | "full",
+      payment_type: values.payment_type as PaymentType,
       tenor:
         values.payment_type === "tenor" && values.tenor
           ? parseInt(values.tenor, 10)
@@ -117,7 +117,7 @@ export function useEditPayment({
         amount: values.amount as number,
         participant_id: values.participant_id || undefined,
         program_id: values.program_id || resolvedProgramId,
-        payment_type: values.payment_type as "tenor" | "full" | undefined,
+        payment_type: values.payment_type as PaymentType | undefined,
         tenor:
           values.payment_type === "tenor" && values.tenor
             ? parseInt(values.tenor, 10)
@@ -188,6 +188,7 @@ export function useEditPayment({
     loading ||
     !participantId?.trim() ||
     amount === undefined ||
+    (paymentType !== "scholarship" && amount <= 0) ||
     !paymentType ||
     !status?.trim() ||
     (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));
