@@ -20,6 +20,20 @@ interface AttendanceGridProps {
   attendance: AttendanceGrid;
 }
 
+function countPresentSessions(
+  participantId: string,
+  sessions: ProgramSession[],
+  attendance: AttendanceGrid,
+): number {
+  const participantAttendance = attendance[participantId] ?? {};
+
+  return sessions.reduce(
+    (count, session) =>
+      participantAttendance[session.id] === "present" ? count + 1 : count,
+    0,
+  );
+}
+
 export function AttendanceGridTable({
   programId,
   participants,
@@ -113,7 +127,7 @@ export function AttendanceGridTable({
       <table className="w-full min-w-max border-collapse text-sm">
         <thead>
           <tr className="border-b bg-muted/50">
-            <th className="sticky left-0 z-10 min-w-[180px] border-r bg-muted/50 px-4 py-3 text-left font-medium">
+            <th className="sticky left-0 z-20 min-w-[180px] border-r bg-muted px-4 py-3 text-left font-medium">
               Participant
             </th>
             {sessions.map((session) => (
@@ -132,7 +146,14 @@ export function AttendanceGridTable({
           </tr>
         </thead>
         <tbody>
-          {sortedParticipants.map((participant) => (
+          {sortedParticipants.map((participant) => {
+            const presentCount = countPresentSessions(
+              participant.id,
+              sessions,
+              localAttendance,
+            );
+
+            return (
             <tr key={participant.id} className="border-b last:border-b-0">
               <td className="sticky left-0 z-10 border-r bg-background px-4 py-3">
                 <div className="font-medium capitalize">
@@ -143,6 +164,9 @@ export function AttendanceGridTable({
                     {participant.email}
                   </div>
                 ) : null}
+                <div className="mt-1 text-xs font-medium text-green-700">
+                  {presentCount}/{sessions.length} present
+                </div>
               </td>
               {sessions.map((session) => {
                 const cellKey = `${participant.id}:${session.id}`;
@@ -166,7 +190,8 @@ export function AttendanceGridTable({
                 );
               })}
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>
