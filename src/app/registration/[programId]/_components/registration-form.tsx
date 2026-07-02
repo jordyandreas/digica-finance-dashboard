@@ -352,8 +352,8 @@ export function RegistrationForm({
               </p>
             </div>
 
-            <div className="flex items-start justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3 text-left">
-              <p className="min-w-0 flex-1 break-all text-xs text-brand-deep">
+            <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3.5 text-left">
+              <p className="min-w-0 flex-1 break-all text-sm font-medium text-brand-deep sm:text-base">
                 {registrationUrl || `/registration/${programId}`}
               </p>
               <button
@@ -361,9 +361,9 @@ export function RegistrationForm({
                 onClick={handleCopyRegistrationLink}
                 disabled={!registrationUrl}
                 aria-label="Copy registration link"
-                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-brand-deep transition-colors hover:bg-background/70 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-brand-deep transition-colors hover:bg-background/70 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-5 w-5" />
               </button>
             </div>
           </div>
