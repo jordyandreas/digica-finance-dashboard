@@ -5,7 +5,10 @@ import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
 import { Button } from "@/components/atoms/button";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { formatCurrency } from "@/utils/currency";
-import { formatDate } from "@/utils/date";
+import {
+  formatProgramShortDateRange,
+  formatProgramShortTimeRange,
+} from "@/utils/programs";
 import { Program } from "@/services/programs.service";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 
@@ -45,15 +48,22 @@ export function programsColumns({
     },
     {
       accessorKey: "start_date",
-      header: "Start Date",
+      header: "Dates",
       enableSorting: true,
-      cell: (program) => formatDate(program.start_date),
+      cell: (program) =>
+        formatProgramShortDateRange(program.start_date, program.end_date),
     },
     {
-      accessorKey: "end_date",
-      header: "End Date",
-      enableSorting: true,
-      cell: (program) => formatDate(program.end_date),
+      accessorKey: "start_time",
+      header: "Time",
+      enableSorting: false,
+      cell: (program) => {
+        const timeRange = formatProgramShortTimeRange(
+          program.start_time,
+          program.end_time,
+        );
+        return timeRange === "—" ? timeRange : `${timeRange} WIB`;
+      },
     },
     {
       accessorKey: "price",

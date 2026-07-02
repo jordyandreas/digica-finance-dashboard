@@ -5,6 +5,7 @@ import {
   SelectController,
   TextInputController,
 } from "@/components/controllers";
+import { RichTextEditor } from "@/components/molecules/rich-text-editor";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { UseFormReturn } from "react-hook-form";
 
@@ -32,6 +33,25 @@ export function ProgramForm({ form }: ProgramFormProps) {
           },
         }}
       />
+
+      <div className="space-y-2">
+        <div>
+          <label className="text-sm font-medium text-foreground">
+            Program Benefit / Summary
+          </label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            This content will be shown below the program title on the public
+            registration page.
+          </p>
+        </div>
+        <RichTextEditor
+          value={form.watch("summary_html")}
+          onChange={(value) =>
+            form.setValue("summary_html", value, { shouldDirty: true })
+          }
+          placeholder="Write the program benefits, highlights, or short summary..."
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <SelectController
@@ -85,6 +105,32 @@ export function ProgramForm({ form }: ProgramFormProps) {
       <div className="grid grid-cols-2 gap-4">
         <TextInputController
           form={form}
+          name="start_time"
+          label="Start Time"
+          placeholder="Select start time"
+          componentProps={{
+            input: {
+              type: "time",
+            },
+          }}
+        />
+
+        <TextInputController
+          form={form}
+          name="end_time"
+          label="End Time"
+          placeholder="Select end time"
+          componentProps={{
+            input: {
+              type: "time",
+            },
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <TextInputController
+          form={form}
           name="price"
           label="Price"
           required
@@ -113,6 +159,19 @@ export function ProgramForm({ form }: ProgramFormProps) {
           }}
         />
       </div>
+
+      <TextInputController
+        form={form}
+        name="registration_link"
+        label="Registration Link"
+        placeholder="https://..."
+        description="Leave blank to use the default registration page link."
+        componentProps={{
+          input: {
+            type: "url",
+          },
+        }}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <SelectController

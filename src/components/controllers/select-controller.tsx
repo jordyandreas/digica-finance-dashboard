@@ -178,7 +178,7 @@ function SearchableSelectField<Option extends OptionItem>({
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[var(--radix-popover-trigger-width)] gap-0 p-0"
+        className="w-(--radix-popover-trigger-width) gap-0 p-0"
         onOpenAutoFocus={(event) => event.preventDefault()}
       >
         <div className="border-b p-2">
@@ -377,11 +377,22 @@ export function SelectController<
                     disabled={isDisabled}
                     {...selectTriggerRest}
                   >
-                    <SelectValue
-                      placeholder={placeholder}
-                      className={cn("capitalize", selectValueClassName)}
-                      {...selectValueRest}
-                    />
+                    {value ? (
+                      <SelectValue
+                        placeholder={placeholder}
+                        className={cn("capitalize", selectValueClassName)}
+                        {...selectValueRest}
+                      />
+                    ) : (
+                      <span
+                        className={cn(
+                          "capitalize text-muted-foreground",
+                          selectValueClassName,
+                        )}
+                      >
+                        {placeholder}
+                      </span>
+                    )}
                   </SelectTrigger>
                   <SelectContent {...selectContent}>
                     <SelectGroup>

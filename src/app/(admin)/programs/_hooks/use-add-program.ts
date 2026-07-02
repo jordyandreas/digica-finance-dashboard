@@ -18,10 +18,14 @@ import { programSessionsQueryKey } from "../[id]/attendance/_hooks/use-attendanc
 
 export type ProgramFormState = {
   name: string;
+  summary_html: string;
   type: ProgramType | "";
   year: string;
   start_date: string;
   end_date: string;
+  start_time: string;
+  end_time: string;
+  registration_link: string;
   price: number | undefined;
   session_count: string;
   status: ProgramStatus;
@@ -31,10 +35,14 @@ const optionalString = (value: string) => (value ? value : undefined);
 
 const defaultFormState = (): ProgramFormState => ({
   name: "",
+  summary_html: "",
   type: "",
   year: String(new Date().getFullYear()),
   start_date: "",
   end_date: "",
+  start_time: "",
+  end_time: "",
+  registration_link: "",
   price: undefined,
   session_count: "0",
   status: "draft",
@@ -47,10 +55,14 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
 
   return {
     name: program.name || "",
+    summary_html: "",
     type: program.type || "",
     year: program.year != null ? String(program.year) : "",
     start_date: program.start_date ? program.start_date.split("T")[0] : "",
     end_date: program.end_date ? program.end_date.split("T")[0] : "",
+    start_time: program.start_time ?? "",
+    end_time: program.end_time ?? "",
+    registration_link: program.registration_link ?? "",
     price: program.price ?? undefined,
     session_count: String(program.session_count ?? 0),
     status: program.status || "draft",
@@ -78,6 +90,9 @@ const buildProgramInput = (
   year: parseYear(values.year),
   start_date: optionalString(values.start_date),
   end_date: optionalString(values.end_date),
+  start_time: optionalString(values.start_time),
+  end_time: optionalString(values.end_time),
+  registration_link: optionalString(values.registration_link),
   price: values.price ?? undefined,
   session_count: parseSessionCount(values.session_count),
   status: values.status || undefined,
@@ -96,6 +111,32 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
   React.useEffect(() => {
     form.reset(buildFormState(program));
   }, [form, program, isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen || !program?.id) {
+      form.setValue("summary_html", "", { shouldDirty: false });
+      return;
+    }
+
+    let cancelled = false;
+
+    void (async () => {
+      const { getProgramPublicContent } = await import(
+        "@/services/program-public-content.service"
+      );
+      const result = await getProgramPublicContent(program.id);
+
+      if (!cancelled) {
+        form.setValue("summary_html", result.data?.summary_html ?? "", {
+          shouldDirty: false,
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form, isOpen, program?.id]);
 
   const handleSubmit = form.handleSubmit(async (values: ProgramFormState) => {
     setLoading(true);
@@ -124,9 +165,27 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
 
       const savedProgram = result.data;
       if (savedProgram) {
+        const { upsertProgramPublicContent } = await import(
+          "@/services/program-public-content.service"
+        );
         const { syncProgramSessions } = await import(
           "@/services/program-sessions.service"
         );
+        const contentResult = await upsertProgramPublicContent({
+          program_id: savedProgram.id,
+          summary_html: values.summary_html.trim() || null,
+        });
+
+        if (contentResult.error) {
+          console.error(
+            "Error saving program public content:",
+            contentResult.error,
+          );
+          toast.error("Program saved but summary content could not be updated", {
+            description: contentResult.error.message,
+          });
+        }
+
         const sessionCount = parseSessionCount(values.session_count);
         const syncResult = await syncProgramSessions(
           savedProgram.id,

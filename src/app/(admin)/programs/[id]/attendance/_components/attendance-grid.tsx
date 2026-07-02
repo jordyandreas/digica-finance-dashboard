@@ -34,6 +34,18 @@ function countPresentSessions(
   );
 }
 
+function countPresentParticipants(
+  sessionId: string,
+  participants: Participant[],
+  attendance: AttendanceGrid,
+): number {
+  return participants.reduce(
+    (count, participant) =>
+      attendance[participant.id]?.[sessionId] === "present" ? count + 1 : count,
+    0,
+  );
+}
+
 export function AttendanceGridTable({
   programId,
   participants,
@@ -130,19 +142,30 @@ export function AttendanceGridTable({
             <th className="sticky left-0 z-20 min-w-[180px] border-r bg-muted px-4 py-3 text-left font-medium">
               Participant
             </th>
-            {sessions.map((session) => (
-              <th
-                key={session.id}
-                className="px-3 py-3 text-left font-medium"
-              >
-                <div>Session {session.session_number}</div>
-                <div className="text-xs font-normal text-muted-foreground">
-                  {session.session_date
-                    ? formatDate(session.session_date)
-                    : "No date set"}
-                </div>
-              </th>
-            ))}
+            {sessions.map((session) => {
+              const sessionPresentCount = countPresentParticipants(
+                session.id,
+                sortedParticipants,
+                localAttendance,
+              );
+
+              return (
+                <th
+                  key={session.id}
+                  className="px-3 py-3 text-left font-medium"
+                >
+                  <div>Session {session.session_number}</div>
+                  <div className="text-xs font-normal text-muted-foreground">
+                    {session.session_date
+                      ? formatDate(session.session_date)
+                      : "No date set"}
+                  </div>
+                  <div className="mt-1 text-xs font-medium text-green-700">
+                    {sessionPresentCount}/{sortedParticipants.length} present
+                  </div>
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>

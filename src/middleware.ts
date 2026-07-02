@@ -33,7 +33,9 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     publicPaths.has(pathname) ||
     pathname.startsWith("/check-in/") ||
-    pathname.startsWith("/api/check-in/");
+    pathname.startsWith("/api/check-in/") ||
+    pathname.startsWith("/registration/") ||
+    pathname.startsWith("/api/registration/");
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();

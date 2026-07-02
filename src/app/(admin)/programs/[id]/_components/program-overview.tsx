@@ -7,8 +7,11 @@ import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
-import { formatDate } from "@/utils/date";
-import { formatProgramType } from "@/utils/programs";
+import {
+  formatProgramShortDateRange,
+  formatProgramShortTimeRange,
+  formatProgramType,
+} from "@/utils/programs";
 import { emptyFallback } from "@/utils/string";
 import { useProgram } from "../_hooks/useProgram";
 
@@ -97,18 +100,6 @@ export function ProgramOverview({
               tagName="dt"
               className="text-muted-foreground"
             >
-              Start Date
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {formatDate(program?.start_date ?? null)}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
               Sessions
             </Typography>
             <Typography variant="body2" tagName="dd">
@@ -123,10 +114,31 @@ export function ProgramOverview({
               tagName="dt"
               className="text-muted-foreground"
             >
-              End Date
+              Date
             </Typography>
             <Typography variant="body2" tagName="dd">
-              {formatDate(program?.end_date ?? null)}
+              {formatProgramShortDateRange(
+                program?.start_date ?? null,
+                program?.end_date ?? null,
+              )}
+            </Typography>
+          </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Time
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {(() => {
+                const timeRange = formatProgramShortTimeRange(
+                  program?.start_time ?? null,
+                  program?.end_time ?? null,
+                );
+                return timeRange === "—" ? timeRange : `${timeRange} WIB`;
+              })()}
             </Typography>
           </div>
           

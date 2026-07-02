@@ -23,6 +23,9 @@ export interface Program {
   year: number | null;
   start_date: string | null;
   end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  registration_link: string | null;
   price: number;
   session_count: number;
   status: ProgramStatus;
@@ -35,6 +38,9 @@ export interface CreateProgramInput {
   year: number;
   start_date?: string | null;
   end_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  registration_link?: string | null;
   price: number;
   session_count?: number;
   status?: ProgramStatus; // default 'draft'
@@ -46,6 +52,9 @@ export interface UpdateProgramInput {
   year?: number;
   start_date?: string | null;
   end_date?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  registration_link?: string | null;
   price?: number;
   session_count?: number;
   status?: ProgramStatus;
