@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Copy, Info, ShieldCheck, Users } from "lucide-react";
+import { Copy, Info, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/atoms/button";
@@ -35,6 +35,7 @@ export interface RegistrationPageData {
     start_time: string | null;
     end_time: string | null;
     registration_link: string | null;
+    wa_group_link: string | null;
   };
 }
 
@@ -49,6 +50,7 @@ type RegistrationFormState = {
 interface RegistrationFormProps {
   programId: string;
   registrationLink?: string | null;
+  waGroupLink?: string | null;
 }
 
 const defaultOrganizationCopy = {
@@ -94,9 +96,62 @@ const defaultValues: RegistrationFormState = {
   organization: "",
 };
 
+interface SuccessStepCardProps {
+  title: string;
+  description: string;
+  badge: "Required" | "Optional";
+  emphasized?: boolean;
+  children: React.ReactNode;
+}
+
+function SuccessStepCard({
+  title,
+  description,
+  badge,
+  emphasized = false,
+  children,
+}: SuccessStepCardProps) {
+  const isRequired = badge === "Required";
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-4",
+        emphasized
+          ? "border-brand-royal/60 bg-brand-pale/30 ring-1 ring-brand-royal/20"
+          : "border-brand-periwinkle/50 bg-brand-pale/15",
+      )}
+    >
+      <div className="mb-1 flex flex-wrap items-center gap-2">
+        <p className="text-sm font-semibold text-brand-deep">{title}</p>
+        <span
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            isRequired
+              ? "bg-brand-royal/15 text-brand-royal"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {badge}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "mb-4 text-xs leading-relaxed",
+          emphasized ? "text-brand-deep/80" : "text-muted-foreground",
+        )}
+      >
+        {description}
+      </p>
+      {children}
+    </div>
+  );
+}
+
 export function RegistrationForm({
   programId,
   registrationLink,
+  waGroupLink,
 }: RegistrationFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -121,6 +176,8 @@ export function RegistrationForm({
     registrationLink,
     origin,
   );
+  const waGroupUrl = waGroupLink?.trim() ?? "";
+  const hasWaGroupLink = Boolean(waGroupUrl);
 
   const handleSuccessModalChange = (open: boolean) => {
     setIsSuccessModalOpen(open);
@@ -137,9 +194,22 @@ export function RegistrationForm({
 
     try {
       await navigator.clipboard.writeText(registrationUrl);
-      toast.success("Link registration copied!");
+      toast.success("Invitation link copied!");
     } catch {
       toast.error("Failed to copy registration link");
+    }
+  };
+
+  const handleCopyWaGroupLink = async () => {
+    if (!waGroupUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(waGroupUrl);
+      toast.success("WhatsApp link copied!");
+    } catch {
+      toast.error("Failed to copy WhatsApp group link");
     }
   };
 
@@ -329,48 +399,82 @@ export function RegistrationForm({
       </form>
 
       <Dialog open={isSuccessModalOpen} onOpenChange={handleSuccessModalChange}>
-        <DialogContent className="border-brand-periwinkle/70 sm:max-w-md">
-          <DialogHeader className="items-center text-center sm:text-center">
-            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <DialogTitle className="text-brand-deep">
-              Registration completed!
-            </DialogTitle>
-            <DialogDescription>
-              You have successfully registered for the Digica program. Please
-              wait for our team to invite you to the WhatsApp group 3 days
-              before the program starts.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3 rounded-xl border bg-brand-pale/20 px-4 py-3 text-sm text-muted-foreground">
-              <Users className="mt-0.5 h-4 w-4 shrink-0 text-brand-royal" />
-              <p>
-                Want to join with your friends too? Share this registration link
-                so they can register right away.
-              </p>
-            </div>
+        <DialogContent className="flex max-h-[90dvh] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-2xl border-brand-periwinkle/70 p-0 sm:w-[70%] sm:max-w-md">
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
+            <DialogHeader className="items-center space-y-3 text-center sm:text-center">
+              <DialogTitle className="text-xl text-brand-deep">
+                You&apos;re registered 🎉
+              </DialogTitle>
+              <DialogDescription className="text-center text-sm leading-relaxed">
+                {hasWaGroupLink
+                  ? "Your seat is confirmed. Join our WhatsApp group to receive class schedules & materials."
+                  : "Your seat is confirmed. Share the invitation link with friends, and we'll invite you to the WhatsApp group 3 days before the program starts."}
+              </DialogDescription>
+            </DialogHeader>
 
-            <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 px-4 py-3.5 text-left">
-              <p className="min-w-0 flex-1 break-all text-sm font-medium text-brand-deep sm:text-base">
-                {registrationUrl || `/registration/${programId}`}
-              </p>
-              <button
-                type="button"
-                onClick={handleCopyRegistrationLink}
-                disabled={!registrationUrl}
-                aria-label="Copy registration link"
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-brand-deep transition-colors hover:bg-background/70 disabled:cursor-not-allowed disabled:opacity-50"
+            <div className="mt-6 space-y-4">
+              {hasWaGroupLink ? (
+                <SuccessStepCard
+                  title="Join WhatsApp Group"
+                  description="Join to receive class updates, schedules, and materials."
+                  badge="Required"
+                  emphasized
+                >
+                  <div className="space-y-3">
+                    <Button asChild className="h-11 w-full">
+                      <a
+                        href={waGroupUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Join WhatsApp Group
+                      </a>
+                    </Button>
+
+                    <div className="flex items-center gap-3 py-1">
+                      <div className="h-px flex-1 bg-border/80" />
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        Having trouble?
+                      </span>
+                      <div className="h-px flex-1 bg-border/80" />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full gap-2"
+                      onClick={handleCopyWaGroupLink}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy WhatsApp Link
+                    </Button>
+                  </div>
+                </SuccessStepCard>
+              ) : null}
+
+              <SuccessStepCard
+                title="Invite your friends"
+                description="Learning is better together."
+                badge="Optional"
               >
-                <Copy className="h-5 w-5" />
-              </button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-11 w-full gap-2"
+                  onClick={handleCopyRegistrationLink}
+                  disabled={!registrationUrl}
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy Invitation Link
+                </Button>
+              </SuccessStepCard>
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:justify-center">
+
+          <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
             <Button
               type="button"
-              className="w-full sm:w-auto"
+              className="h-11 w-full"
               onClick={() => handleSuccessModalChange(false)}
             >
               Done

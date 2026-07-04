@@ -81,10 +81,7 @@ export function AttendanceContent({
         </p>
       </div>
 
-      <CheckInLinkCard
-        programId={programId}
-        registrationLink={program?.registration_link}
-      />
+      <CheckInLinkCard programId={programId} />
 
       <Card>
         <CardHeader className={cn("space-y-0", !isSessionDatesOpen && "pb-6")}>

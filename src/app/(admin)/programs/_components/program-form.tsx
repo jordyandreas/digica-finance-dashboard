@@ -173,6 +173,19 @@ export function ProgramForm({ form }: ProgramFormProps) {
         }}
       />
 
+      <TextInputController
+        form={form}
+        name="wa_group_link"
+        label="WhatsApp Group Link"
+        placeholder="https://chat.whatsapp.com/..."
+        description="WhatsApp group invite link shown to participants after registration."
+        componentProps={{
+          input: {
+            type: "url",
+          },
+        }}
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <SelectController
           form={form}

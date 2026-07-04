@@ -15,7 +15,7 @@ async function getProgram(programId: string) {
 
   const { data, error } = await supabase
     .from("programs")
-    .select("id, name, start_date, end_date, start_time, end_time, registration_link")
+    .select("id, name, start_date, end_date, start_time, end_time, registration_link, wa_group_link")
     .eq("id", programId)
     .single();
 

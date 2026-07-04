@@ -26,6 +26,7 @@ export type ProgramFormState = {
   start_time: string;
   end_time: string;
   registration_link: string;
+  wa_group_link: string;
   price: number | undefined;
   session_count: string;
   status: ProgramStatus;
@@ -43,6 +44,7 @@ const defaultFormState = (): ProgramFormState => ({
   start_time: "",
   end_time: "",
   registration_link: "",
+  wa_group_link: "",
   price: undefined,
   session_count: "0",
   status: "draft",
@@ -63,6 +65,7 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
     start_time: program.start_time ?? "",
     end_time: program.end_time ?? "",
     registration_link: program.registration_link ?? "",
+    wa_group_link: program.wa_group_link ?? "",
     price: program.price ?? undefined,
     session_count: String(program.session_count ?? 0),
     status: program.status || "draft",
@@ -93,6 +96,7 @@ const buildProgramInput = (
   start_time: optionalString(values.start_time),
   end_time: optionalString(values.end_time),
   registration_link: optionalString(values.registration_link),
+  wa_group_link: optionalString(values.wa_group_link),
   price: values.price ?? undefined,
   session_count: parseSessionCount(values.session_count),
   status: values.status || undefined,

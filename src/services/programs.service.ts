@@ -26,6 +26,7 @@ export interface Program {
   start_time: string | null;
   end_time: string | null;
   registration_link: string | null;
+  wa_group_link: string | null;
   price: number;
   session_count: number;
   status: ProgramStatus;
@@ -41,6 +42,7 @@ export interface CreateProgramInput {
   start_time?: string | null;
   end_time?: string | null;
   registration_link?: string | null;
+  wa_group_link?: string | null;
   price: number;
   session_count?: number;
   status?: ProgramStatus; // default 'draft'
@@ -55,6 +57,7 @@ export interface UpdateProgramInput {
   start_time?: string | null;
   end_time?: string | null;
   registration_link?: string | null;
+  wa_group_link?: string | null;
   price?: number;
   session_count?: number;
   status?: ProgramStatus;

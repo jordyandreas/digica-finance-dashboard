@@ -179,6 +179,7 @@ export default function RegistrationPage() {
           <RegistrationForm
             programId={programId}
             registrationLink={data.program.registration_link}
+            waGroupLink={data.program.wa_group_link}
           />
         </div>
       ) : null}

@@ -1,18 +1,20 @@
 'use client';
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
+import { resolveRegistrationLink } from "@/utils/program-public";
 import {
   formatProgramShortDateRange,
   formatProgramShortTimeRange,
   formatProgramType,
 } from "@/utils/programs";
 import { emptyFallback } from "@/utils/string";
+import { ParticipantLinkRow } from "./participant-link-row";
 import { useProgram } from "../_hooks/useProgram";
 
 type ProgramOverviewProps = {
@@ -27,6 +29,18 @@ export function ProgramOverview({
   const { data: program, isLoading } = useProgram(programId);
   const title = isLoading ? "Loading..." : program?.name || "Program Details";
   const [isOpen, setIsOpen] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
+
+  const registrationUrl = resolveRegistrationLink(
+    programId,
+    program?.registration_link,
+    origin,
+  );
+  const waGroupUrl = program?.wa_group_link?.trim() ?? "";
 
   return (
     <div className="w-full space-y-4">
@@ -143,6 +157,21 @@ export function ProgramOverview({
           </div>
           
         </dl>
+
+        <div className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-2">
+          <ParticipantLinkRow
+            label="Registration link"
+            url={registrationUrl}
+            fallback={`/registration/${programId}`}
+            successMessage="Registration link copied to clipboard"
+          />
+          <ParticipantLinkRow
+            label="WhatsApp group link"
+            url={waGroupUrl}
+            emptyLabel="Not configured"
+            successMessage="WhatsApp group link copied to clipboard"
+          />
+        </div>
       </CardContent>
       )}
     </Card>
