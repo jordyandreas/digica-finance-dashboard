@@ -20,6 +20,7 @@ import { programPublicSlugSchema } from "@/schemas/program-public-slug-schema";
 export type ProgramFormState = {
   name: string;
   summary_html: string;
+  og_image_url: string;
   type: ProgramType | "";
   year: string;
   start_date: string;
@@ -42,6 +43,7 @@ const nullableString = (value: string) => {
 const defaultFormState = (): ProgramFormState => ({
   name: "",
   summary_html: "",
+  og_image_url: "",
   type: "",
   year: String(new Date().getFullYear()),
   start_date: "",
@@ -64,6 +66,7 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
   return {
     name: program.name || "",
     summary_html: "",
+    og_image_url: "",
     type: program.type || "",
     year: program.year != null ? String(program.year) : "",
     start_date: program.start_date ? program.start_date.split("T")[0] : "",
@@ -127,6 +130,7 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
   React.useEffect(() => {
     if (!isOpen || !program?.id) {
       form.setValue("summary_html", "", { shouldDirty: false });
+      form.setValue("og_image_url", "", { shouldDirty: false });
       return;
     }
 
@@ -140,6 +144,9 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
 
       if (!cancelled) {
         form.setValue("summary_html", result.data?.summary_html ?? "", {
+          shouldDirty: false,
+        });
+        form.setValue("og_image_url", result.data?.og_image_url ?? "", {
           shouldDirty: false,
         });
       }
@@ -204,6 +211,7 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
         const contentResult = await upsertProgramPublicContent({
           program_id: savedProgram.id,
           summary_html: values.summary_html.trim() || null,
+          og_image_url: nullableString(values.og_image_url),
         });
 
         if (contentResult.error) {

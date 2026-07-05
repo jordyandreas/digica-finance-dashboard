@@ -53,6 +53,22 @@ export function ProgramForm({ form }: ProgramFormProps) {
         />
       </div>
 
+      <TextInputController
+        form={form}
+        name="og_image_url"
+        label="Open Graph Image Path"
+        placeholder="/og/fw-sql3.png"
+        componentProps={{
+          input: {
+            id: "og_image_url",
+          },
+        }}
+      />
+      <p className="-mt-2 text-xs text-muted-foreground">
+        Public path or full URL for the WhatsApp/social preview banner. Use
+        og:logo separately via the Digica logo. Example: /og/fw-sql3.png
+      </p>
+
       <div className="grid grid-cols-2 gap-4">
         <SelectController
           form={form}

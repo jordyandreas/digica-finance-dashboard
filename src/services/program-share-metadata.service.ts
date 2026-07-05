@@ -4,6 +4,11 @@ import {
   formatProgramTimeRange,
 } from "@/utils/program-public";
 import {
+  buildShareOgImage,
+  buildShareOgLogoUrl,
+  type ShareOgImage,
+} from "@/utils/program-share-assets";
+import {
   resolveProgramIdByIdentifier,
   resolvePublicAppOrigin,
 } from "@/utils/program-public-link";
@@ -20,6 +25,7 @@ export interface ProgramRegistrationPublicData {
   public_code: string;
   public_slug: string | null;
   summary_html: string | null;
+  og_image_url: string | null;
 }
 
 export interface ProgramShareMetadata {
@@ -29,6 +35,8 @@ export interface ProgramShareMetadata {
   dateRange: string;
   timeRange: string;
   programName: string;
+  ogImage: ShareOgImage;
+  ogLogoUrl: string;
 }
 
 function stripHtml(html: string): string {
@@ -75,19 +83,38 @@ export async function getProgramRegistrationPublicData(
     return null;
   }
 
-  const { data: publicContent, error: publicContentError } = await supabase
+  const publicContentResult = await supabase
     .from("program_public_contents")
-    .select("summary_html")
+    .select("summary_html, og_image_url")
     .eq("program_id", resolvedProgramId)
     .maybeSingle();
 
-  if (publicContentError) {
-    throw publicContentError;
+  let summaryHtml: string | null = null;
+  let ogImageUrl: string | null = null;
+
+  if (publicContentResult.error?.code === "42703") {
+    const legacyContentResult = await supabase
+      .from("program_public_contents")
+      .select("summary_html")
+      .eq("program_id", resolvedProgramId)
+      .maybeSingle();
+
+    if (legacyContentResult.error) {
+      throw legacyContentResult.error;
+    }
+
+    summaryHtml = legacyContentResult.data?.summary_html ?? null;
+  } else if (publicContentResult.error) {
+    throw publicContentResult.error;
+  } else {
+    summaryHtml = publicContentResult.data?.summary_html ?? null;
+    ogImageUrl = publicContentResult.data?.og_image_url ?? null;
   }
 
   return {
     ...data,
-    summary_html: publicContent?.summary_html ?? null,
+    summary_html: summaryHtml,
+    og_image_url: ogImageUrl,
   };
 }
 
@@ -107,6 +134,9 @@ export function buildProgramShareMetadata(
   const origin = resolvePublicAppOrigin();
   const normalizedIdentifier = identifier.trim();
   const canonicalUrl = `${origin}/r/${normalizedIdentifier}`;
+  const configuredOgImageUrl =
+    program.og_image_url ??
+    (normalizedIdentifier === "fw-sql3" ? "/og/fw-sql3.png" : null);
 
   const summaryText = program.summary_html
     ? truncate(stripHtml(program.summary_html), 160)
@@ -133,6 +163,8 @@ export function buildProgramShareMetadata(
     dateRange,
     timeRange,
     programName: program.name,
+    ogImage: buildShareOgImage(origin, program.name, configuredOgImageUrl),
+    ogLogoUrl: buildShareOgLogoUrl(origin),
   };
 }
 
