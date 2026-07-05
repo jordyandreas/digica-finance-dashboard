@@ -5,6 +5,7 @@ import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   buildCheckInUrl,
+  resolvePublicAppOrigin,
   resolvePublicIdentifier,
   type ProgramPublicLinkFields,
 } from "@/utils/program-public-link";
@@ -23,7 +24,9 @@ export function CheckInLinkCard({ program }: CheckInLinkCardProps) {
       return;
     }
 
-    setCheckInUrl(buildCheckInUrl(window.location.origin, program));
+    setCheckInUrl(
+      buildCheckInUrl(resolvePublicAppOrigin(window.location.origin), program),
+    );
   }, [program]);
 
   const fallback = program?.public_code

@@ -24,6 +24,7 @@ import {
 } from "@/schemas/participant-registration-schema";
 import { cn } from "@/lib/utils";
 import { resolveRegistrationLink } from "@/utils/program-public";
+import { resolvePublicAppOrigin } from "@/utils/program-public-link";
 
 export interface RegistrationPageData {
   program: {
@@ -174,7 +175,7 @@ export function RegistrationForm({
     organizationCopyByOccupation[occupation] ?? defaultOrganizationCopy;
 
   React.useEffect(() => {
-    setOrigin(window.location.origin);
+    setOrigin(resolvePublicAppOrigin(window.location.origin));
   }, []);
 
   const registrationUrl = resolveRegistrationLink(

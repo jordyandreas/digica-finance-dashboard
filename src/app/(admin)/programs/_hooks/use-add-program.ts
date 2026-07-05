@@ -34,7 +34,10 @@ export type ProgramFormState = {
   status: ProgramStatus;
 };
 
-const optionalString = (value: string) => (value ? value : undefined);
+const nullableString = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+};
 
 const defaultFormState = (): ProgramFormState => ({
   name: "",
@@ -95,13 +98,13 @@ const buildProgramInput = (
   name: values.name.trim(),
   type: values.type || undefined,
   year: parseYear(values.year),
-  start_date: optionalString(values.start_date),
-  end_date: optionalString(values.end_date),
-  start_time: optionalString(values.start_time),
-  end_time: optionalString(values.end_time),
-  registration_link: optionalString(values.registration_link),
-  wa_group_link: optionalString(values.wa_group_link),
-  public_slug: optionalString(values.public_slug),
+  start_date: nullableString(values.start_date),
+  end_date: nullableString(values.end_date),
+  start_time: nullableString(values.start_time),
+  end_time: nullableString(values.end_time),
+  registration_link: nullableString(values.registration_link),
+  wa_group_link: nullableString(values.wa_group_link),
+  public_slug: nullableString(values.public_slug),
   price: values.price ?? undefined,
   session_count: parseSessionCount(values.session_count),
   status: values.status || undefined,

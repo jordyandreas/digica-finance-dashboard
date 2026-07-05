@@ -8,7 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { resolveRegistrationLink } from "@/utils/program-public";
-import { resolvePublicIdentifier } from "@/utils/program-public-link";
+import {
+  resolvePublicAppOrigin,
+  resolvePublicIdentifier,
+} from "@/utils/program-public-link";
 import {
   formatProgramShortDateRange,
   formatProgramShortTimeRange,
@@ -33,7 +36,7 @@ export function ProgramOverview({
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
-    setOrigin(window.location.origin);
+    setOrigin(resolvePublicAppOrigin(window.location.origin));
   }, []);
 
   const registrationUrl = resolveRegistrationLink(
@@ -46,12 +49,14 @@ export function ProgramOverview({
         }
       : null,
   );
+
   const registrationFallback = program?.public_code
     ? `/r/${resolvePublicIdentifier({
         public_code: program.public_code,
         public_slug: program.public_slug,
       })}`
     : `/registration/${programId}`;
+
   const waGroupUrl = program?.wa_group_link?.trim() ?? "";
 
   return (

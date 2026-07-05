@@ -165,7 +165,7 @@ export function ProgramForm({ form }: ProgramFormProps) {
         name="public_slug"
         label="Custom Link Slug"
         placeholder="bootcamp-juli-2026"
-        description="Optional. Used in short links like /r/bootcamp-juli-2026. Leave blank to use the auto-generated code."
+        description="Optional. Used in your short Digica registration and check-in links (e.g. /r/bootcamp-juli-2026). Leave blank to use the auto-generated code."
         componentProps={{
           input: {
             autoCapitalize: "none",
@@ -180,7 +180,7 @@ export function ProgramForm({ form }: ProgramFormProps) {
         name="registration_link"
         label="Registration Link"
         placeholder="https://..."
-        description="Leave blank to use the default short registration link on this site."
+        description="Only for external pages. Leave blank to use the short Digica link (/r/...)."
         componentProps={{
           input: {
             type: "url",

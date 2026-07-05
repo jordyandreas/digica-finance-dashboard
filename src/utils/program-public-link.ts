@@ -28,6 +28,18 @@ export function generatePublicCode(length = PUBLIC_CODE_LENGTH): string {
   return code;
 }
 
+export function resolvePublicAppOrigin(browserOrigin = ""): string {
+  const configured = process.env.NEXT_PUBLIC_PUBLIC_APP_URL?.trim().replace(
+    /\/$/,
+    "",
+  );
+  if (configured) {
+    return configured;
+  }
+
+  return browserOrigin.replace(/\/$/, "");
+}
+
 export function resolvePublicIdentifier(
   program: ProgramPublicLinkFields,
 ): string {
