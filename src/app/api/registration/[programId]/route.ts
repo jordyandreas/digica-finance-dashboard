@@ -4,42 +4,12 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import {
   participantRegistrationSchema,
 } from "@/schemas/participant-registration-schema";
+import { getProgramRegistrationPublicData } from "@/services/program-share-metadata.service";
 import { normalizeParticipantPhoneForSubmit } from "@/utils/phone";
 import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
 
 interface RegistrationRouteParams {
   params: Promise<{ programId: string }>;
-}
-
-async function getProgram(programId: string) {
-  const supabase = createAdminClient();
-
-  const { data, error } = await supabase
-    .from("programs")
-    .select(
-      "id, name, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug",
-    )
-    .eq("id", programId)
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  const { data: publicContent, error: publicContentError } = await supabase
-    .from("program_public_contents")
-    .select("summary_html")
-    .eq("program_id", programId)
-    .maybeSingle();
-
-  if (publicContentError) {
-    throw publicContentError;
-  }
-
-  return {
-    ...data,
-    summary_html: publicContent?.summary_html ?? null,
-  };
 }
 
 export async function GET(
@@ -48,17 +18,7 @@ export async function GET(
 ) {
   try {
     const { programId: identifier } = await params;
-    const supabase = createAdminClient();
-    const resolvedProgramId = await resolveProgramIdByIdentifier(
-      supabase,
-      identifier,
-    );
-
-    if (!resolvedProgramId) {
-      return NextResponse.json({ error: "Program not found" }, { status: 404 });
-    }
-
-    const program = await getProgram(resolvedProgramId);
+    const program = await getProgramRegistrationPublicData(identifier);
 
     if (!program) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
@@ -90,7 +50,7 @@ export async function POST(
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
 
-    const program = await getProgram(resolvedProgramId);
+    const program = await getProgramRegistrationPublicData(identifier);
 
     if (!program) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });

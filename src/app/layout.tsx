@@ -15,7 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const publicAppUrl =
+  process.env.NEXT_PUBLIC_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
+  "https://digica-academy.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(publicAppUrl),
   title: "Digica Finance Dashboard",
   description:
     "Finance dashboard for managing programs, participants, payments, and expenses",

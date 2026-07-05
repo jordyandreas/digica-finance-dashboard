@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
-import { generatePublicCode } from "@/utils/program-public-link";
+import { generatePublicCode } from "@/utils/program-public-code";
 import { normalizeProgramPublicSlug } from "@/schemas/program-public-slug-schema";
 import {
   buildPaginationMeta,

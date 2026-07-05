@@ -1,9 +1,4 @@
-import { randomBytes } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-
-const PUBLIC_CODE_ALPHABET =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-const PUBLIC_CODE_LENGTH = 6;
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -15,17 +10,6 @@ export interface ProgramPublicLinkFields {
 
 export function isUuid(value: string): boolean {
   return UUID_PATTERN.test(value.trim());
-}
-
-export function generatePublicCode(length = PUBLIC_CODE_LENGTH): string {
-  const bytes = randomBytes(length);
-  let code = "";
-
-  for (let index = 0; index < length; index += 1) {
-    code += PUBLIC_CODE_ALPHABET[bytes[index] % PUBLIC_CODE_ALPHABET.length];
-  }
-
-  return code;
 }
 
 export function resolvePublicAppOrigin(browserOrigin = ""): string {
