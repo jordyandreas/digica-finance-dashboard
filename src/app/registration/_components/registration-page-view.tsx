@@ -3,7 +3,6 @@
 import * as React from "react";
 import Image from "next/image";
 import { AlertCircle, CalendarDays, Clock3, Sparkles } from "lucide-react";
-import DOMPurify from "isomorphic-dompurify";
 import {
   RegistrationForm,
   type RegistrationPageData,
@@ -44,9 +43,84 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
   const [data, setData] = React.useState<RegistrationPageData | null>(null);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const sanitizedSummaryHtml = React.useMemo(() => {
-    return DOMPurify.sanitize(data?.program.summary_html ?? "");
-  }, [data?.program.summary_html]);
+  const [sanitizedSummaryHtml, setSanitizedSummaryHtml] = React.useState("");
+
+  React.useEffect(() => {
+    const summaryHtml = data?.program.summary_html;
+
+    if (!summaryHtml) {
+      setSanitizedSummaryHtml("");
+      return;
+    }
+
+    let cancelled = false;
+
+    void import("isomorphic-dompurify")
+      .then(({ default: DOMPurify }) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSanitizedSummaryHtml(DOMPurify.sanitize(summaryHtml));
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7435/ingest/5fd01bb4-894f-413f-b437-bb736c271def",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Debug-Session-Id": "7b4354",
+            },
+            body: JSON.stringify({
+              sessionId: "7b4354",
+              runId: "post-fix",
+              hypothesisId: "H4",
+              location: "registration-page-view.tsx:sanitize:client-success",
+              message: "Client-only DOMPurify sanitize succeeded",
+              data: { identifier, summaryLength: summaryHtml.length },
+              timestamp: Date.now(),
+            }),
+          },
+        ).catch(() => {});
+        // #endregion
+      })
+      .catch((error: unknown) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSanitizedSummaryHtml("");
+        // #region agent log
+        fetch(
+          "http://127.0.0.1:7435/ingest/5fd01bb4-894f-413f-b437-bb736c271def",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Debug-Session-Id": "7b4354",
+            },
+            body: JSON.stringify({
+              sessionId: "7b4354",
+              runId: "post-fix",
+              hypothesisId: "H4",
+              location: "registration-page-view.tsx:sanitize:client-error",
+              message: "Client-only DOMPurify sanitize failed",
+              data: {
+                identifier,
+                errorMessage:
+                  error instanceof Error ? error.message : "unknown sanitize error",
+              },
+              timestamp: Date.now(),
+            }),
+          },
+        ).catch(() => {});
+        // #endregion
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data?.program.summary_html, identifier]);
 
   React.useEffect(() => {
     if (!identifier) {
