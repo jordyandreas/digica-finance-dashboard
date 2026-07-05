@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { getTodayDateString } from "@/lib/date-utils";
 import { getPublicCheckInSessions } from "@/utils/check-in-sessions";
+import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
 
 interface CheckInRouteParams {
   params: Promise<{ programId: string }>;
@@ -49,8 +50,18 @@ async function loadProgramContext(programId: string) {
 
 export async function GET(_request: Request, { params }: CheckInRouteParams) {
   try {
-    const { programId } = await params;
-    const context = await loadProgramContext(programId);
+    const { programId: identifier } = await params;
+    const supabase = createAdminClient();
+    const resolvedProgramId = await resolveProgramIdByIdentifier(
+      supabase,
+      identifier,
+    );
+
+    if (!resolvedProgramId) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
+
+    const context = await loadProgramContext(resolvedProgramId);
 
     if (!context) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
@@ -94,7 +105,17 @@ export async function GET(_request: Request, { params }: CheckInRouteParams) {
 
 export async function POST(request: Request, { params }: CheckInRouteParams) {
   try {
-    const { programId } = await params;
+    const { programId: identifier } = await params;
+    const supabase = createAdminClient();
+    const resolvedProgramId = await resolveProgramIdByIdentifier(
+      supabase,
+      identifier,
+    );
+
+    if (!resolvedProgramId) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
+
     const body = (await request.json()) as {
       participant_id?: string;
       session_id?: string;
@@ -110,7 +131,7 @@ export async function POST(request: Request, { params }: CheckInRouteParams) {
       );
     }
 
-    const context = await loadProgramContext(programId);
+    const context = await loadProgramContext(resolvedProgramId);
 
     if (!context) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
@@ -139,7 +160,6 @@ export async function POST(request: Request, { params }: CheckInRouteParams) {
       );
     }
 
-    const supabase = createAdminClient();
     const { error } = await supabase.from("attendance").upsert(
       {
         participant_id: participantId,

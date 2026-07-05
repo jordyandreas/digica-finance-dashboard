@@ -1,5 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
+import { generatePublicCode } from "@/utils/program-public-link";
+import { normalizeProgramPublicSlug } from "@/schemas/program-public-slug-schema";
 import {
   buildPaginationMeta,
   type PaginatedResponse,
@@ -27,6 +29,8 @@ export interface Program {
   end_time: string | null;
   registration_link: string | null;
   wa_group_link: string | null;
+  public_code: string;
+  public_slug: string | null;
   price: number;
   session_count: number;
   status: ProgramStatus;
@@ -43,6 +47,7 @@ export interface CreateProgramInput {
   end_time?: string | null;
   registration_link?: string | null;
   wa_group_link?: string | null;
+  public_slug?: string | null;
   price: number;
   session_count?: number;
   status?: ProgramStatus; // default 'draft'
@@ -58,6 +63,7 @@ export interface UpdateProgramInput {
   end_time?: string | null;
   registration_link?: string | null;
   wa_group_link?: string | null;
+  public_slug?: string | null;
   price?: number;
   session_count?: number;
   status?: ProgramStatus;
@@ -169,14 +175,38 @@ export async function getProgramById(id: string): Promise<{
   return { data, error };
 }
 
+async function generateUniquePublicCode(): Promise<string> {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const publicCode = generatePublicCode();
+    const { data, error } = await supabase
+      .from("programs")
+      .select("id")
+      .eq("public_code", publicCode)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data) {
+      return publicCode;
+    }
+  }
+
+  throw new Error("Failed to generate a unique public link code");
+}
+
 export async function createProgram(input: CreateProgramInput): Promise<{
   data: Program | null;
   error: PostgrestError | null;
 }> {
+  const publicCode = await generateUniquePublicCode();
   const { data, error } = await supabase
     .from("programs")
     .insert({
       ...input,
+      public_code: publicCode,
+      public_slug: normalizeProgramPublicSlug(input.public_slug),
       status: input.status ?? "draft",
     })
     .select()
@@ -192,9 +222,15 @@ export async function updateProgram(
   data: Program | null;
   error: PostgrestError | null;
 }> {
+  const payload: UpdateProgramInput = { ...input };
+
+  if ("public_slug" in input) {
+    payload.public_slug = normalizeProgramPublicSlug(input.public_slug);
+  }
+
   const { data, error } = await supabase
     .from("programs")
-    .update(input)
+    .update(payload)
     .eq("id", id)
     .select()
     .single();

@@ -162,10 +162,25 @@ export function ProgramForm({ form }: ProgramFormProps) {
 
       <TextInputController
         form={form}
+        name="public_slug"
+        label="Custom Link Slug"
+        placeholder="bootcamp-juli-2026"
+        description="Optional. Used in short links like /r/bootcamp-juli-2026. Leave blank to use the auto-generated code."
+        componentProps={{
+          input: {
+            autoCapitalize: "none",
+            autoCorrect: "off",
+            spellCheck: false,
+          },
+        }}
+      />
+
+      <TextInputController
+        form={form}
         name="registration_link"
         label="Registration Link"
         placeholder="https://..."
-        description="Leave blank to use the default registration page link."
+        description="Leave blank to use the default short registration link on this site."
         componentProps={{
           input: {
             type: "url",

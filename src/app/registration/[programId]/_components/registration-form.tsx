@@ -36,6 +36,8 @@ export interface RegistrationPageData {
     end_time: string | null;
     registration_link: string | null;
     wa_group_link: string | null;
+    public_code: string;
+    public_slug: string | null;
   };
 }
 
@@ -51,6 +53,8 @@ interface RegistrationFormProps {
   programId: string;
   registrationLink?: string | null;
   waGroupLink?: string | null;
+  publicCode?: string;
+  publicSlug?: string | null;
 }
 
 const defaultOrganizationCopy = {
@@ -152,6 +156,8 @@ export function RegistrationForm({
   programId,
   registrationLink,
   waGroupLink,
+  publicCode,
+  publicSlug,
 }: RegistrationFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -172,9 +178,14 @@ export function RegistrationForm({
   }, []);
 
   const registrationUrl = resolveRegistrationLink(
-    programId,
     registrationLink,
     origin,
+    publicCode
+      ? {
+          public_code: publicCode,
+          public_slug: publicSlug,
+        }
+      : null,
   );
   const waGroupUrl = waGroupLink?.trim() ?? "";
   const hasWaGroupLink = Boolean(waGroupUrl);

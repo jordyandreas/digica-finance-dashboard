@@ -35,7 +35,9 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/check-in/") ||
     pathname.startsWith("/api/check-in/") ||
     pathname.startsWith("/registration/") ||
-    pathname.startsWith("/api/registration/");
+    pathname.startsWith("/api/registration/") ||
+    pathname.startsWith("/r/") ||
+    pathname.startsWith("/c/");
 
   if (!user && !isPublicRoute) {
     const redirectUrl = request.nextUrl.clone();

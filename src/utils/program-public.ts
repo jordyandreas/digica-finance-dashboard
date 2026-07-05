@@ -1,5 +1,9 @@
 import { format } from "date-fns";
 import { parseDateString } from "@/lib/date-utils";
+import {
+  buildRegistrationUrl,
+  type ProgramPublicLinkFields,
+} from "@/utils/program-public-link";
 
 function formatProgramDate(value: string | null): string {
   const parsed = parseDateString(value);
@@ -56,14 +60,18 @@ export function formatProgramTimeRange(
 }
 
 export function resolveRegistrationLink(
-  programId: string,
   registrationLink: string | null | undefined,
   origin = "",
+  program?: ProgramPublicLinkFields | null,
 ): string {
   const custom = registrationLink?.trim();
   if (custom) {
     return custom;
   }
 
-  return origin ? `${origin}/registration/${programId}` : "";
+  if (!origin || !program?.public_code) {
+    return "";
+  }
+
+  return buildRegistrationUrl(origin, program);
 }

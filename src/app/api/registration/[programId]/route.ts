@@ -5,6 +5,7 @@ import {
   participantRegistrationSchema,
 } from "@/schemas/participant-registration-schema";
 import { normalizeParticipantPhoneForSubmit } from "@/utils/phone";
+import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
 
 interface RegistrationRouteParams {
   params: Promise<{ programId: string }>;
@@ -15,7 +16,9 @@ async function getProgram(programId: string) {
 
   const { data, error } = await supabase
     .from("programs")
-    .select("id, name, start_date, end_date, start_time, end_time, registration_link, wa_group_link")
+    .select(
+      "id, name, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug",
+    )
     .eq("id", programId)
     .single();
 
@@ -44,8 +47,18 @@ export async function GET(
   { params }: RegistrationRouteParams,
 ) {
   try {
-    const { programId } = await params;
-    const program = await getProgram(programId);
+    const { programId: identifier } = await params;
+    const supabase = createAdminClient();
+    const resolvedProgramId = await resolveProgramIdByIdentifier(
+      supabase,
+      identifier,
+    );
+
+    if (!resolvedProgramId) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
+
+    const program = await getProgram(resolvedProgramId);
 
     if (!program) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
@@ -66,8 +79,18 @@ export async function POST(
   { params }: RegistrationRouteParams,
 ) {
   try {
-    const { programId } = await params;
-    const program = await getProgram(programId);
+    const { programId: identifier } = await params;
+    const supabase = createAdminClient();
+    const resolvedProgramId = await resolveProgramIdByIdentifier(
+      supabase,
+      identifier,
+    );
+
+    if (!resolvedProgramId) {
+      return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
+
+    const program = await getProgram(resolvedProgramId);
 
     if (!program) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
@@ -85,14 +108,13 @@ export async function POST(
     }
 
     const values = validation.data;
-    const supabase = createAdminClient();
     const { error } = await supabase.from("participants").insert({
       name: values.name.trim().toLowerCase(),
       email: values.email.trim().toLowerCase(),
       phone: normalizeParticipantPhoneForSubmit(values.phone),
       occupation: values.occupation || null,
       organization: values.organization?.trim().toLowerCase() || null,
-      program_id: programId,
+      program_id: resolvedProgramId,
       status: "active",
       joined_date: getTodayDateString(),
     });

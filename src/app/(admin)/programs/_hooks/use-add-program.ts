@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import type { ProgramModalProps } from "../_modals/add-program";
 import { programQueryKey } from "../[id]/_hooks/useProgram";
 import { programSessionsQueryKey } from "../[id]/attendance/_hooks/use-attendance";
+import { programPublicSlugSchema } from "@/schemas/program-public-slug-schema";
 
 export type ProgramFormState = {
   name: string;
@@ -27,6 +28,7 @@ export type ProgramFormState = {
   end_time: string;
   registration_link: string;
   wa_group_link: string;
+  public_slug: string;
   price: number | undefined;
   session_count: string;
   status: ProgramStatus;
@@ -45,6 +47,7 @@ const defaultFormState = (): ProgramFormState => ({
   end_time: "",
   registration_link: "",
   wa_group_link: "",
+  public_slug: "",
   price: undefined,
   session_count: "0",
   status: "draft",
@@ -66,6 +69,7 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
     end_time: program.end_time ?? "",
     registration_link: program.registration_link ?? "",
     wa_group_link: program.wa_group_link ?? "",
+    public_slug: program.public_slug ?? "",
     price: program.price ?? undefined,
     session_count: String(program.session_count ?? 0),
     status: program.status || "draft",
@@ -97,6 +101,7 @@ const buildProgramInput = (
   end_time: optionalString(values.end_time),
   registration_link: optionalString(values.registration_link),
   wa_group_link: optionalString(values.wa_group_link),
+  public_slug: optionalString(values.public_slug),
   price: values.price ?? undefined,
   session_count: parseSessionCount(values.session_count),
   status: values.status || undefined,
@@ -143,6 +148,16 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
   }, [form, isOpen, program?.id]);
 
   const handleSubmit = form.handleSubmit(async (values: ProgramFormState) => {
+    const slugValidation = programPublicSlugSchema.safeParse(values.public_slug);
+    if (!slugValidation.success) {
+      const message =
+        slugValidation.error.issues[0]?.message ||
+        "Custom link slug is invalid";
+      form.setError("public_slug", { type: "manual", message });
+      toast.error(message);
+      return;
+    }
+
     setLoading(true);
     try {
       const { createProgram, updateProgram } = await import(
@@ -161,6 +176,14 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
         console.error("Error saving program:", result.error);
         const errorMessage =
           result.error.message || JSON.stringify(result.error);
+
+        if (result.error.code === "23505") {
+          form.setError("public_slug", {
+            type: "manual",
+            message: "This custom link slug is already in use",
+          });
+        }
+
         toast.error("Error saving program", {
           description: errorMessage,
         });

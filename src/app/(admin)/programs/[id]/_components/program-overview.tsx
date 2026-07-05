@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { resolveRegistrationLink } from "@/utils/program-public";
+import { resolvePublicIdentifier } from "@/utils/program-public-link";
 import {
   formatProgramShortDateRange,
   formatProgramShortTimeRange,
@@ -36,10 +37,21 @@ export function ProgramOverview({
   }, []);
 
   const registrationUrl = resolveRegistrationLink(
-    programId,
     program?.registration_link,
     origin,
+    program?.public_code
+      ? {
+          public_code: program.public_code,
+          public_slug: program.public_slug,
+        }
+      : null,
   );
+  const registrationFallback = program?.public_code
+    ? `/r/${resolvePublicIdentifier({
+        public_code: program.public_code,
+        public_slug: program.public_slug,
+      })}`
+    : `/registration/${programId}`;
   const waGroupUrl = program?.wa_group_link?.trim() ?? "";
 
   return (
@@ -162,7 +174,7 @@ export function ProgramOverview({
           <ParticipantLinkRow
             label="Registration link"
             url={registrationUrl}
-            fallback={`/registration/${programId}`}
+            fallback={registrationFallback}
             successMessage="Registration link copied to clipboard"
           />
           <ParticipantLinkRow
