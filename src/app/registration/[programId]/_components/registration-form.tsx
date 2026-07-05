@@ -101,6 +101,10 @@ const defaultValues: RegistrationFormState = {
   organization: "",
 };
 
+function sanitizePhoneInput(value: string): string {
+  return value.replace(/[^\d+\s-]/g, "");
+}
+
 interface SuccessStepCardProps {
   title: string;
   description: string;
@@ -333,7 +337,17 @@ export function RegistrationForm({
             componentProps={{
               input: {
                 type: "tel",
+                inputMode: "tel",
                 required: true,
+                onChange: (event) => {
+                  const sanitized = sanitizePhoneInput(event.target.value);
+                  if (sanitized !== event.target.value) {
+                    form.setValue("phone", sanitized, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }
+                },
               },
             }}
           />
@@ -419,7 +433,7 @@ export function RegistrationForm({
               </DialogTitle>
               <DialogDescription className="text-center text-sm leading-relaxed">
                 {hasWaGroupLink
-                  ? "Your seat is confirmed. Join our WhatsApp group to receive class schedules & materials."
+                  ? "Your seat is confirmed. Join our WhatsApp group to receive your e-certificate, schedules, and materials."
                   : "Your seat is confirmed. Share the invitation link with friends, and we'll invite you to the WhatsApp group 3 days before the program starts."}
               </DialogDescription>
             </DialogHeader>
@@ -428,7 +442,7 @@ export function RegistrationForm({
               {hasWaGroupLink ? (
                 <SuccessStepCard
                   title="Join WhatsApp Group"
-                  description="Join to receive class updates, schedules, and materials."
+                  description="Your e-certificate will be shared in this group after the program. Join now to receive it, along with class schedules and materials."
                   badge="Required"
                   emphasized
                 >
