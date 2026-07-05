@@ -7,7 +7,11 @@ import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
-import { DataTableSkeleton } from "@/components/molecules/data-table";
+import {
+  DataTableFilters,
+  DataTableSkeleton,
+} from "@/components/molecules/data-table";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 import type { Participant } from "@/services/participants.service";
 import type { ProgramSession } from "@/services/program-sessions.service";
@@ -47,6 +51,8 @@ export function AttendanceContent({
   const sessionCount = program?.session_count ?? 0;
   const showSkeleton = isLoading && sessions.length === 0;
   const [isSessionDatesOpen, setIsSessionDatesOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
 
   if (sessionCount === 0) {
     return (
@@ -148,23 +154,32 @@ export function AttendanceContent({
         )}
       </Card>
 
-      <div
-        className={
-          isFetching && !showSkeleton
-            ? "opacity-60 transition-opacity"
-            : undefined
-        }
-      >
-        {showSkeleton ? (
-          <DataTableSkeleton rows={5} columns={4} />
-        ) : (
-          <AttendanceGridTable
-            programId={programId}
-            participants={participants}
-            sessions={sessions}
-            attendance={attendance}
-          />
-        )}
+      <div className="space-y-3">
+        <DataTableFilters
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search name, email, or phone"
+        />
+
+        <div
+          className={
+            isFetching && !showSkeleton
+              ? "opacity-60 transition-opacity"
+              : undefined
+          }
+        >
+          {showSkeleton ? (
+            <DataTableSkeleton rows={5} columns={4} />
+          ) : (
+            <AttendanceGridTable
+              programId={programId}
+              participants={participants}
+              sessions={sessions}
+              attendance={attendance}
+              search={debouncedSearch}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

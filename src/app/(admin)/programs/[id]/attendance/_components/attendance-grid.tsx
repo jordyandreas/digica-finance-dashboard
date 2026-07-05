@@ -10,6 +10,7 @@ import type { AttendanceGrid } from "@/services/attendance.service";
 import { deleteAttendance, upsertAttendance } from "@/services/attendance.service";
 import { Typography } from "@/components/atoms/typography";
 import { formatDate } from "@/utils/date";
+import { participantMatchesSearch } from "@/utils/search";
 import { AttendanceCell } from "./attendance-cell";
 import { attendanceQueryKey } from "../_hooks/use-attendance";
 
@@ -18,6 +19,7 @@ interface AttendanceGridProps {
   participants: Participant[];
   sessions: ProgramSession[];
   attendance: AttendanceGrid;
+  search?: string;
 }
 
 function countPresentSessions(
@@ -51,15 +53,18 @@ export function AttendanceGridTable({
   participants,
   sessions,
   attendance,
+  search = "",
 }: AttendanceGridProps) {
-  const sortedParticipants = React.useMemo(
+  const visibleParticipants = React.useMemo(
     () =>
-      [...participants].sort((a, b) =>
-        (a.name ?? "").localeCompare(b.name ?? "", undefined, {
-          sensitivity: "base",
-        }),
-      ),
-    [participants],
+      [...participants]
+        .filter((participant) => participantMatchesSearch(participant, search))
+        .sort((a, b) =>
+          (a.name ?? "").localeCompare(b.name ?? "", undefined, {
+            sensitivity: "base",
+          }),
+        ),
+    [participants, search],
   );
 
   const queryClient = useQueryClient();
@@ -124,11 +129,21 @@ export function AttendanceGridTable({
     }
   };
 
-  if (sortedParticipants.length === 0) {
+  if (participants.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-8 text-center">
         <Typography variant="body2" className="text-muted-foreground">
           No participants yet. Add participants first to record attendance.
+        </Typography>
+      </div>
+    );
+  }
+
+  if (visibleParticipants.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center">
+        <Typography variant="body2" className="text-muted-foreground">
+          No participants match your search.
         </Typography>
       </div>
     );
@@ -145,7 +160,7 @@ export function AttendanceGridTable({
             {sessions.map((session) => {
               const sessionPresentCount = countPresentParticipants(
                 session.id,
-                sortedParticipants,
+                visibleParticipants,
                 localAttendance,
               );
 
@@ -161,7 +176,7 @@ export function AttendanceGridTable({
                       : "No date set"}
                   </div>
                   <div className="mt-1 text-xs font-medium text-green-700">
-                    {sessionPresentCount}/{sortedParticipants.length} present
+                    {sessionPresentCount}/{visibleParticipants.length} present
                   </div>
                 </th>
               );
@@ -169,7 +184,7 @@ export function AttendanceGridTable({
           </tr>
         </thead>
         <tbody>
-          {sortedParticipants.map((participant) => {
+          {visibleParticipants.map((participant) => {
             const presentCount = countPresentSessions(
               participant.id,
               sessions,
