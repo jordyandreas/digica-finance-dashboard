@@ -62,59 +62,13 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
         }
 
         setSanitizedSummaryHtml(DOMPurify.sanitize(summaryHtml));
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7435/ingest/5fd01bb4-894f-413f-b437-bb736c271def",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Debug-Session-Id": "7b4354",
-            },
-            body: JSON.stringify({
-              sessionId: "7b4354",
-              runId: "post-fix",
-              hypothesisId: "H4",
-              location: "registration-page-view.tsx:sanitize:client-success",
-              message: "Client-only DOMPurify sanitize succeeded",
-              data: { identifier, summaryLength: summaryHtml.length },
-              timestamp: Date.now(),
-            }),
-          },
-        ).catch(() => {});
-        // #endregion
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (cancelled) {
           return;
         }
 
         setSanitizedSummaryHtml("");
-        // #region agent log
-        fetch(
-          "http://127.0.0.1:7435/ingest/5fd01bb4-894f-413f-b437-bb736c271def",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Debug-Session-Id": "7b4354",
-            },
-            body: JSON.stringify({
-              sessionId: "7b4354",
-              runId: "post-fix",
-              hypothesisId: "H4",
-              location: "registration-page-view.tsx:sanitize:client-error",
-              message: "Client-only DOMPurify sanitize failed",
-              data: {
-                identifier,
-                errorMessage:
-                  error instanceof Error ? error.message : "unknown sanitize error",
-              },
-              timestamp: Date.now(),
-            }),
-          },
-        ).catch(() => {});
-        // #endregion
       });
 
     return () => {
