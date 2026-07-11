@@ -208,6 +208,7 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
 
           <RegistrationForm
             programId={identifier}
+            programType={data.program.type}
             registrationLink={data.program.registration_link}
             waGroupLink={data.program.wa_group_link}
             publicCode={data.program.public_code}

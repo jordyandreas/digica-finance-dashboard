@@ -25,11 +25,13 @@ import {
 import { cn } from "@/lib/utils";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import { resolvePublicAppOrigin } from "@/utils/program-public-link";
+import type { ProgramType } from "@/services/programs.service";
 
 export interface RegistrationPageData {
   program: {
     id: string;
     name: string;
+    type: ProgramType;
     summary_html: string | null;
     start_date: string | null;
     end_date: string | null;
@@ -52,6 +54,7 @@ type RegistrationFormState = {
 
 interface RegistrationFormProps {
   programId: string;
+  programType?: ProgramType | null;
   registrationLink?: string | null;
   waGroupLink?: string | null;
   publicCode?: string;
@@ -159,6 +162,7 @@ function SuccessStepCard({
 
 export function RegistrationForm({
   programId,
+  programType,
   registrationLink,
   waGroupLink,
   publicCode,
@@ -194,6 +198,25 @@ export function RegistrationForm({
   );
   const waGroupUrl = waGroupLink?.trim() ?? "";
   const hasWaGroupLink = Boolean(waGroupUrl);
+  const isBootcampProgram =
+    programType === "bootcamp" || programType === "mini_bootcamp";
+
+  const successDescription = isBootcampProgram ? (
+    <>
+      Your <strong className="font-semibold text-foreground">special promo</strong>{" "}
+      is confirmed. Our admin will contact you{" "}
+      <strong className="font-semibold text-foreground">ASAP</strong> with{" "}
+      <strong className="font-semibold text-foreground">payment details</strong> so
+      you can{" "}
+      <strong className="font-semibold text-foreground">secure it</strong>. After
+      payment, we&apos;ll share the details in the{" "}
+      <strong className="font-semibold text-foreground">WhatsApp message</strong>.
+    </>
+  ) : hasWaGroupLink ? (
+    "Your seat is confirmed. Join our WhatsApp group to receive your e-certificate, schedules, and materials."
+  ) : (
+    "Your seat is confirmed. Share the invitation link with friends, and we'll invite you to the WhatsApp group 3 days before the program starts."
+  );
 
   const handleSuccessModalChange = (open: boolean) => {
     setIsSuccessModalOpen(open);
@@ -432,9 +455,7 @@ export function RegistrationForm({
                 You&apos;re registered 🎉
               </DialogTitle>
               <DialogDescription className="text-center text-sm leading-relaxed">
-                {hasWaGroupLink
-                  ? "Your seat is confirmed. Join our WhatsApp group to receive your e-certificate, schedules, and materials."
-                  : "Your seat is confirmed. Share the invitation link with friends, and we'll invite you to the WhatsApp group 3 days before the program starts."}
+                {successDescription}
               </DialogDescription>
             </DialogHeader>
 
