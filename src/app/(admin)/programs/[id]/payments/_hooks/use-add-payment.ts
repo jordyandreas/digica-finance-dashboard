@@ -23,8 +23,11 @@ import type { PaymentFormState } from "../_components/payment-form";
 import { formatDateTimeLocalString } from "@/lib/date-utils";
 import { paymentsQueryKey, paymentsSummaryQueryKey, usePayments } from "./use-payments";
 
-const defaultFormState = (programId: string): PaymentFormState => ({
-  participant_id: "",
+const defaultFormState = (
+  programId: string,
+  participantId = "",
+): PaymentFormState => ({
+  participant_id: participantId,
   amount: undefined,
   payment_type: "full",
   tenor: "",
@@ -52,9 +55,11 @@ export function useAddPayment({
   const [loading, setLoading] = React.useState(false);
   const resolvedProgramId =
     programId ?? addPaymentModal.props?.programId ?? "";
+  const resolvedParticipantId = addPaymentModal.props?.participantId ?? "";
+  const lockParticipant = Boolean(resolvedParticipantId);
   const resolvedOnSuccess = onSuccess ?? addPaymentModal.props?.onSuccess;
   const form = useForm<PaymentFormState>({
-    defaultValues: defaultFormState(resolvedProgramId),
+    defaultValues: defaultFormState(resolvedProgramId, resolvedParticipantId),
   });
   const participantId = form.watch("participant_id");
   const amount = form.watch("amount");
@@ -70,16 +75,33 @@ export function useAddPayment({
       .map((payment) => payment.participant_id)
       .filter((id): id is string => Boolean(id)),
   );
-  const filteredParticipants = participants.filter(
+  const unpaidParticipants = participants.filter(
     (participant) => !paidParticipantIds.has(participant.id),
   );
+  const lockedParticipant = resolvedParticipantId
+    ? participants.find((participant) => participant.id === resolvedParticipantId)
+    : undefined;
+  const filteredParticipants =
+    lockedParticipant &&
+    !unpaidParticipants.some(
+      (participant) => participant.id === lockedParticipant.id,
+    )
+      ? [lockedParticipant, ...unpaidParticipants]
+      : unpaidParticipants;
 
   React.useEffect(() => {
     if (addPaymentModal.isOpen) {
-      form.reset(defaultFormState(resolvedProgramId));
+      form.reset(
+        defaultFormState(resolvedProgramId, resolvedParticipantId),
+      );
       form.clearErrors();
     }
-  }, [form, addPaymentModal.isOpen, resolvedProgramId]);
+  }, [
+    form,
+    addPaymentModal.isOpen,
+    resolvedProgramId,
+    resolvedParticipantId,
+  ]);
 
   const invalidatePayments = async () => {
     if (!resolvedProgramId) {
@@ -117,6 +139,14 @@ export function useAddPayment({
   const handleAddClick = () => {
     addPaymentModal.open({
       programId: resolvedProgramId,
+      onSuccess: handleSuccess,
+    });
+  };
+
+  const handleAddForParticipant = (participantId: string) => {
+    addPaymentModal.open({
+      programId: resolvedProgramId,
+      participantId,
       onSuccess: handleSuccess,
     });
   };
@@ -290,11 +320,13 @@ export function useAddPayment({
     handleSubmit,
     applyDisabled,
     handleAddClick,
+    handleAddForParticipant,
     handleEdit,
     handleDelete,
     participants,
     filteredParticipants,
     isParticipantsLoading,
+    lockParticipant,
     deleteConfirmation: {
       isOpen: deleteConfirmation.isOpen,
       setOpen: deleteConfirmation.setOpen,

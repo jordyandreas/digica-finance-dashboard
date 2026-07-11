@@ -48,8 +48,13 @@ export function ParticipantsContent({
   isPending = false,
   isFetching = false,
 }: ParticipantsContentProps) {
-  const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
-    useAddParticipant({ programId });
+  const {
+    handleAddClick,
+    handleAddPayment,
+    handleEdit,
+    handleDelete,
+    deleteConfirmation,
+  } = useAddParticipant({ programId });
   const showSkeleton = isPending && participants.length === 0;
 
   return (
@@ -98,6 +103,7 @@ export function ParticipantsContent({
               <>
                 <ParticipantsTable
                   data={participants}
+                  onAddPayment={handleAddPayment}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

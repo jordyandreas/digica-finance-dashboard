@@ -17,7 +17,13 @@ import {
 } from "../_components/participant-form";
 import type { AddParticipantModalProps } from "../_modals/add-participant";
 import type { EditParticipantModalProps } from "../_modals/edit-participant";
+import type { AddPaymentModalProps } from "../../payments/_modals/add-payment";
 import { participantsQueryKey } from "./use-participants";
+import {
+  paymentsQueryKey,
+  paymentsSummaryQueryKey,
+} from "../../payments/_hooks/use-payments";
+import { dashboardProgramSummaryQueryKey } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
 import { getLocalDateInputValue } from "@/utils/date";
 import { normalizeParticipantPhoneForSubmit } from "@/utils/phone";
 
@@ -50,6 +56,7 @@ export function useAddParticipant({
   const editParticipantModal = useModal<EditParticipantModalProps>(
     "editParticipantModal",
   );
+  const addPaymentModal = useModal<AddPaymentModalProps>("addPaymentModal");
   const [loading, setLoading] = React.useState(false);
   const resolvedProgramId =
     programId ?? addParticipantModal.props?.programId ?? "";
@@ -79,6 +86,22 @@ export function useAddParticipant({
     });
   };
 
+  const handlePaymentSuccess = async () => {
+    if (!resolvedProgramId) {
+      return;
+    }
+    await queryClient.invalidateQueries({
+      queryKey: paymentsQueryKey(resolvedProgramId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: paymentsSummaryQueryKey(resolvedProgramId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: dashboardProgramSummaryQueryKey(resolvedProgramId),
+    });
+    await invalidateParticipants();
+  };
+
   const handleSuccess = async () => {
     if (resolvedOnSuccess) {
       resolvedOnSuccess();
@@ -91,6 +114,14 @@ export function useAddParticipant({
     addParticipantModal.open({
       programId: resolvedProgramId,
       onSuccess: handleSuccess,
+    });
+  };
+
+  const handleAddPayment = (participant: Participant) => {
+    addPaymentModal.open({
+      programId: resolvedProgramId,
+      participantId: participant.id,
+      onSuccess: handlePaymentSuccess,
     });
   };
 
@@ -222,6 +253,7 @@ export function useAddParticipant({
     handleSubmit,
     applyDisabled,
     handleAddClick,
+    handleAddPayment,
     handleEdit,
     handleDelete,
     deleteConfirmation: {

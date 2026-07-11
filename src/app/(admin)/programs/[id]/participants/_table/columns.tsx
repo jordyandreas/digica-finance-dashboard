@@ -3,13 +3,14 @@ import { formatDate } from "@/utils/date";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
-import { Copy, Pencil, Trash2 } from "lucide-react";
+import { Banknote, Copy, Pencil, Trash2 } from "lucide-react";
 import { emptyFallback } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
 import { toast } from "sonner";
 
 interface ParticipantsColumnsProps {
+  onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
 }
@@ -23,7 +24,13 @@ async function copyEmail(email: string) {
   }
 }
 
+function canAddPayment(participant: Participant): boolean {
+  const status = participant.payment_status;
+  return status !== "paid" && status !== "on_progress";
+}
+
 export function participantsColumns({
+  onAddPayment,
   onEdit,
   onDelete,
 }: ParticipantsColumnsProps): ColumnDef<Participant>[] {
@@ -152,8 +159,24 @@ export function participantsColumns({
       id: "actions",
       header: "Actions",
       enableSorting: false,
+      // 3 icon buttons (payment + edit + delete); default sticky actions width is 88px
+      size: 120,
+      minSize: 120,
+      maxSize: 120,
       cell: (participant) => (
         <div className="flex items-center gap-1">
+          {onAddPayment && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onAddPayment(participant)}
+              disabled={!canAddPayment(participant)}
+              className="h-8 w-8 text-primary hover:text-primary disabled:opacity-40"
+            >
+              <Banknote className="h-4 w-4" />
+              <span className="sr-only">Add payment</span>
+            </Button>
+          )}
           {onEdit && (
             <Button
               variant="ghost"

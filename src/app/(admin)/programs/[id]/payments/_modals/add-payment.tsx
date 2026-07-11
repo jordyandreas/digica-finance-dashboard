@@ -6,6 +6,7 @@ import { useAddPayment } from "../_hooks/use-add-payment";
 
 export interface AddPaymentModalProps {
   programId?: string;
+  participantId?: string;
   onSuccess?: () => void;
 }
 
@@ -22,6 +23,7 @@ export function AddPaymentModal({
     participants,
     filteredParticipants,
     isParticipantsLoading,
+    lockParticipant,
   } = useAddPayment({ programId, onSuccess });
 
   return (
@@ -44,6 +46,7 @@ export function AddPaymentModal({
         participants={participants}
         filteredParticipants={filteredParticipants}
         isParticipantsLoading={isParticipantsLoading}
+        disableParticipant={lockParticipant}
       />
     </Modal>
   );

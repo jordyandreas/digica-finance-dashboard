@@ -6,16 +6,18 @@ import { participantsColumns } from "./columns";
 
 interface ParticipantsTableProps {
   data: Participant[];
+  onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
 }
 
 export function ParticipantsTable({
   data,
+  onAddPayment,
   onEdit,
   onDelete,
 }: ParticipantsTableProps) {
-  const columns = participantsColumns({ onEdit, onDelete });
+  const columns = participantsColumns({ onAddPayment, onEdit, onDelete });
 
   return (
     <DataTable
