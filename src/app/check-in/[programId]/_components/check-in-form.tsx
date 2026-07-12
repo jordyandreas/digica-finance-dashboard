@@ -79,7 +79,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
 
   const isWorkshop = data.program.type === "workshop";
   const promoBannerSrc = "/banner/banner-fw-sql-3.png";
-  const promoBannerAlt = "Promo secure seat Batch 4";
+  const promoBannerAlt = "Promo secure seat Batch 3";
 
   const form = useForm<CheckInFormState>({
     defaultValues: {
@@ -239,8 +239,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           <CalendarX className="h-6 w-6" />
         </div>
         <p className="text-sm text-muted-foreground">
-          No class scheduled for check-in today. Contact your Administrator if you think
-          this is a mistake.
+          No class scheduled for check-in today. Contact your Administrator if
+          you think this is a mistake.
         </p>
       </div>
     );
@@ -304,7 +304,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
             <SelectController
               form={form}
               name="secure_seat_interest"
-              label="Banyak peserta workshop sudah mulai secure seat Batch 4. Jangan sampai ketinggalan!"
+              label="Banyak peserta workshop sudah mulai secure seat Batch 3. Jangan sampai ketinggalan!"
               placeholder="Pilih jawaban"
               options={SECURE_SEAT_INTEREST_OPTIONS}
               componentProps={{
@@ -389,7 +389,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                             Slot terbatas!
                           </strong>{" "}
                           Karena kamu mau secure promo sekarang, amankan seat
-                          Batch 4 lewat link di bawah (sama seperti di banner).
+                          Batch 3 lewat link di bawah (sama seperti di banner).
                         </p>
                         <div className="flex items-center gap-2">
                           <a
@@ -449,9 +449,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                       <br />
                       Sampai jumpa di program Digica Academy berikutnya 🚀
                     </p>
-                    <p className="font-medium text-foreground">
-                      #MakeITHappen
-                    </p>
+                    <p className="font-medium text-foreground">#MakeITHappen</p>
                   </div>
                 </DialogDescription>
               </>
