@@ -27,6 +27,21 @@ import {
 } from "@/utils/check-in-participants";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import { resolvePublicAppOrigin } from "@/utils/program-public-link";
+import { cn } from "@/lib/utils";
+
+const INITIAL_SLOTS = 15;
+const MIN_SLOTS = 3;
+const TICK_MS = 25_000;
+
+function getSlotNumberClass(slots: number): string {
+  if (slots <= 6) {
+    return "text-destructive";
+  }
+  if (slots <= 10) {
+    return "text-amber-600";
+  }
+  return "text-brand-deep";
+}
 
 export interface CheckInParticipant {
   id: string;
@@ -76,6 +91,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   const [isBannerPreviewOpen, setIsBannerPreviewOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [origin, setOrigin] = React.useState("");
+  const [remainingSlots, setRemainingSlots] = React.useState(INITIAL_SLOTS);
+  const [slotTickPulse, setSlotTickPulse] = React.useState(false);
 
   const isWorkshop = data.program.type === "workshop";
   const promoBannerSrc = "/banner/banner-fw-sql-3.png";
@@ -97,6 +114,37 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   React.useEffect(() => {
     setOrigin(resolvePublicAppOrigin(window.location.origin));
   }, []);
+
+  React.useEffect(() => {
+    if (!isWorkshop) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRemainingSlots((current) => {
+        if (current <= MIN_SLOTS) {
+          window.clearInterval(intervalId);
+          return current;
+        }
+        return current - 1;
+      });
+    }, TICK_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [isWorkshop]);
+
+  React.useEffect(() => {
+    if (!isWorkshop || remainingSlots >= INITIAL_SLOTS) {
+      return;
+    }
+
+    setSlotTickPulse(true);
+    const timeoutId = window.setTimeout(() => {
+      setSlotTickPulse(false);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isWorkshop, remainingSlots]);
 
   React.useEffect(() => {
     if (!selectedParticipantId) {
@@ -318,6 +366,19 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                 },
               }}
             />
+            <p className="text-sm font-medium text-muted-foreground">
+              tersisa{" "}
+              <span
+                className={cn(
+                  "inline-block font-bold transition-all duration-300",
+                  getSlotNumberClass(remainingSlots),
+                  slotTickPulse && "scale-110",
+                )}
+              >
+                {remainingSlots}
+              </span>{" "}
+              slot
+            </p>
           </div>
         ) : null}
 
