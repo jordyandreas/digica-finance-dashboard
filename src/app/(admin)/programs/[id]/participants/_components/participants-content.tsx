@@ -10,6 +10,7 @@ import {
 } from "@/components/molecules/data-table";
 import { PAYMENT_STATUS_FILTER_OPTIONS } from "@/constants/payment-status";
 import { type Participant } from "@/services/participants.service";
+import type { ProgramType } from "@/services/programs.service";
 import { type PaginationMeta } from "@/types/pagination";
 import { Plus } from "lucide-react";
 import { useAddParticipant } from "../_hooks/use-add-participant";
@@ -19,6 +20,7 @@ interface ParticipantsContentProps {
   participants: Participant[];
   pagination?: PaginationMeta;
   programId: string;
+  programType?: ProgramType | null;
   page: number;
   limit: number;
   search: string;
@@ -36,6 +38,7 @@ export function ParticipantsContent({
   participants,
   pagination,
   programId,
+  programType,
   page,
   limit,
   search,
@@ -56,6 +59,7 @@ export function ParticipantsContent({
     deleteConfirmation,
   } = useAddParticipant({ programId });
   const showSkeleton = isPending && participants.length === 0;
+  const skeletonColumns = programType === "workshop" ? 8 : 7;
 
   return (
     <>
@@ -98,11 +102,12 @@ export function ParticipantsContent({
                 </p>
               </div>
             ) : showSkeleton ? (
-              <DataTableSkeleton rows={limit} columns={7} />
+              <DataTableSkeleton rows={limit} columns={skeletonColumns} />
             ) : (
               <>
                 <ParticipantsTable
                   data={participants}
+                  programType={programType}
                   onAddPayment={handleAddPayment}
                   onEdit={handleEdit}
                   onDelete={handleDelete}

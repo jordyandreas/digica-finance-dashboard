@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { getTodayDateString } from "@/lib/date-utils";
+import { isSecureSeatInterest } from "@/constants/secure-seat-interest";
+import type { ProgramType } from "@/services/programs.service";
 import { getPublicCheckInSessions } from "@/utils/check-in-sessions";
 import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
 
@@ -13,7 +15,9 @@ async function loadProgramContext(programId: string) {
 
   const { data: program, error: programError } = await supabase
     .from("programs")
-    .select("id, name, session_count")
+    .select(
+      "id, name, type, session_count, registration_link, public_code, public_slug",
+    )
     .eq("id", programId)
     .single();
 
@@ -42,7 +46,15 @@ async function loadProgramContext(programId: string) {
   }
 
   return {
-    program,
+    program: {
+      id: program.id as string,
+      name: program.name as string,
+      type: program.type as ProgramType,
+      session_count: program.session_count as number,
+      registration_link: (program.registration_link as string | null) ?? null,
+      public_code: (program.public_code as string | null) ?? null,
+      public_slug: (program.public_slug as string | null) ?? null,
+    },
     participants: participants ?? [],
     sessions: sessions ?? [],
   };
@@ -81,6 +93,10 @@ export async function GET(_request: Request, { params }: CheckInRouteParams) {
       program: {
         id: context.program.id,
         name: context.program.name,
+        type: context.program.type,
+        registration_link: context.program.registration_link,
+        public_code: context.program.public_code,
+        public_slug: context.program.public_slug,
       },
       participants: context.participants.map((participant) => ({
         id: participant.id,
@@ -119,10 +135,12 @@ export async function POST(request: Request, { params }: CheckInRouteParams) {
     const body = (await request.json()) as {
       participant_id?: string;
       session_id?: string;
+      secure_seat_interest?: string;
     };
 
     const participantId = body.participant_id?.trim();
     const sessionId = body.session_id?.trim();
+    const secureSeatInterest = body.secure_seat_interest?.trim();
 
     if (!participantId || !sessionId) {
       return NextResponse.json(
@@ -135,6 +153,20 @@ export async function POST(request: Request, { params }: CheckInRouteParams) {
 
     if (!context) {
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
+    }
+
+    const isWorkshop = context.program.type === "workshop";
+
+    if (isWorkshop) {
+      if (!isSecureSeatInterest(secureSeatInterest)) {
+        return NextResponse.json(
+          {
+            error:
+              "secure_seat_interest is required and must be yes, undecided, or no",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     const participant = context.participants.find(
@@ -172,6 +204,18 @@ export async function POST(request: Request, { params }: CheckInRouteParams) {
 
     if (error) {
       throw error;
+    }
+
+    if (isWorkshop && isSecureSeatInterest(secureSeatInterest)) {
+      const { error: interestError } = await supabase
+        .from("participants")
+        .update({ secure_seat_interest: secureSeatInterest })
+        .eq("id", participantId)
+        .eq("program_id", resolvedProgramId);
+
+      if (interestError) {
+        throw interestError;
+      }
     }
 
     return NextResponse.json({

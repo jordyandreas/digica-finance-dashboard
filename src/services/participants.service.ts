@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
+import type { SecureSeatInterest } from "@/constants/secure-seat-interest";
 import {
   buildPaginationMeta,
   type ListParams,
@@ -21,6 +22,7 @@ export interface Participant {
   payment_status: string | null;
   joined_date: string | null;
   notes: string | null;
+  secure_seat_interest: SecureSeatInterest | null;
   created_at: string | null;
 }
 
@@ -36,6 +38,7 @@ export interface CreateParticipantInput {
   payment_status?: string;
   joined_date?: string;
   notes?: string;
+  secure_seat_interest?: SecureSeatInterest | null;
 }
 
 export interface UpdateParticipantInput {
@@ -50,6 +53,7 @@ export interface UpdateParticipantInput {
   payment_status?: string;
   joined_date?: string;
   notes?: string;
+  secure_seat_interest?: SecureSeatInterest | null;
 }
 
 export async function getParticipants(programId?: string): Promise<{

@@ -7,6 +7,7 @@ import { ParticipantsContent } from "./_components/participants-content";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useProgram } from "../_hooks/useProgram";
 
 export default function ParticipantsPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +17,7 @@ export default function ParticipantsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(PAYMENT_STATUS_ALL);
   const debouncedSearch = useDebouncedValue(search);
+  const { data: program } = useProgram(programId);
 
   useEffect(() => {
     setPage(1);
@@ -38,6 +40,7 @@ export default function ParticipantsPage() {
       participants={participantsResult?.data ?? []}
       pagination={participantsResult?.pagination}
       programId={programId}
+      programType={program?.type}
       page={page}
       limit={limit}
       search={search}

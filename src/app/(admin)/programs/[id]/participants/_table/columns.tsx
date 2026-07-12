@@ -8,8 +8,11 @@ import { emptyFallback } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
 import { toast } from "sonner";
+import { formatSecureSeatInterest } from "@/constants/secure-seat-interest";
+import type { ProgramType } from "@/services/programs.service";
 
 interface ParticipantsColumnsProps {
+  programType?: ProgramType | null;
   onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
@@ -30,11 +33,14 @@ function canAddPayment(participant: Participant): boolean {
 }
 
 export function participantsColumns({
+  programType,
   onAddPayment,
   onEdit,
   onDelete,
 }: ParticipantsColumnsProps): ColumnDef<Participant>[] {
-  return [
+  const isWorkshop = programType === "workshop";
+
+  const columns: ColumnDef<Participant>[] = [
     {
       accessorKey: "name",
       header: "Participant",
@@ -129,6 +135,24 @@ export function participantsColumns({
           <Typography variant="body3">{emptyFallback("")}</Typography>
         ),
     },
+  ];
+
+  if (isWorkshop) {
+    columns.push({
+      accessorKey: "secure_seat_interest",
+      header: "Secure Seat",
+      enableSorting: true,
+      minSize: 140,
+      maxSize: 260,
+      cell: (participant) => (
+        <Typography variant="body3" className="normal-case">
+          {formatSecureSeatInterest(participant.secure_seat_interest)}
+        </Typography>
+      ),
+    });
+  }
+
+  columns.push(
     {
       accessorKey: "notes",
       header: "Notes",
@@ -202,5 +226,7 @@ export function participantsColumns({
         </div>
       ),
     },
-  ];
+  );
+
+  return columns;
 }
