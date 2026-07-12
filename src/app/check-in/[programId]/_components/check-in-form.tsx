@@ -313,6 +313,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                   id: "secure_seat_interest",
                 },
                 labelTypography: {
+                  variant: "label",
                   className: "text-left leading-snug",
                 },
               }}
