@@ -4,10 +4,11 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   getParticipants,
   getParticipantsPaginated,
+  type ParticipantsListParams,
 } from "@/services/participants.service";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
-import type { ListParams } from "@/types/pagination";
+import { SECURE_SEAT_INTEREST_ALL } from "@/constants/secure-seat-interest";
 
 export const participantsQueryKey = (programId: string) =>
   ["participants", programId] as const;
@@ -18,8 +19,18 @@ export const participantsPaginatedQueryKey = (
   limit: number,
   search = "",
   status = PAYMENT_STATUS_ALL,
+  secureSeatInterest = SECURE_SEAT_INTEREST_ALL,
 ) =>
-  ["participants", programId, "paginated", page, limit, search, status] as const;
+  [
+    "participants",
+    programId,
+    "paginated",
+    page,
+    limit,
+    search,
+    status,
+    secureSeatInterest,
+  ] as const;
 
 export function useParticipants(programId: string) {
   return useQuery({
@@ -42,7 +53,8 @@ export function useParticipantsPaginated(
     limit = DEFAULT_PAGE_SIZE,
     search = "",
     status = PAYMENT_STATUS_ALL,
-  }: ListParams = {},
+    secureSeatInterest = SECURE_SEAT_INTEREST_ALL,
+  }: ParticipantsListParams = {},
 ) {
   return useQuery({
     queryKey: participantsPaginatedQueryKey(
@@ -51,6 +63,7 @@ export function useParticipantsPaginated(
       limit,
       search,
       status,
+      secureSeatInterest,
     ),
     queryFn: async () => {
       const { data, error } = await getParticipantsPaginated(programId, {
@@ -58,6 +71,7 @@ export function useParticipantsPaginated(
         limit,
         search,
         status,
+        secureSeatInterest,
       });
       if (error) {
         throw error;

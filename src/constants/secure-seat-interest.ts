@@ -7,6 +7,8 @@ export const SECURE_SEAT_INTEREST_VALUES = [
 export type SecureSeatInterest =
   (typeof SECURE_SEAT_INTEREST_VALUES)[number];
 
+export const SECURE_SEAT_INTEREST_ALL = "all";
+
 export const SECURE_SEAT_INTEREST_LABELS: Record<SecureSeatInterest, string> =
   {
     yes: "Ya, aku mau secure promo sekarang",
@@ -20,6 +22,13 @@ export const SECURE_SEAT_INTEREST_OPTIONS = SECURE_SEAT_INTEREST_VALUES.map(
     label: SECURE_SEAT_INTEREST_LABELS[value],
   }),
 );
+
+export const SECURE_SEAT_INTEREST_FILTER_OPTIONS = [
+  { label: "All secure seat", value: SECURE_SEAT_INTEREST_ALL },
+  { label: "Yes", value: "yes" },
+  { label: "Undecided", value: "undecided" },
+  { label: "No", value: "no" },
+] as const;
 
 export function isSecureSeatInterest(
   value: string | null | undefined,

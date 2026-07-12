@@ -25,6 +25,11 @@ export interface DataTableFiltersProps {
   onStatusChange?: (value: string) => void;
   statusOptions?: DataTableFilterOption[];
   statusPlaceholder?: string;
+  secondaryFilter?: string;
+  onSecondaryFilterChange?: (value: string) => void;
+  secondaryFilterOptions?: DataTableFilterOption[];
+  secondaryFilterPlaceholder?: string;
+  secondaryFilterAllValue?: string;
   className?: string;
 }
 
@@ -39,11 +44,24 @@ export function DataTableFilters({
   onStatusChange,
   statusOptions,
   statusPlaceholder = "Payment status",
+  secondaryFilter,
+  onSecondaryFilterChange,
+  secondaryFilterOptions,
+  secondaryFilterPlaceholder = "Filter",
+  secondaryFilterAllValue = "all",
   className,
 }: DataTableFiltersProps) {
   const selectedStatusLabel = statusOptions?.find(
     (option) => option.value === status,
   )?.label;
+  const selectedSecondaryLabel = secondaryFilterOptions?.find(
+    (option) => option.value === secondaryFilter,
+  )?.label;
+
+  const showStatusFilter = Boolean(statusOptions && onStatusChange);
+  const showSecondaryFilter = Boolean(
+    secondaryFilterOptions && onSecondaryFilterChange,
+  );
 
   return (
     <div
@@ -63,26 +81,56 @@ export function DataTableFilters({
         />
       </div>
 
-      {statusOptions && onStatusChange ? (
-        <div className="w-full shrink-0 sm:w-56">
-          <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger>
-              {status === PAYMENT_STATUS_ALL ? (
-                <span className="text-muted-foreground">
-                  {statusPlaceholder}
-                </span>
-              ) : (
-                <SelectValue>{selectedStatusLabel}</SelectValue>
-              )}
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {showStatusFilter || showSecondaryFilter ? (
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+          {showStatusFilter ? (
+            <div className="w-full shrink-0 sm:w-56">
+              <Select value={status} onValueChange={onStatusChange}>
+                <SelectTrigger>
+                  {status === PAYMENT_STATUS_ALL ? (
+                    <span className="text-muted-foreground">
+                      {statusPlaceholder}
+                    </span>
+                  ) : (
+                    <SelectValue>{selectedStatusLabel}</SelectValue>
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {showSecondaryFilter ? (
+            <div className="w-full shrink-0 sm:w-56">
+              <Select
+                value={secondaryFilter}
+                onValueChange={onSecondaryFilterChange}
+              >
+                <SelectTrigger>
+                  {secondaryFilter === secondaryFilterAllValue ? (
+                    <span className="text-muted-foreground">
+                      {secondaryFilterPlaceholder}
+                    </span>
+                  ) : (
+                    <SelectValue>{selectedSecondaryLabel}</SelectValue>
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {secondaryFilterOptions?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

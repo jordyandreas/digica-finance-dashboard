@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
-import type { SecureSeatInterest } from "@/constants/secure-seat-interest";
+import {
+  SECURE_SEAT_INTEREST_ALL,
+  type SecureSeatInterest,
+} from "@/constants/secure-seat-interest";
 import {
   buildPaginationMeta,
   type ListParams,
@@ -56,6 +59,10 @@ export interface UpdateParticipantInput {
   secure_seat_interest?: SecureSeatInterest | null;
 }
 
+export type ParticipantsListParams = ListParams & {
+  secureSeatInterest?: string;
+};
+
 export async function getParticipants(programId?: string): Promise<{
   data: Participant[] | null;
   error: PostgrestError | null;
@@ -76,7 +83,13 @@ export async function getParticipants(programId?: string): Promise<{
 
 export async function getParticipantsPaginated(
   programId: string,
-  { page = 1, limit = 10, search, status }: ListParams = {},
+  {
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    secureSeatInterest,
+  }: ParticipantsListParams = {},
 ): Promise<{
   data: PaginatedResponse<Participant> | null;
   error: PostgrestError | null;
@@ -98,6 +111,13 @@ export async function getParticipantsPaginated(
 
   if (status && status !== PAYMENT_STATUS_ALL) {
     query = query.eq("payment_status", status);
+  }
+
+  if (
+    secureSeatInterest &&
+    secureSeatInterest !== SECURE_SEAT_INTEREST_ALL
+  ) {
+    query = query.eq("secure_seat_interest", secureSeatInterest);
   }
 
   const { data, error, count } = await query

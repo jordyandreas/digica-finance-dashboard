@@ -9,6 +9,10 @@ import {
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
 import { PAYMENT_STATUS_FILTER_OPTIONS } from "@/constants/payment-status";
+import {
+  SECURE_SEAT_INTEREST_ALL,
+  SECURE_SEAT_INTEREST_FILTER_OPTIONS,
+} from "@/constants/secure-seat-interest";
 import { type Participant } from "@/services/participants.service";
 import type { ProgramType } from "@/services/programs.service";
 import { type PaginationMeta } from "@/types/pagination";
@@ -25,8 +29,10 @@ interface ParticipantsContentProps {
   limit: number;
   search: string;
   status: string;
+  secureSeatInterest: string;
   onSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
+  onSecureSeatInterestChange: (value: string) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   error?: Error | null;
@@ -43,8 +49,10 @@ export function ParticipantsContent({
   limit,
   search,
   status,
+  secureSeatInterest,
   onSearchChange,
   onStatusChange,
+  onSecureSeatInterestChange,
   onPageChange,
   onLimitChange,
   error,
@@ -59,7 +67,8 @@ export function ParticipantsContent({
     deleteConfirmation,
   } = useAddParticipant({ programId });
   const showSkeleton = isPending && participants.length === 0;
-  const skeletonColumns = programType === "workshop" ? 8 : 7;
+  const isWorkshop = programType === "workshop";
+  const skeletonColumns = isWorkshop ? 8 : 7;
 
   return (
     <>
@@ -86,6 +95,17 @@ export function ParticipantsContent({
             onStatusChange={onStatusChange}
             statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
             statusPlaceholder="Payment status"
+            {...(isWorkshop
+              ? {
+                  secondaryFilter: secureSeatInterest,
+                  onSecondaryFilterChange: onSecureSeatInterestChange,
+                  secondaryFilterOptions: [
+                    ...SECURE_SEAT_INTEREST_FILTER_OPTIONS,
+                  ],
+                  secondaryFilterPlaceholder: "Secure seat",
+                  secondaryFilterAllValue: SECURE_SEAT_INTEREST_ALL,
+                }
+              : {})}
           />
           <Card
             className={
