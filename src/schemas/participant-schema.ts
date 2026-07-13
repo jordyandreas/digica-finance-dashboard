@@ -37,4 +37,5 @@ export const participantSchema = z.object({
   organization: z.string().trim().optional(),
   joined_date: z.string().trim().min(1, "Joined date is required"),
   notes: z.string().trim().optional(),
+  reference_name: z.string().trim().optional(),
 });

@@ -13,6 +13,7 @@ import type { ProgramType } from "@/services/programs.service";
 
 interface ParticipantsColumnsProps {
   programType?: ProgramType | null;
+  participantNamesById?: Record<string, string>;
   onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
@@ -34,6 +35,7 @@ function canAddPayment(participant: Participant): boolean {
 
 export function participantsColumns({
   programType,
+  participantNamesById = {},
   onAddPayment,
   onEdit,
   onDelete,
@@ -153,6 +155,25 @@ export function participantsColumns({
   }
 
   columns.push(
+    {
+      id: "referral",
+      header: "Referral",
+      enableSorting: false,
+      minSize: 120,
+      maxSize: 200,
+      cell: (participant) => {
+        const referralId = participant.reference_name;
+        const referralName =
+          referralId && referralId !== "none"
+            ? participantNamesById[referralId] || referralId
+            : "No referral";
+        return (
+          <Typography variant="body3" className="capitalize">
+            {emptyFallback(referralName)}
+          </Typography>
+        );
+      },
+    },
     {
       accessorKey: "notes",
       header: "Notes",

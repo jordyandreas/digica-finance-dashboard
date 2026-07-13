@@ -38,6 +38,7 @@ export function AddParticipantModal({
     >
       <ParticipantFormFields
         form={form}
+        programId={programId ?? ""}
       />
     </Modal>
   );

@@ -41,6 +41,8 @@ export function EditParticipantModal({
     >
       <ParticipantFormFields
         form={form}
+        programId={programId ?? ""}
+        excludeParticipantId={participant?.id}
       />
     </Modal>
   );

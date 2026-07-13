@@ -29,6 +29,7 @@ const buildFormState = (
     ? participant.joined_date.split("T")[0]
     : "",
   notes: participant?.notes || "",
+  reference_name: participant?.reference_name || "none",
   program_id: participant?.program_id || programId,
 });
 
@@ -67,6 +68,7 @@ export function useEditParticipantModal({
         organization: values.organization,
         joined_date: values.joined_date,
         notes: values.notes,
+        reference_name: values.reference_name,
       });
 
       if (!validation.success) {
@@ -108,6 +110,10 @@ export function useEditParticipantModal({
           // payment_status: values.payment_status || undefined,
           joined_date: values.joined_date,
           notes: values.notes?.trim() || undefined,
+          reference_name:
+            values.reference_name && values.reference_name !== "none"
+              ? values.reference_name
+              : null,
           program_id: values.program_id || resolvedProgramId,
         };
 

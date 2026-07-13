@@ -25,6 +25,7 @@ export interface Participant {
   payment_status: string | null;
   joined_date: string | null;
   notes: string | null;
+  reference_name: string | null;
   secure_seat_interest: SecureSeatInterest | null;
   created_at: string | null;
 }
@@ -41,6 +42,7 @@ export interface CreateParticipantInput {
   payment_status?: string;
   joined_date?: string;
   notes?: string;
+  reference_name?: string | null;
   secure_seat_interest?: SecureSeatInterest | null;
 }
 
@@ -56,6 +58,7 @@ export interface UpdateParticipantInput {
   payment_status?: string;
   joined_date?: string;
   notes?: string;
+  reference_name?: string | null;
   secure_seat_interest?: SecureSeatInterest | null;
 }
 

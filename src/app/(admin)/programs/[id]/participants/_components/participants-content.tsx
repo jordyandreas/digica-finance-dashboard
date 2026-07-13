@@ -18,6 +18,7 @@ import type { ProgramType } from "@/services/programs.service";
 import { type PaginationMeta } from "@/types/pagination";
 import { Plus } from "lucide-react";
 import { useAddParticipant } from "../_hooks/use-add-participant";
+import { useParticipants } from "../_hooks/use-participants";
 import { ParticipantsTable } from "../_table";
 
 interface ParticipantsContentProps {
@@ -66,9 +67,16 @@ export function ParticipantsContent({
     handleDelete,
     deleteConfirmation,
   } = useAddParticipant({ programId });
+  const { data: allParticipants } = useParticipants(programId);
+  const participantNamesById = Object.fromEntries(
+    (allParticipants ?? []).map((participant) => [
+      participant.id,
+      participant.name || "Unnamed participant",
+    ]),
+  );
   const showSkeleton = isPending && participants.length === 0;
   const isWorkshop = programType === "workshop";
-  const skeletonColumns = isWorkshop ? 8 : 7;
+  const skeletonColumns = isWorkshop ? 9 : 8;
 
   return (
     <>
@@ -128,6 +136,7 @@ export function ParticipantsContent({
                 <ParticipantsTable
                   data={participants}
                   programType={programType}
+                  participantNamesById={participantNamesById}
                   onAddPayment={handleAddPayment}
                   onEdit={handleEdit}
                   onDelete={handleDelete}

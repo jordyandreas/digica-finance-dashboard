@@ -11,6 +11,7 @@ import {
   occupationOptions,
   participantSchema,
 } from "@/schemas/participant-schema";
+import { useParticipants } from "../_hooks/use-participants";
 
 export { participantSchema };
 
@@ -24,14 +25,36 @@ export type ParticipantFormState = {
   payment_status: string;
   joined_date: string;
   notes: string;
+  reference_name: string;
   program_id: string;
 };
 
 interface ParticipantFormFieldsProps {
   form: UseFormReturn<ParticipantFormState>;
+  programId?: string;
+  excludeParticipantId?: string;
 }
 
-export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
+export function ParticipantFormFields({
+  form,
+  programId = "",
+  excludeParticipantId,
+}: ParticipantFormFieldsProps) {
+  const { data: participants = [], isLoading: isParticipantsLoading } =
+    useParticipants(programId);
+
+  const referralParticipants = participants.filter(
+    (participant) => participant.id !== excludeParticipantId,
+  );
+
+  const referralOptions = [
+    { label: "No referral", value: "none" },
+    ...referralParticipants.map((participant) => ({
+      label: participant.name || "Unnamed participant",
+      value: participant.id,
+    })),
+  ];
+
   return (
     <div className="space-y-4">
       <TextInputController
@@ -123,7 +146,7 @@ export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
             selectTrigger: { className: "mt-2", id: "status" },
           }}
         />
-        
+
         <DatePickerController
           form={form}
           name="joined_date"
@@ -146,6 +169,24 @@ export function ParticipantFormFields({ form }: ParticipantFormFieldsProps) {
           }}
         /> */}
       </div>
+
+      <SelectController
+        form={form}
+        name="reference_name"
+        label="Referral"
+        searchable
+        searchPlaceholder="Search referral..."
+        placeholder={
+          isParticipantsLoading ? "Loading participants..." : "Select referral"
+        }
+        options={referralOptions}
+        componentProps={{
+          selectTrigger: { className: "mt-2", id: "reference_name" },
+          select: {
+            disabled: isParticipantsLoading,
+          },
+        }}
+      />
 
       <TextareaController
         form={form}
