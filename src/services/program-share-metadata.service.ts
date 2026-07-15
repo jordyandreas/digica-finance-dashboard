@@ -26,8 +26,12 @@ export interface ProgramRegistrationPublicData {
   wa_group_link: string | null;
   public_code: string;
   public_slug: string | null;
+  price: number | null;
+  promo_individual_price: number | null;
+  promo_bareng_teman_price: number | null;
   summary_html: string | null;
   og_image_url: string | null;
+  registration_banner_url: string | null;
 }
 
 export interface ProgramShareMetadata {
@@ -76,7 +80,7 @@ export async function getProgramRegistrationPublicData(
   const { data, error } = await supabase
     .from("programs")
     .select(
-      "id, name, type, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug",
+      "id, name, type, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug, price, promo_individual_price, promo_bareng_teman_price",
     )
     .eq("id", resolvedProgramId)
     .single();
@@ -87,17 +91,18 @@ export async function getProgramRegistrationPublicData(
 
   const publicContentResult = await supabase
     .from("program_public_contents")
-    .select("summary_html, og_image_url")
+    .select("summary_html, og_image_url, registration_banner_url")
     .eq("program_id", resolvedProgramId)
     .maybeSingle();
 
   let summaryHtml: string | null = null;
   let ogImageUrl: string | null = null;
+  let registrationBannerUrl: string | null = null;
 
   if (publicContentResult.error?.code === "42703") {
     const legacyContentResult = await supabase
       .from("program_public_contents")
-      .select("summary_html")
+      .select("summary_html, og_image_url")
       .eq("program_id", resolvedProgramId)
       .maybeSingle();
 
@@ -106,17 +111,31 @@ export async function getProgramRegistrationPublicData(
     }
 
     summaryHtml = legacyContentResult.data?.summary_html ?? null;
+    ogImageUrl = legacyContentResult.data?.og_image_url ?? null;
   } else if (publicContentResult.error) {
     throw publicContentResult.error;
   } else {
     summaryHtml = publicContentResult.data?.summary_html ?? null;
     ogImageUrl = publicContentResult.data?.og_image_url ?? null;
+    registrationBannerUrl =
+      publicContentResult.data?.registration_banner_url ?? null;
   }
+
+  const toNullablePrice = (value: unknown): number | null => {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+      return null;
+    }
+    return value;
+  };
 
   return {
     ...data,
+    price: toNullablePrice(data.price),
+    promo_individual_price: toNullablePrice(data.promo_individual_price),
+    promo_bareng_teman_price: toNullablePrice(data.promo_bareng_teman_price),
     summary_html: summaryHtml,
     og_image_url: ogImageUrl,
+    registration_banner_url: registrationBannerUrl,
   };
 }
 

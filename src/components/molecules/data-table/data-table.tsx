@@ -28,6 +28,14 @@ interface DataTableProps<T> {
   columns: ColumnDef<T>[];
   keyExtractor: (item: T) => string | number;
   emptyPlaceholder?: React.ReactNode;
+  onRowClick?: (row: T) => void;
+}
+
+function isInteractiveTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  return Boolean(
+    target.closest("button, a, input, textarea, select, [role='button']"),
+  );
 }
 
 function getColumnMeta(meta: unknown): DataTableColumnMeta {
@@ -60,6 +68,7 @@ export function DataTable<T extends object>({
   columns,
   keyExtractor,
   emptyPlaceholder,
+  onRowClick,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
 
@@ -151,7 +160,18 @@ export function DataTable<T extends object>({
             </TableRow>
           ) : (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id} className="group">
+              <TableRow
+                key={row.id}
+                className={cn("group", onRowClick && "cursor-pointer")}
+                onClick={
+                  onRowClick
+                    ? (event) => {
+                        if (isInteractiveTarget(event.target)) return;
+                        onRowClick(row.original);
+                      }
+                    : undefined
+                }
+              >
                 {row.getVisibleCells().map((cell) => {
                   const meta = getColumnMeta(cell.column.columnDef.meta);
 

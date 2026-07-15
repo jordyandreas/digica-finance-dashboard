@@ -16,7 +16,7 @@ async function loadProgramContext(programId: string) {
   const { data: program, error: programError } = await supabase
     .from("programs")
     .select(
-      "id, name, type, session_count, registration_link, public_code, public_slug",
+      "id, name, type, batch, session_count, registration_link, bootcamp_registration_link, public_code, public_slug",
     )
     .eq("id", programId)
     .single();
@@ -45,15 +45,36 @@ async function loadProgramContext(programId: string) {
     throw sessionsError;
   }
 
+  const { data: publicContent } = await supabase
+    .from("program_public_contents")
+    .select("promo_banner_url")
+    .eq("program_id", programId)
+    .maybeSingle();
+
   return {
     program: {
       id: program.id as string,
       name: program.name as string,
       type: program.type as ProgramType,
+      batch: (() => {
+        const raw = program.batch;
+        if (typeof raw === "number" && Number.isFinite(raw) && raw >= 1) {
+          return raw;
+        }
+        if (raw == null) {
+          return null;
+        }
+        const parsed = Number(raw);
+        return Number.isFinite(parsed) && parsed >= 1 ? parsed : null;
+      })(),
       session_count: program.session_count as number,
       registration_link: (program.registration_link as string | null) ?? null,
+      bootcamp_registration_link:
+        (program.bootcamp_registration_link as string | null) ?? null,
       public_code: (program.public_code as string | null) ?? null,
       public_slug: (program.public_slug as string | null) ?? null,
+      promo_banner_url:
+        (publicContent?.promo_banner_url as string | null) ?? null,
     },
     participants: participants ?? [],
     sessions: sessions ?? [],
@@ -94,9 +115,12 @@ export async function GET(_request: Request, { params }: CheckInRouteParams) {
         id: context.program.id,
         name: context.program.name,
         type: context.program.type,
+        batch: context.program.batch,
         registration_link: context.program.registration_link,
+        bootcamp_registration_link: context.program.bootcamp_registration_link,
         public_code: context.program.public_code,
         public_slug: context.program.public_slug,
+        promo_banner_url: context.program.promo_banner_url,
       },
       participants: context.participants.map((participant) => ({
         id: participant.id,

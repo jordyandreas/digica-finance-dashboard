@@ -76,7 +76,7 @@ export function ParticipantsContent({
   );
   const showSkeleton = isPending && participants.length === 0;
   const isWorkshop = programType === "workshop";
-  const skeletonColumns = isWorkshop ? 9 : 8;
+  const skeletonColumns = isWorkshop ? 9 : 10;
 
   return (
     <>

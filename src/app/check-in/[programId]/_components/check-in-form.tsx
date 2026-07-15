@@ -25,8 +25,7 @@ import {
   formatCheckInParticipantLabel,
   getDuplicateParticipantNames,
 } from "@/utils/check-in-participants";
-import { resolveRegistrationLink } from "@/utils/program-public";
-import { resolvePublicAppOrigin } from "@/utils/program-public-link";
+import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { cn } from "@/lib/utils";
 
 const INITIAL_SLOTS = 15;
@@ -61,9 +60,12 @@ export interface CheckInData {
     id: string;
     name: string;
     type: ProgramType;
+    batch: number | null;
     registration_link: string | null;
+    bootcamp_registration_link: string | null;
     public_code: string | null;
     public_slug: string | null;
+    promo_banner_url: string | null;
   };
   participants: CheckInParticipant[];
   sessions: CheckInSession[];
@@ -90,13 +92,21 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [isBannerPreviewOpen, setIsBannerPreviewOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [origin, setOrigin] = React.useState("");
   const [remainingSlots, setRemainingSlots] = React.useState(INITIAL_SLOTS);
   const [slotTickPulse, setSlotTickPulse] = React.useState(false);
 
   const isWorkshop = data.program.type === "workshop";
-  const promoBannerSrc = "/banner/banner-fw-sql-3.png";
-  const promoBannerAlt = "Promo secure seat Batch 3";
+  const promoBannerSrc = data.program.promo_banner_url?.trim() || null;
+  const promoBannerAlt = `Promo secure seat — ${data.program.name}`;
+  const hasPromoBanner = Boolean(promoBannerSrc);
+  const batchNumber =
+    typeof data.program.batch === "number" &&
+    Number.isFinite(data.program.batch) &&
+    data.program.batch >= 1
+      ? data.program.batch
+      : null;
+  const batchSeatLabel =
+    batchNumber != null ? `Batch ${batchNumber}` : null;
 
   const form = useForm<CheckInFormState>({
     defaultValues: {
@@ -110,10 +120,6 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   const selectedSessionId = form.watch("session_id");
   const selectedSecureSeatInterest = form.watch("secure_seat_interest");
   const isSessionSelectEnabled = Boolean(selectedParticipantId);
-
-  React.useEffect(() => {
-    setOrigin(resolvePublicAppOrigin(window.location.origin));
-  }, []);
 
   React.useEffect(() => {
     if (!isWorkshop) {
@@ -157,21 +163,18 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     }
   }, [data.sessions, form, selectedParticipantId]);
 
-  const registrationUrl = resolveRegistrationLink(
-    data.program.registration_link,
-    origin,
-    data.program.public_code
-      ? {
-          public_code: data.program.public_code,
-          public_slug: data.program.public_slug,
-        }
-      : null,
-  );
+  const bootcampRegistrationUrl = React.useMemo(() => {
+    const raw = data.program.bootcamp_registration_link?.trim() ?? "";
+    if (!raw) {
+      return "";
+    }
+    return appendRegistrationSource(raw, "workshop_promo");
+  }, [data.program.bootcamp_registration_link]);
 
   const showSecureSeatCta =
     isWorkshop &&
     successSecureSeatInterest === "yes" &&
-    Boolean(registrationUrl);
+    Boolean(bootcampRegistrationUrl);
 
   const duplicateNames = React.useMemo(
     () => getDuplicateParticipantNames(data.participants),
@@ -209,12 +212,12 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   };
 
   const handleCopyRegistrationLink = async () => {
-    if (!registrationUrl) {
+    if (!bootcampRegistrationUrl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(registrationUrl);
+      await navigator.clipboard.writeText(bootcampRegistrationUrl);
       toast.success("Link berhasil disalin!");
     } catch {
       toast.error("Gagal menyalin link");
@@ -296,76 +299,170 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
 
   return (
     <>
-      <form onSubmit={onSubmit} className="space-y-4">
-        <SelectController
-          form={form}
-          name="participant_id"
-          label="Your name"
-          placeholder="Select your name"
-          searchable
-          searchPlaceholder="Search name..."
-          options={participantOptions}
-          componentProps={{
-            selectTrigger: { className: "mt-2", id: "participant_id" },
-          }}
-        />
-
-        <SelectController
-          form={form}
-          name="session_id"
-          label="Session"
-          placeholder={
-            isSessionSelectEnabled ? "Select session" : "Select your name first"
-          }
-          description={
-            isSessionSelectEnabled
-              ? undefined
-              : "Choose your name before selecting a session."
-          }
-          options={sessionOptions}
-          componentProps={{
-            select: { disabled: !isSessionSelectEnabled },
-            selectTrigger: {
-              className: "mt-2",
-              id: "session_id",
-              disabled: !isSessionSelectEnabled,
-            },
-          }}
-        />
-
+      <form onSubmit={onSubmit} className="space-y-5">
         {isWorkshop ? (
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => setIsBannerPreviewOpen(true)}
-              className="block w-full overflow-hidden rounded-lg border border-brand-periwinkle/50 text-left transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-royal focus-visible:ring-offset-2"
-              aria-label="Preview promo banner"
-            >
-              <Image
-                src={promoBannerSrc}
-                alt={promoBannerAlt}
-                width={800}
-                height={450}
-                className="h-auto w-full object-cover"
-              />
-            </button>
+          <div className="space-y-3 rounded-xl border border-brand-periwinkle/50 bg-brand-pale/15 p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-brand-deep">
+                Absensi
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Pilih nama dan sesi hari ini untuk catat kehadiranmu.
+              </p>
+            </div>
+
             <SelectController
               form={form}
-              name="secure_seat_interest"
-              label="Banyak peserta workshop sudah mulai secure seat Batch 3. Jangan sampai ketinggalan!"
-              placeholder="Pilih jawaban"
-              options={SECURE_SEAT_INTEREST_OPTIONS}
+              name="participant_id"
+              label="Your name"
+              placeholder="Select your name"
+              searchable
+              searchPlaceholder="Search name..."
+              options={participantOptions}
               componentProps={{
+                selectTrigger: { className: "mt-2", id: "participant_id" },
+              }}
+            />
+
+            <SelectController
+              form={form}
+              name="session_id"
+              label="Session"
+              placeholder={
+                isSessionSelectEnabled
+                  ? "Select session"
+                  : "Select your name first"
+              }
+              description={
+                isSessionSelectEnabled
+                  ? undefined
+                  : "Choose your name before selecting a session."
+              }
+              options={sessionOptions}
+              componentProps={{
+                select: { disabled: !isSessionSelectEnabled },
                 selectTrigger: {
                   className: "mt-2",
-                  id: "secure_seat_interest",
-                },
-                labelTypography: {
-                  variant: "label",
-                  className: "text-left leading-snug",
+                  id: "session_id",
+                  disabled: !isSessionSelectEnabled,
                 },
               }}
             />
+          </div>
+        ) : (
+          <>
+            <SelectController
+              form={form}
+              name="participant_id"
+              label="Your name"
+              placeholder="Select your name"
+              searchable
+              searchPlaceholder="Search name..."
+              options={participantOptions}
+              componentProps={{
+                selectTrigger: { className: "mt-2", id: "participant_id" },
+              }}
+            />
+
+            <SelectController
+              form={form}
+              name="session_id"
+              label="Session"
+              placeholder={
+                isSessionSelectEnabled
+                  ? "Select session"
+                  : "Select your name first"
+              }
+              description={
+                isSessionSelectEnabled
+                  ? undefined
+                  : "Choose your name before selecting a session."
+              }
+              options={sessionOptions}
+              componentProps={{
+                select: { disabled: !isSessionSelectEnabled },
+                selectTrigger: {
+                  className: "mt-2",
+                  id: "session_id",
+                  disabled: !isSessionSelectEnabled,
+                },
+              }}
+            />
+          </>
+        )}
+
+        {isWorkshop ? (
+          <div className="space-y-3 rounded-xl border border-brand-periwinkle/60 bg-brand-pale/25 p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-brand-deep">
+                Secure promo
+              </p>
+              <p className="text-sm leading-snug text-brand-deep/90">
+                Mau amankan seat dengan harga spesial workshop? Slot promo
+                terbatas — pilih sekarang sebelum kehabisan!
+              </p>
+            </div>
+
+            {hasPromoBanner && promoBannerSrc ? (
+              <button
+                type="button"
+                onClick={() => setIsBannerPreviewOpen(true)}
+                className="block w-full overflow-hidden rounded-lg border border-brand-periwinkle/50 text-left transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-royal focus-visible:ring-offset-2"
+                aria-label="Preview promo banner"
+              >
+                {promoBannerSrc.startsWith("http") ? (
+                  <Image
+                    src={promoBannerSrc}
+                    alt={promoBannerAlt}
+                    width={800}
+                    height={450}
+                    className="h-auto w-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <Image
+                    src={promoBannerSrc}
+                    alt={promoBannerAlt}
+                    width={800}
+                    height={450}
+                    className="h-auto w-full object-cover"
+                  />
+                )}
+              </button>
+            ) : null}
+
+            <div
+              className="space-y-2"
+              role="radiogroup"
+              aria-label="Secure seat interest"
+            >
+              {SECURE_SEAT_INTEREST_OPTIONS.map((option) => {
+                const selected = selectedSecureSeatInterest === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() =>
+                      form.setValue("secure_seat_interest", option.value, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    className={cn(
+                      "w-full rounded-xl border px-4 py-3 text-left text-sm transition",
+                      selected
+                        ? "border-brand-royal/60 bg-brand-pale text-brand-deep shadow-sm ring-1 ring-brand-royal/20"
+                        : "border-border bg-background/80 text-foreground hover:border-brand-periwinkle hover:bg-brand-pale/40",
+                    )}
+                  >
+                    <span className="font-medium">{option.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
             <p className="text-sm font-medium text-muted-foreground">
               tersisa{" "}
               <span
@@ -395,127 +492,160 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
         </Button>
       </form>
 
-      <Dialog open={isBannerPreviewOpen} onOpenChange={setIsBannerPreviewOpen}>
-        <DialogContent className="border-brand-periwinkle/70 p-2 sm:max-w-3xl">
-          <DialogHeader className="sr-only">
-            <DialogTitle>{promoBannerAlt}</DialogTitle>
-            <DialogDescription>Preview promo banner</DialogDescription>
-          </DialogHeader>
-          <Image
-            src={promoBannerSrc}
-            alt={promoBannerAlt}
-            width={1200}
-            height={675}
-            className="h-auto w-full rounded-md object-contain"
-            priority
-          />
-        </DialogContent>
-      </Dialog>
+      {hasPromoBanner && promoBannerSrc ? (
+        <Dialog open={isBannerPreviewOpen} onOpenChange={setIsBannerPreviewOpen}>
+          <DialogContent className="w-[calc(100%-1.5rem)] border-brand-periwinkle/70 p-3 sm:max-w-md">
+            <DialogHeader className="sr-only">
+              <DialogTitle>{promoBannerAlt}</DialogTitle>
+              <DialogDescription>Preview promo banner</DialogDescription>
+            </DialogHeader>
+            {promoBannerSrc.startsWith("http") ? (
+              <Image
+                src={promoBannerSrc}
+                alt={promoBannerAlt}
+                width={800}
+                height={450}
+                className="mx-auto h-auto max-h-[60dvh] w-full rounded-md object-contain"
+                unoptimized
+                priority
+              />
+            ) : (
+              <Image
+                src={promoBannerSrc}
+                alt={promoBannerAlt}
+                width={800}
+                height={450}
+                className="mx-auto h-auto max-h-[60dvh] w-full rounded-md object-contain"
+                priority
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       <Dialog open={isSuccessModalOpen} onOpenChange={handleSuccessModalChange}>
         <DialogContent
           className={
             isWorkshop
-              ? "border-brand-periwinkle/70 sm:max-w-lg"
+              ? "flex max-h-[85dvh] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-2xl border-brand-periwinkle/70 p-0 sm:max-w-lg"
               : "border-brand-periwinkle/70 sm:max-w-md"
           }
         >
-          <DialogHeader className="items-center text-center sm:text-center">
-            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            {isWorkshop ? (
-              <>
-                <DialogTitle className="text-brand-deep">
-                  Terima kasih!
-                </DialogTitle>
-                <DialogDescription asChild>
-                  <div className="space-y-3 text-left text-sm leading-relaxed text-muted-foreground">
-                    <p>
-                      Terima kasih sudah mengikuti workshop dan mengisi form
-                      ini! 🙌
-                    </p>
-                    <p>
-                      Kami sangat menghargai waktumu dan antusiasme untuk
-                      belajar{" "}
-                      <strong className="font-semibold text-foreground">
-                        {data.program.name}
-                      </strong>{" "}
-                      bersama Digica Academy.
-                    </p>
-                    {showSecureSeatCta ? (
-                      <div className="space-y-2 rounded-lg border border-brand-periwinkle/50 bg-brand-pale/40 p-3">
-                        <p>
-                          <strong className="font-semibold text-foreground">
-                            Slot terbatas!
-                          </strong>{" "}
-                          Karena kamu mau secure promo sekarang, amankan seat
-                          Batch 3 lewat link di bawah (sama seperti di banner).
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <a
-                            href={registrationUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="min-w-0 flex-1 truncate font-medium text-brand-royal underline underline-offset-2"
-                          >
-                            {registrationUrl}
-                          </a>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 shrink-0"
-                            onClick={handleCopyRegistrationLink}
-                            aria-label="Salin link registrasi"
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+          {isWorkshop ? (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
+                <DialogHeader className="items-center text-center sm:text-center">
+                  <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
+                    <CheckCircle2 className="h-7 w-7" />
+                  </div>
+                  <DialogTitle className="text-brand-deep">
+                    Terima kasih!
+                  </DialogTitle>
+                  <DialogDescription asChild>
+                    <div className="space-y-3 text-left text-sm leading-relaxed text-muted-foreground">
+                      <p>
+                        Terima kasih sudah mengikuti workshop dan mengisi form
+                        ini! 🙌
+                      </p>
+                      <p>
+                        Kami sangat menghargai waktumu dan antusiasme untuk
+                        belajar{" "}
+                        <strong className="font-semibold text-foreground">
+                          {data.program.name}
+                        </strong>{" "}
+                        bersama Digica Academy.
+                      </p>
+                      {showSecureSeatCta ? (
+                        <div className="space-y-2 rounded-lg border border-brand-periwinkle/50 bg-brand-pale/40 p-3">
+                          <p>
+                            <strong className="font-semibold text-foreground">
+                              Slot terbatas!
+                            </strong>{" "}
+                            Karena kamu mau secure promo sekarang, amankan seat
+                            {batchSeatLabel ? ` ${batchSeatLabel}` : ""} lewat
+                            link di bawah (sama seperti di banner).
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={bootcampRegistrationUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="min-w-0 flex-1 truncate font-medium text-brand-royal underline underline-offset-2"
+                            >
+                              {bootcampRegistrationUrl}
+                            </a>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              onClick={handleCopyRegistrationLink}
+                              aria-label="Salin link registrasi"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <p>
+                            Jangan sampai kehabisan — makin cepat daftar, makin
+                            aman seat-nya.
+                          </p>
                         </div>
+                      ) : null}
+                      <p>
+                        ✅{" "}
+                        <strong className="font-semibold text-foreground">
+                          E-Sertifikat
+                        </strong>{" "}
+                        akan dikirim melalui{" "}
+                        <strong className="font-semibold text-foreground">
+                          Grup WA
+                        </strong>
+                        , silahkan tunggu dalam{" "}
+                        <strong className="font-semibold text-foreground">
+                          waktu 5-7 hari kerja
+                        </strong>
+                        .
+                      </p>
+                      <div className="space-y-1">
                         <p>
-                          Jangan sampai kehabisan — makin cepat daftar, makin
-                          aman seat-nya.
+                          📱 Tetap terhubung dan dapatkan insight menarik seputar
+                          Data &amp; Tech:
+                        </p>
+                        <p>
+                          🔹 Follow kami di Instagram, TikTok dan Threads:
+                          <br />
+                          👉 @digica.academy
                         </p>
                       </div>
-                    ) : null}
-                    <p>
-                      ✅{" "}
-                      <strong className="font-semibold text-foreground">
-                        E-Sertifikat
-                      </strong>{" "}
-                      akan dikirim melalui{" "}
-                      <strong className="font-semibold text-foreground">
-                        Grup WA
-                      </strong>
-                      , silahkan tunggu dalam{" "}
-                      <strong className="font-semibold text-foreground">
-                        waktu 5-7 hari kerja
-                      </strong>
-                      .
-                    </p>
-                    <div className="space-y-1">
                       <p>
-                        📱 Tetap terhubung dan dapatkan insight menarik seputar
-                        Data &amp; Tech:
-                      </p>
-                      <p>
-                        🔹 Follow kami di Instagram, TikTok dan Threads:
+                        🎓 Siap belajar lebih dalam? Nantikan info tentang
+                        bootcamp dan kelas lainnya!
                         <br />
-                        👉 @digica.academy
+                        Sampai jumpa di program Digica Academy berikutnya 🚀
+                      </p>
+                      <p className="font-medium text-foreground">
+                        #MakeITHappen
                       </p>
                     </div>
-                    <p>
-                      🎓 Siap belajar lebih dalam? Nantikan info tentang
-                      bootcamp dan kelas lainnya!
-                      <br />
-                      Sampai jumpa di program Digica Academy berikutnya 🚀
-                    </p>
-                    <p className="font-medium text-foreground">#MakeITHappen</p>
-                  </div>
-                </DialogDescription>
-              </>
-            ) : (
-              <>
+                  </DialogDescription>
+                </DialogHeader>
+              </div>
+              <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
+                <Button
+                  type="button"
+                  className="h-11 w-full"
+                  onClick={() => handleSuccessModalChange(false)}
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader className="items-center text-center sm:text-center">
+                <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
+                  <CheckCircle2 className="h-7 w-7" />
+                </div>
                 <DialogTitle className="text-brand-deep">
                   You&apos;re checked in
                 </DialogTitle>
@@ -524,18 +654,18 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                     ? `Attendance recorded for Session ${successSessionNumber}.`
                     : "Your attendance has been recorded."}
                 </DialogDescription>
-              </>
-            )}
-          </DialogHeader>
-          <DialogFooter className="sm:justify-center">
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={() => handleSuccessModalChange(false)}
-            >
-              Done
-            </Button>
-          </DialogFooter>
+              </DialogHeader>
+              <DialogFooter className="sm:justify-center">
+                <Button
+                  type="button"
+                  className="w-full sm:w-auto"
+                  onClick={() => handleSuccessModalChange(false)}
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>

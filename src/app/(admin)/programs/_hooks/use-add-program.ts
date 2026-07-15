@@ -21,16 +21,22 @@ export type ProgramFormState = {
   name: string;
   summary_html: string;
   og_image_url: string;
+  registration_banner_url: string;
+  promo_banner_url: string;
   type: ProgramType | "";
   year: string;
+  batch: string;
   start_date: string;
   end_date: string;
   start_time: string;
   end_time: string;
   registration_link: string;
+  bootcamp_registration_link: string;
   wa_group_link: string;
   public_slug: string;
   price: number | undefined;
+  promo_individual_price: number | undefined;
+  promo_bareng_teman_price: number | undefined;
   session_count: string;
   status: ProgramStatus;
 };
@@ -44,16 +50,22 @@ const defaultFormState = (): ProgramFormState => ({
   name: "",
   summary_html: "",
   og_image_url: "",
+  registration_banner_url: "",
+  promo_banner_url: "",
   type: "",
   year: String(new Date().getFullYear()),
+  batch: "",
   start_date: "",
   end_date: "",
   start_time: "",
   end_time: "",
   registration_link: "",
+  bootcamp_registration_link: "",
   wa_group_link: "",
   public_slug: "",
   price: undefined,
+  promo_individual_price: undefined,
+  promo_bareng_teman_price: undefined,
   session_count: "0",
   status: "draft",
 });
@@ -67,16 +79,22 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
     name: program.name || "",
     summary_html: "",
     og_image_url: "",
+    registration_banner_url: "",
+    promo_banner_url: "",
     type: program.type || "",
     year: program.year != null ? String(program.year) : "",
+    batch: program.batch != null ? String(program.batch) : "",
     start_date: program.start_date ? program.start_date.split("T")[0] : "",
     end_date: program.end_date ? program.end_date.split("T")[0] : "",
     start_time: program.start_time ?? "",
     end_time: program.end_time ?? "",
     registration_link: program.registration_link ?? "",
+    bootcamp_registration_link: program.bootcamp_registration_link ?? "",
     wa_group_link: program.wa_group_link ?? "",
     public_slug: program.public_slug ?? "",
     price: program.price ?? undefined,
+    promo_individual_price: program.promo_individual_price ?? undefined,
+    promo_bareng_teman_price: program.promo_bareng_teman_price ?? undefined,
     session_count: String(program.session_count ?? 0),
     status: program.status || "draft",
   };
@@ -95,42 +113,84 @@ const parseSessionCount = (value: string) => {
   return Math.min(count, 52);
 };
 
+const parseBatch = (value: string): number | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const batch = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(batch) || batch < 1) {
+    return null;
+  }
+  return batch;
+};
+
+const parseOfferPrice = (value: number | undefined): number | null => {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return Math.round(value);
+};
+
 const buildProgramInput = (
   values: ProgramFormState
-): UpdateProgramInput => ({
-  name: values.name.trim(),
-  type: values.type || undefined,
-  year: parseYear(values.year),
-  start_date: nullableString(values.start_date),
-  end_date: nullableString(values.end_date),
-  start_time: nullableString(values.start_time),
-  end_time: nullableString(values.end_time),
-  registration_link: nullableString(values.registration_link),
-  wa_group_link: nullableString(values.wa_group_link),
-  public_slug: nullableString(values.public_slug),
-  price: values.price ?? undefined,
-  session_count: parseSessionCount(values.session_count),
-  status: values.status || undefined,
-});
+): UpdateProgramInput => {
+  const isPaidProgram =
+    values.type === "bootcamp" || values.type === "mini_bootcamp";
+
+  return {
+    name: values.name.trim(),
+    type: values.type || undefined,
+    year: parseYear(values.year),
+    batch: parseBatch(values.batch),
+    start_date: nullableString(values.start_date),
+    end_date: nullableString(values.end_date),
+    start_time: nullableString(values.start_time),
+    end_time: nullableString(values.end_time),
+    registration_link: nullableString(values.registration_link),
+    bootcamp_registration_link: nullableString(values.bootcamp_registration_link),
+    wa_group_link: nullableString(values.wa_group_link),
+    public_slug: nullableString(values.public_slug),
+    price: values.price ?? undefined,
+    promo_individual_price: isPaidProgram
+      ? parseOfferPrice(values.promo_individual_price)
+      : null,
+    promo_bareng_teman_price: isPaidProgram
+      ? parseOfferPrice(values.promo_bareng_teman_price)
+      : null,
+    session_count: parseSessionCount(values.session_count),
+    status: values.status || undefined,
+  };
+};
 
 export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
   const queryClient = useQueryClient();
   const { isOpen, close } = useModal<ProgramModalProps>("programModal");
   const [loading, setLoading] = React.useState(false);
+  const [registrationBannerFile, setRegistrationBannerFile] =
+    React.useState<File | null>(null);
+  const [promoBannerFile, setPromoBannerFile] = React.useState<File | null>(
+    null,
+  );
   const form = useForm<ProgramFormState>({
     defaultValues: defaultFormState(),
   });
   const name = form.watch("name");
   const year = form.watch("year");
+  const programType = form.watch("type");
 
   React.useEffect(() => {
     form.reset(buildFormState(program));
+    setRegistrationBannerFile(null);
+    setPromoBannerFile(null);
   }, [form, program, isOpen]);
 
   React.useEffect(() => {
     if (!isOpen || !program?.id) {
       form.setValue("summary_html", "", { shouldDirty: false });
       form.setValue("og_image_url", "", { shouldDirty: false });
+      form.setValue("registration_banner_url", "", { shouldDirty: false });
+      form.setValue("promo_banner_url", "", { shouldDirty: false });
       return;
     }
 
@@ -147,6 +207,14 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
           shouldDirty: false,
         });
         form.setValue("og_image_url", result.data?.og_image_url ?? "", {
+          shouldDirty: false,
+        });
+        form.setValue(
+          "registration_banner_url",
+          result.data?.registration_banner_url ?? "",
+          { shouldDirty: false },
+        );
+        form.setValue("promo_banner_url", result.data?.promo_banner_url ?? "", {
           shouldDirty: false,
         });
       }
@@ -175,6 +243,10 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
       );
 
       const programData = buildProgramInput(values);
+      if (values.type !== "workshop") {
+        programData.bootcamp_registration_link = null;
+      }
+
       let result;
       if (program) {
         result = await updateProgram(program.id, programData);
@@ -208,10 +280,54 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
         const { syncProgramSessions } = await import(
           "@/services/program-sessions.service"
         );
+        const {
+          removeProgramBannerObjects,
+          uploadProgramBanner,
+        } = await import("@/services/program-banner-storage.service");
+
+        let registrationBannerUrl = nullableString(
+          values.registration_banner_url,
+        );
+        let promoBannerUrl =
+          values.type === "workshop"
+            ? nullableString(values.promo_banner_url)
+            : null;
+
+        if (registrationBannerFile) {
+          const uploadResult = await uploadProgramBanner(
+            savedProgram.id,
+            "registration",
+            registrationBannerFile,
+          );
+          if (uploadResult.error || !uploadResult.url) {
+            throw uploadResult.error ?? new Error("Failed to upload registration banner");
+          }
+          registrationBannerUrl = uploadResult.url;
+        } else if (!registrationBannerUrl) {
+          await removeProgramBannerObjects(savedProgram.id, "registration");
+        }
+
+        if (values.type === "workshop" && promoBannerFile) {
+          const uploadResult = await uploadProgramBanner(
+            savedProgram.id,
+            "promo",
+            promoBannerFile,
+          );
+          if (uploadResult.error || !uploadResult.url) {
+            throw uploadResult.error ?? new Error("Failed to upload promo banner");
+          }
+          promoBannerUrl = uploadResult.url;
+        } else if (values.type !== "workshop" || !promoBannerUrl) {
+          await removeProgramBannerObjects(savedProgram.id, "promo");
+          promoBannerUrl = null;
+        }
+
         const contentResult = await upsertProgramPublicContent({
           program_id: savedProgram.id,
           summary_html: values.summary_html.trim() || null,
           og_image_url: nullableString(values.og_image_url),
+          registration_banner_url: registrationBannerUrl,
+          promo_banner_url: promoBannerUrl,
         });
 
         if (contentResult.error) {
@@ -275,5 +391,10 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
     form,
     handleSubmit,
     applyDisabled,
+    programType,
+    registrationBannerFile,
+    setRegistrationBannerFile,
+    promoBannerFile,
+    setPromoBannerFile,
   };
 }

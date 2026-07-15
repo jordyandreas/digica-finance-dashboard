@@ -8,6 +8,13 @@ import {
   type RegistrationPageData,
 } from "@/app/registration/[programId]/_components/registration-form";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   formatProgramDateRange,
   formatProgramTimeRange,
 } from "@/utils/program-public";
@@ -44,6 +51,7 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [sanitizedSummaryHtml, setSanitizedSummaryHtml] = React.useState("");
+  const [isBannerPreviewOpen, setIsBannerPreviewOpen] = React.useState(false);
 
   React.useEffect(() => {
     const summaryHtml = data?.program.summary_html;
@@ -120,6 +128,11 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
     };
   }, [identifier]);
 
+  const registrationBannerUrl = data?.program.registration_banner_url?.trim() || null;
+  const registrationBannerAlt = data
+    ? `${data.program.name} banner`
+    : "Registration banner";
+
   return (
     <RegistrationPageShell>
       {isLoading ? (
@@ -160,60 +173,140 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
         </div>
       ) : data ? (
         <div className="flex flex-col gap-5">
-          <div className="space-y-4 rounded-2xl border border-brand-periwinkle/60 bg-brand-pale/20 p-5 text-center">
-            <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-brand-periwinkle/50 bg-background/80 px-3 py-1 text-xs font-medium text-brand-deep">
-              <Sparkles className="h-3.5 w-3.5" />
-              Digica Program Registration
-            </div>
-
-            <div className="space-y-2">
-              <h1 className="text-2xl font-semibold text-brand-deep">
-                {data.program.name}
-              </h1>
-            </div>
-
-            <div className="flex items-start gap-3 rounded-xl border bg-background/80 px-4 py-3 text-left">
-              <div className="min-w-0 flex-1">
-                <p className="flex items-start gap-2 text-xs font-medium text-brand-deep sm:text-sm">
-                  <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span className="min-w-0">
-                    {formatProgramDateRange(
-                      data.program.start_date,
-                      data.program.end_date,
-                    )}
-                  </span>
-                </p>
+          {registrationBannerUrl ? (
+            <button
+              type="button"
+              onClick={() => setIsBannerPreviewOpen(true)}
+              className="block w-full overflow-hidden rounded-2xl border border-brand-periwinkle/50 text-left transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-royal focus-visible:ring-offset-2"
+              aria-label="Preview registration banner"
+            >
+              {registrationBannerUrl.startsWith("http") ? (
+                <Image
+                  src={registrationBannerUrl}
+                  alt={registrationBannerAlt}
+                  width={1200}
+                  height={630}
+                  className="h-auto w-full object-cover"
+                  unoptimized
+                  priority
+                />
+              ) : (
+                <Image
+                  src={registrationBannerUrl}
+                  alt={registrationBannerAlt}
+                  width={1200}
+                  height={630}
+                  className="h-auto w-full object-cover"
+                  priority
+                />
+              )}
+            </button>
+          ) : (
+            <div className="space-y-4 rounded-2xl border border-brand-periwinkle/60 bg-brand-pale/20 p-5 text-center">
+              <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-brand-periwinkle/50 bg-background/80 px-3 py-1 text-xs font-medium text-brand-deep">
+                <Sparkles className="h-3.5 w-3.5" />
+                Digica Program Registration
               </div>
-              <div className="w-px self-stretch bg-border" />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-start gap-2 text-xs font-medium text-brand-deep sm:text-sm">
-                  <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span className="min-w-0">
-                    {formatProgramTimeRange(
-                      data.program.start_time,
-                      data.program.end_time,
-                    )}
-                  </span>
-                </p>
+
+              <div className="space-y-2">
+                <h1 className="text-2xl font-semibold text-brand-deep">
+                  {data.program.name}
+                </h1>
               </div>
+
+              <div className="flex items-start gap-3 rounded-xl border bg-background/80 px-4 py-3 text-left">
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-start gap-2 text-xs font-medium text-brand-deep sm:text-sm">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span className="min-w-0">
+                      {formatProgramDateRange(
+                        data.program.start_date,
+                        data.program.end_date,
+                      )}
+                    </span>
+                  </p>
+                </div>
+                <div className="w-px self-stretch bg-border" />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-start gap-2 text-xs font-medium text-brand-deep sm:text-sm">
+                    <Clock3 className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span className="min-w-0">
+                      {formatProgramTimeRange(
+                        data.program.start_time,
+                        data.program.end_time,
+                      )}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              {sanitizedSummaryHtml ? (
+                <div
+                  className="rounded-xl border bg-background/80 px-4 py-4 text-left text-sm text-foreground [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-2 [&_strong]:font-semibold"
+                  dangerouslySetInnerHTML={{ __html: sanitizedSummaryHtml }}
+                />
+              ) : null}
             </div>
+          )}
 
-            {sanitizedSummaryHtml ? (
-              <div
-                className="rounded-xl border bg-background/80 px-4 py-4 text-left text-sm text-foreground [&_h2]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-2 [&_strong]:font-semibold"
-                dangerouslySetInnerHTML={{ __html: sanitizedSummaryHtml }}
-              />
-            ) : null}
-          </div>
+          <React.Suspense
+            fallback={
+              <div className="h-40 animate-pulse rounded-2xl border bg-muted/30" />
+            }
+          >
+            <RegistrationForm
+              programId={identifier}
+              programName={data.program.name}
+              programType={data.program.type}
+              registrationLink={data.program.registration_link}
+              waGroupLink={data.program.wa_group_link}
+              publicCode={data.program.public_code}
+              publicSlug={data.program.public_slug}
+              offerPrices={{
+                promo_individual_price:
+                  data.program.promo_individual_price ?? null,
+                promo_bareng_teman_price:
+                  data.program.promo_bareng_teman_price ?? null,
+                price: data.program.price ?? null,
+              }}
+            />
+          </React.Suspense>
 
-          <RegistrationForm
-            programId={identifier}
-            programType={data.program.type}
-            registrationLink={data.program.registration_link}
-            waGroupLink={data.program.wa_group_link}
-            publicCode={data.program.public_code}
-            publicSlug={data.program.public_slug}
-          />
+          {registrationBannerUrl ? (
+            <Dialog
+              open={isBannerPreviewOpen}
+              onOpenChange={setIsBannerPreviewOpen}
+            >
+              <DialogContent className="w-[calc(100%-1.5rem)] border-brand-periwinkle/70 p-3 sm:max-w-md">
+                <DialogHeader className="sr-only">
+                  <DialogTitle>{registrationBannerAlt}</DialogTitle>
+                  <DialogDescription>
+                    Preview registration banner
+                  </DialogDescription>
+                </DialogHeader>
+                {registrationBannerUrl.startsWith("http") ? (
+                  <Image
+                    src={registrationBannerUrl}
+                    alt={registrationBannerAlt}
+                    width={1200}
+                    height={630}
+                    className="mx-auto h-auto max-h-[60dvh] w-full rounded-md object-contain"
+                    unoptimized
+                    priority
+                  />
+                ) : (
+                  <Image
+                    src={registrationBannerUrl}
+                    alt={registrationBannerAlt}
+                    width={1200}
+                    height={630}
+                    className="mx-auto h-auto max-h-[60dvh] w-full rounded-md object-contain"
+                    priority
+                  />
+                )}
+              </DialogContent>
+            </Dialog>
+          ) : null}
         </div>
       ) : null}
     </RegistrationPageShell>

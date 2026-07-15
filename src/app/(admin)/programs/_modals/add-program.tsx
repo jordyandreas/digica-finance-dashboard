@@ -17,6 +17,10 @@ export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
     form,
     handleSubmit,
     applyDisabled,
+    registrationBannerFile,
+    setRegistrationBannerFile,
+    promoBannerFile,
+    setPromoBannerFile,
   } = useAddProgram({ program, onSuccess });
 
   return (
@@ -38,7 +42,13 @@ export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
       applyDisabled={applyDisabled}
       onCancel={close}
     >
-      <ProgramForm form={form} />
+      <ProgramForm
+        form={form}
+        registrationBannerFile={registrationBannerFile}
+        onRegistrationBannerFileChange={setRegistrationBannerFile}
+        promoBannerFile={promoBannerFile}
+        onPromoBannerFileChange={setPromoBannerFile}
+      />
     </Modal>
   );
 }
