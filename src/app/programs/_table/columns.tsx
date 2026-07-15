@@ -82,8 +82,12 @@ export function programsColumns({
       id: "actions",
       header: "Actions",
       enableSorting: false,
+      // 3 icon buttons (view + edit + delete) + cell padding; default sticky width is 88px
+      size: 136,
+      minSize: 136,
+      maxSize: 136,
       cell: (program) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {(() => {
             const programId =
               program.id ??
@@ -98,7 +102,7 @@ export function programsColumns({
 
             if (!isValidProgramId) {
               return (
-                <Button variant="ghost" size="icon" disabled className="h-8 w-8">
+                <Button variant="ghost" size="icon" disabled className="h-8 w-8 shrink-0">
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View program details</span>
                 </Button>
@@ -106,7 +110,7 @@ export function programsColumns({
             }
 
             return (
-              <Button variant="ghost" size="icon" asChild className="h-8 w-8">
+              <Button variant="ghost" size="icon" asChild className="h-8 w-8 shrink-0">
                 <Link href={`/programs/${normalizedProgramId}/participants`}>
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View program details</span>
@@ -119,7 +123,7 @@ export function programsColumns({
               variant="ghost"
               size="icon"
               onClick={() => onEdit(program)}
-              className="h-8 w-8"
+              className="h-8 w-8 shrink-0"
             >
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit program</span>
@@ -130,7 +134,7 @@ export function programsColumns({
               variant="ghost"
               size="icon"
               onClick={() => onDelete(program)}
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
               <span className="sr-only">Delete program</span>
