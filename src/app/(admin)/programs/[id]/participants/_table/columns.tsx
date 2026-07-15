@@ -9,7 +9,12 @@ import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
 import { toast } from "sonner";
 import { formatSecureSeatInterest } from "@/constants/secure-seat-interest";
+import {
+  formatRegistrationPackage,
+  formatRegistrationSource,
+} from "@/constants/registration-offers";
 import type { ProgramType } from "@/services/programs.service";
+import { formatCurrency } from "@/utils/currency";
 
 interface ParticipantsColumnsProps {
   programType?: ProgramType | null;
@@ -152,6 +157,53 @@ export function participantsColumns({
         </Typography>
       ),
     });
+  } else {
+    columns.push(
+      {
+        accessorKey: "registration_source",
+        header: "Source",
+        enableSorting: true,
+        minSize: 110,
+        maxSize: 160,
+        cell: (participant) => (
+          <Typography variant="body3" className="normal-case">
+            {formatRegistrationSource(participant.registration_source)}
+          </Typography>
+        ),
+      },
+      {
+        accessorKey: "selected_package",
+        header: "Package",
+        enableSorting: true,
+        minSize: 140,
+        maxSize: 220,
+        cell: (participant) => {
+          const packageLabel = formatRegistrationPackage(
+            participant.selected_package,
+          );
+          const priceLabel =
+            participant.package_price != null
+              ? formatCurrency(participant.package_price)
+              : null;
+
+          return (
+            <div className="flex flex-col gap-0.5">
+              <Typography variant="body3" className="normal-case">
+                {packageLabel}
+              </Typography>
+              {priceLabel ? (
+                <Typography
+                  variant="label"
+                  className="normal-case text-muted-foreground"
+                >
+                  {priceLabel}
+                </Typography>
+              ) : null}
+            </div>
+          );
+        },
+      },
+    );
   }
 
   columns.push(

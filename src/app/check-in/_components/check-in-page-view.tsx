@@ -108,7 +108,9 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
             </h1>
             {canCheckIn ? (
               <p className="text-sm text-muted-foreground">
-                Select your name and session to mark your attendance.
+                {data.program.type === "workshop"
+                  ? "Isi absensi, lalu jawab promo khusus workshop di bawah."
+                  : "Select your name and session to mark your attendance."}
               </p>
             ) : null}
           </div>

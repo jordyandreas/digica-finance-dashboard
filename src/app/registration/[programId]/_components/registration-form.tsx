@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Copy, Info, ShieldCheck } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Copy, Info, MessageCircle, ShieldCheck } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/atoms/button";
@@ -18,13 +19,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  emptyProgramOfferPrices,
+  getOffersForSource,
+  resolveRegistrationSource,
+  type ProgramOfferPrices,
+  type RegistrationPackage,
+  type RegistrationSource,
+} from "@/constants/registration-offers";
+import {
+  paidParticipantRegistrationSchema,
   participantRegistrationSchema,
-  type ParticipantRegistrationInput,
   registrationOccupationOptions,
 } from "@/schemas/participant-registration-schema";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/utils/currency";
+import { buildPaymentWhatsAppUrl } from "@/utils/admin-whatsapp";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import { resolvePublicAppOrigin } from "@/utils/program-public-link";
+import { appendRegistrationSource } from "@/utils/registration-source-url";
 import type { ProgramType } from "@/services/programs.service";
 
 export interface RegistrationPageData {
@@ -41,6 +53,10 @@ export interface RegistrationPageData {
     wa_group_link: string | null;
     public_code: string;
     public_slug: string | null;
+    registration_banner_url?: string | null;
+    price?: number | null;
+    promo_individual_price?: number | null;
+    promo_bareng_teman_price?: number | null;
   };
 }
 
@@ -50,15 +66,20 @@ type RegistrationFormState = {
   phone: string;
   occupation: string;
   organization: string;
+  selected_package: string;
+  friend_name: string;
+  friend_phone: string;
 };
 
 interface RegistrationFormProps {
   programId: string;
+  programName?: string;
   programType?: ProgramType | null;
   registrationLink?: string | null;
   waGroupLink?: string | null;
   publicCode?: string;
   publicSlug?: string | null;
+  offerPrices?: ProgramOfferPrices;
 }
 
 const defaultOrganizationCopy = {
@@ -102,6 +123,9 @@ const defaultValues: RegistrationFormState = {
   phone: "",
   occupation: "",
   organization: "",
+  selected_package: "",
+  friend_name: "",
+  friend_phone: "",
 };
 
 function sanitizePhoneInput(value: string): string {
@@ -162,16 +186,35 @@ function SuccessStepCard({
 
 export function RegistrationForm({
   programId,
+  programName = "program Digica",
   programType,
   registrationLink,
   waGroupLink,
   publicCode,
   publicSlug,
+  offerPrices = emptyProgramOfferPrices(),
 }: RegistrationFormProps) {
+  const searchParams = useSearchParams();
+  const registrationSource = resolveRegistrationSource(
+    searchParams.get("source"),
+  );
+  const isBootcampProgram =
+    programType === "bootcamp" || programType === "mini_bootcamp";
+  const offers = React.useMemo(
+    () =>
+      isBootcampProgram
+        ? getOffersForSource(registrationSource, offerPrices)
+        : [],
+    [isBootcampProgram, offerPrices, registrationSource],
+  );
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [origin, setOrigin] = React.useState("");
+  const [paymentWhatsAppUrl, setPaymentWhatsAppUrl] = React.useState<
+    string | null
+  >(null);
   const form = useForm<RegistrationFormState>({ defaultValues });
 
   const name = form.watch("name");
@@ -179,12 +222,34 @@ export function RegistrationForm({
   const phone = form.watch("phone");
   const occupation = form.watch("occupation");
   const organization = form.watch("organization");
+  const selectedPackage = form.watch("selected_package");
+  const friendName = form.watch("friend_name");
+  const friendPhone = form.watch("friend_phone");
   const organizationCopy =
     organizationCopyByOccupation[occupation] ?? defaultOrganizationCopy;
 
   React.useEffect(() => {
     setOrigin(resolvePublicAppOrigin(window.location.origin));
   }, []);
+
+  React.useEffect(() => {
+    if (!isBootcampProgram) {
+      form.setValue("selected_package", "");
+      return;
+    }
+
+    if (offers.length === 1) {
+      form.setValue("selected_package", offers[0].package);
+      return;
+    }
+
+    const stillValid = offers.some(
+      (offer) => offer.package === form.getValues("selected_package"),
+    );
+    if (!stillValid) {
+      form.setValue("selected_package", "");
+    }
+  }, [form, isBootcampProgram, offers]);
 
   const registrationUrl = resolveRegistrationLink(
     registrationLink,
@@ -196,21 +261,25 @@ export function RegistrationForm({
         }
       : null,
   );
+  const invitationUrl = React.useMemo(() => {
+    if (!registrationUrl) {
+      return "";
+    }
+    if (!isBootcampProgram) {
+      return registrationUrl;
+    }
+    return appendRegistrationSource(registrationUrl, registrationSource);
+  }, [isBootcampProgram, registrationSource, registrationUrl]);
   const waGroupUrl = waGroupLink?.trim() ?? "";
   const hasWaGroupLink = Boolean(waGroupUrl);
-  const isBootcampProgram =
-    programType === "bootcamp" || programType === "mini_bootcamp";
+  const isBarengTeman = selectedPackage === "bareng_teman";
 
   const successDescription = isBootcampProgram ? (
     <>
-      Your <strong className="font-semibold text-foreground">special promo</strong>{" "}
-      is confirmed. Our admin will contact you{" "}
-      <strong className="font-semibold text-foreground">ASAP</strong> with{" "}
-      <strong className="font-semibold text-foreground">payment details</strong> so
-      you can{" "}
-      <strong className="font-semibold text-foreground">secure it</strong>. After
-      payment, we&apos;ll share the details in the{" "}
-      <strong className="font-semibold text-foreground">WhatsApp message</strong>.
+      Registrasi kamu sudah masuk. Chat admin sekarang untuk minta{" "}
+      <strong className="font-semibold text-foreground">detail pembayaran</strong>{" "}
+      dan amankan seat-mu. Admin siap bantu kalau masih ada pertanyaan soal
+      programnya.
     </>
   ) : hasWaGroupLink ? (
     "Your seat is confirmed. Join our WhatsApp group to receive your e-certificate, schedules, and materials."
@@ -223,16 +292,17 @@ export function RegistrationForm({
     if (!open) {
       form.reset(defaultValues);
       setErrorMessage(null);
+      setPaymentWhatsAppUrl(null);
     }
   };
 
   const handleCopyRegistrationLink = async () => {
-    if (!registrationUrl) {
+    if (!invitationUrl) {
       return;
     }
 
     try {
-      await navigator.clipboard.writeText(registrationUrl);
+      await navigator.clipboard.writeText(invitationUrl);
       toast.success("Invitation link copied!");
     } catch {
       toast.error("Failed to copy registration link");
@@ -256,7 +326,24 @@ export function RegistrationForm({
     setErrorMessage(null);
     form.clearErrors();
 
-    const validation = participantRegistrationSchema.safeParse(values);
+    const payload = isBootcampProgram
+      ? {
+          ...values,
+          registration_source: registrationSource,
+          friend_name: values.friend_name,
+          friend_phone: values.friend_phone,
+        }
+      : {
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+          occupation: values.occupation,
+          organization: values.organization,
+        };
+
+    const validation = isBootcampProgram
+      ? paidParticipantRegistrationSchema.safeParse(payload)
+      : participantRegistrationSchema.safeParse(payload);
 
     if (!validation.success) {
       for (const issue of validation.error.issues) {
@@ -277,16 +364,39 @@ export function RegistrationForm({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(validation.data as ParticipantRegistrationInput),
+        body: JSON.stringify(validation.data),
       });
 
       const result = (await response.json()) as {
         success?: boolean;
         error?: string;
+        package_price?: number;
+        selected_package?: RegistrationPackage;
+        registration_source?: RegistrationSource;
       };
 
       if (!response.ok) {
         throw new Error(result.error || "Failed to submit registration");
+      }
+
+      if (
+        isBootcampProgram &&
+        result.selected_package &&
+        result.package_price != null &&
+        result.registration_source
+      ) {
+        setPaymentWhatsAppUrl(
+          buildPaymentWhatsAppUrl({
+            programName,
+            participantName: values.name.trim(),
+            phone: values.phone.trim(),
+            selectedPackage: result.selected_package,
+            packagePrice: result.package_price,
+            source: result.registration_source,
+          }),
+        );
+      } else {
+        setPaymentWhatsAppUrl(null);
       }
 
       form.reset(defaultValues);
@@ -304,6 +414,12 @@ export function RegistrationForm({
       setIsSubmitting(false);
     }
   });
+
+  const packageReady =
+    !isBootcampProgram ||
+    (Boolean(selectedPackage) &&
+      (!isBarengTeman ||
+        (Boolean(friendName.trim()) && Boolean(friendPhone.trim()))));
 
   return (
     <>
@@ -412,6 +528,97 @@ export function RegistrationForm({
           />
         </div>
 
+        {isBootcampProgram ? (
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-brand-deep">
+                Pilih paket <span className="text-destructive">*</span>
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {registrationSource === "workshop_promo"
+                  ? "Harga spesial untuk peserta workshop."
+                  : "Harga registrasi standar."}
+              </p>
+            </div>
+
+            <div className="space-y-2 rounded-xl border bg-muted/20 p-4">
+              {offers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Paket untuk sumber ini belum tersedia. Hubungi admin Digica.
+                </p>
+              ) : (
+                offers.map((offer) => {
+                  const selected = selectedPackage === offer.package;
+                  return (
+                    <button
+                      key={offer.package}
+                      type="button"
+                      onClick={() =>
+                        form.setValue("selected_package", offer.package, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                      className={cn(
+                        "w-full rounded-xl border px-4 py-3 text-left transition",
+                        selected
+                          ? "border-brand-royal/60 bg-brand-pale text-brand-deep shadow-sm ring-1 ring-brand-royal/20"
+                          : "border-border bg-background hover:border-brand-periwinkle",
+                      )}
+                    >
+                      <p className="text-sm font-semibold text-brand-deep">
+                        {offer.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {offer.description}
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-brand-royal">
+                        {formatCurrency(offer.price)}
+                      </p>
+                    </button>
+                  );
+                })
+              )}
+
+              {isBarengTeman ? (
+                <div className="space-y-3 pt-2">
+                  <TextInputController
+                    form={form}
+                    name="friend_name"
+                    label="Friend Name"
+                    required
+                    placeholder="Nama teman yang join bersama"
+                  />
+                  <TextInputController
+                    form={form}
+                    name="friend_phone"
+                    label="Friend WhatsApp"
+                    required
+                    placeholder="+62 812 000 0000"
+                    componentProps={{
+                      input: {
+                        type: "tel",
+                        inputMode: "tel",
+                        onChange: (event) => {
+                          const sanitized = sanitizePhoneInput(
+                            event.target.value,
+                          );
+                          if (sanitized !== event.target.value) {
+                            form.setValue("friend_phone", sanitized, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+
         {errorMessage ? (
           <div className="flex items-start gap-3 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             <Info className="mt-0.5 h-4 w-4 shrink-0" />
@@ -437,7 +644,8 @@ export function RegistrationForm({
               !email.trim() ||
               !phone.trim() ||
               !occupation.trim() ||
-              !organization.trim()
+              !organization.trim() ||
+              !packageReady
             }
           >
             {isSubmitting
@@ -460,12 +668,39 @@ export function RegistrationForm({
             </DialogHeader>
 
             <div className="mt-6 space-y-4">
+              {isBootcampProgram ? (
+                <SuccessStepCard
+                  title="Chat admin untuk pembayaran"
+                  description="Kirim pesan untuk minta detail transfer. Kamu juga bisa tanya dulu kalau masih mempertimbangkan."
+                  badge="Required"
+                  emphasized
+                >
+                  {paymentWhatsAppUrl ? (
+                    <Button asChild className="h-11 w-full gap-2">
+                      <a
+                        href={paymentWhatsAppUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        Chat Admin WhatsApp
+                      </a>
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Hubungi admin Digica lewat WhatsApp untuk detail
+                      pembayaran.
+                    </p>
+                  )}
+                </SuccessStepCard>
+              ) : null}
+
               {hasWaGroupLink ? (
                 <SuccessStepCard
                   title="Join WhatsApp Group"
                   description="Your e-certificate will be shared in this group after the program. Join now to receive it, along with class schedules and materials."
                   badge="Required"
-                  emphasized
+                  emphasized={!isBootcampProgram}
                 >
                   <div className="space-y-3">
                     <Button asChild className="h-11 w-full">
@@ -501,7 +736,13 @@ export function RegistrationForm({
 
               <SuccessStepCard
                 title="Invite your friends"
-                description="Learning is better together."
+                description={
+                  isBootcampProgram
+                    ? registrationSource === "workshop_promo"
+                      ? "Bagikan link ini ke teman. Mereka juga dapat harga spesial workshop."
+                      : "Bagikan link ini ke teman. Mereka daftar dengan harga yang sama."
+                    : "Learning is better together."
+                }
                 badge="Optional"
               >
                 <Button
@@ -509,7 +750,7 @@ export function RegistrationForm({
                   variant="outline"
                   className="h-11 w-full gap-2"
                   onClick={handleCopyRegistrationLink}
-                  disabled={!registrationUrl}
+                  disabled={!invitationUrl}
                 >
                   <Copy className="h-4 w-4" />
                   Copy Invitation Link

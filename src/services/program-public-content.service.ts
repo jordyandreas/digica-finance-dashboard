@@ -6,6 +6,8 @@ export interface ProgramPublicContent {
   program_id: string;
   summary_html: string | null;
   og_image_url: string | null;
+  registration_banner_url: string | null;
+  promo_banner_url: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -14,6 +16,8 @@ export interface UpsertProgramPublicContentInput {
   program_id: string;
   summary_html?: string | null;
   og_image_url?: string | null;
+  registration_banner_url?: string | null;
+  promo_banner_url?: string | null;
 }
 
 export async function getProgramPublicContent(programId: string): Promise<{

@@ -10,14 +10,27 @@ import { useNumberInput } from "@/hooks/use-number-input";
 import type { UseFormReturn } from "react-hook-form";
 
 import type { ProgramFormState } from "../_hooks/use-add-program";
+import { ProgramBannerUploadField } from "./program-banner-upload-field";
 
 interface ProgramFormProps {
   form: UseFormReturn<ProgramFormState>;
+  registrationBannerFile: File | null;
+  onRegistrationBannerFileChange: (file: File | null) => void;
+  promoBannerFile: File | null;
+  onPromoBannerFileChange: (file: File | null) => void;
 }
 
-export function ProgramForm({ form }: ProgramFormProps) {
+export function ProgramForm({
+  form,
+  registrationBannerFile,
+  onRegistrationBannerFileChange,
+  promoBannerFile,
+  onPromoBannerFileChange,
+}: ProgramFormProps) {
   const { formatNumberValue, createNumberInputHandler } = useNumberInput();
   const price = form.watch("price");
+  const programType = form.watch("type");
+  const isWorkshop = programType === "workshop";
 
   return (
     <div className="space-y-4">
@@ -69,6 +82,30 @@ export function ProgramForm({ form }: ProgramFormProps) {
         og:logo separately via the Digica logo. Example: /og/fw-sql3.png
       </p>
 
+      <ProgramBannerUploadField
+        label="Registration banner"
+        description="Shown on this program public registration page (workshop or mini/bootcamp)."
+        value={form.watch("registration_banner_url")}
+        onChange={(url) =>
+          form.setValue("registration_banner_url", url, { shouldDirty: true })
+        }
+        pendingFile={registrationBannerFile}
+        onFileSelected={onRegistrationBannerFileChange}
+      />
+
+      {isWorkshop ? (
+        <ProgramBannerUploadField
+          label="Promo banner"
+          description="Shown on workshop check-in for the secure-seat promo."
+          value={form.watch("promo_banner_url")}
+          onChange={(url) =>
+            form.setValue("promo_banner_url", url, { shouldDirty: true })
+          }
+          pendingFile={promoBannerFile}
+          onFileSelected={onPromoBannerFileChange}
+        />
+      ) : null}
+
       <div className="grid grid-cols-2 gap-4">
         <SelectController
           form={form}
@@ -101,6 +138,20 @@ export function ProgramForm({ form }: ProgramFormProps) {
           }}
         />
       </div>
+
+      <TextInputController
+        form={form}
+        name="batch"
+        label="Batch"
+        placeholder="e.g. 3"
+        description="Cohort number shown as Batch N (e.g. Batch 3) in check-in success CTA when set."
+        componentProps={{
+          input: {
+            type: "number",
+            min: 1,
+          },
+        }}
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <DatePickerController
@@ -176,6 +227,62 @@ export function ProgramForm({ form }: ProgramFormProps) {
         />
       </div>
 
+      {programType === "bootcamp" || programType === "mini_bootcamp" ? (
+        <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
+          <div className="space-y-1">
+            <p className="text-sm font-medium text-foreground">
+              Workshop promo prices
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Used when participants register via workshop check-in
+              (`source=workshop_promo`). Social / standard registration uses the
+              program Price above. Leave blank to hide that promo package.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <TextInputController
+              form={form}
+              name="promo_individual_price"
+              label="Promo Individual"
+              placeholder="e.g. 249000"
+              componentProps={{
+                input: {
+                  type: "text",
+                  value: formatNumberValue(
+                    form.watch("promo_individual_price"),
+                  ),
+                  onChange: createNumberInputHandler(
+                    form,
+                    "promo_individual_price",
+                    true,
+                  ),
+                },
+              }}
+            />
+            <TextInputController
+              form={form}
+              name="promo_bareng_teman_price"
+              label="Promo Bareng teman"
+              placeholder="e.g. 199000"
+              componentProps={{
+                input: {
+                  type: "text",
+                  value: formatNumberValue(
+                    form.watch("promo_bareng_teman_price"),
+                  ),
+                  onChange: createNumberInputHandler(
+                    form,
+                    "promo_bareng_teman_price",
+                    true,
+                  ),
+                },
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <TextInputController
         form={form}
         name="public_slug"
@@ -203,6 +310,21 @@ export function ProgramForm({ form }: ProgramFormProps) {
           },
         }}
       />
+
+      {isWorkshop ? (
+        <TextInputController
+          form={form}
+          name="bootcamp_registration_link"
+          label="Mini bootcamp / Bootcamp registration link"
+          placeholder="https://.../r/mini-sql-3"
+          description="Shown after secure-seat yes on workshop check-in. Points to the mini/bootcamp registration URL."
+          componentProps={{
+            input: {
+              type: "url",
+            },
+          }}
+        />
+      ) : null}
 
       <TextInputController
         form={form}

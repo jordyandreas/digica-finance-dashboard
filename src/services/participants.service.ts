@@ -5,6 +5,10 @@ import {
   SECURE_SEAT_INTEREST_ALL,
   type SecureSeatInterest,
 } from "@/constants/secure-seat-interest";
+import type {
+  RegistrationPackage,
+  RegistrationSource,
+} from "@/constants/registration-offers";
 import {
   buildPaginationMeta,
   type ListParams,
@@ -27,6 +31,11 @@ export interface Participant {
   notes: string | null;
   reference_name: string | null;
   secure_seat_interest: SecureSeatInterest | null;
+  registration_source: RegistrationSource | null;
+  selected_package: RegistrationPackage | null;
+  package_price: number | null;
+  friend_name: string | null;
+  friend_phone: string | null;
   created_at: string | null;
 }
 

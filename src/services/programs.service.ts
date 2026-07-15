@@ -23,15 +23,19 @@ export interface Program {
   name: string;
   type: ProgramType;
   year: number | null;
+  batch: number | null;
   start_date: string | null;
   end_date: string | null;
   start_time: string | null;
   end_time: string | null;
   registration_link: string | null;
+  bootcamp_registration_link: string | null;
   wa_group_link: string | null;
   public_code: string;
   public_slug: string | null;
   price: number;
+  promo_individual_price: number | null;
+  promo_bareng_teman_price: number | null;
   session_count: number;
   status: ProgramStatus;
   created_at: string;
@@ -41,14 +45,18 @@ export interface CreateProgramInput {
   name: string;
   type: ProgramType;
   year: number;
+  batch?: number | null;
   start_date?: string | null;
   end_date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   registration_link?: string | null;
+  bootcamp_registration_link?: string | null;
   wa_group_link?: string | null;
   public_slug?: string | null;
   price: number;
+  promo_individual_price?: number | null;
+  promo_bareng_teman_price?: number | null;
   session_count?: number;
   status?: ProgramStatus; // default 'draft'
 }
@@ -57,14 +65,18 @@ export interface UpdateProgramInput {
   name?: string;
   type?: ProgramType;
   year?: number;
+  batch?: number | null;
   start_date?: string | null;
   end_date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
   registration_link?: string | null;
+  bootcamp_registration_link?: string | null;
   wa_group_link?: string | null;
   public_slug?: string | null;
   price?: number;
+  promo_individual_price?: number | null;
+  promo_bareng_teman_price?: number | null;
   session_count?: number;
   status?: ProgramStatus;
 }
