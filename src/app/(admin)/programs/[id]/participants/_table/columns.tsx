@@ -4,7 +4,7 @@ import { StatusBadge } from "@/components/atoms/status-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
 import { Banknote, Copy, Pencil, Trash2 } from "lucide-react";
-import { emptyFallback } from "@/utils/string";
+import { emptyFallback, toTitleCase } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
 import { toast } from "sonner";
@@ -24,12 +24,12 @@ interface ParticipantsColumnsProps {
   onDelete?: (participant: Participant) => void;
 }
 
-async function copyEmail(email: string) {
+async function copyText(value: string, successMessage: string) {
   try {
-    await navigator.clipboard.writeText(email);
-    toast.success("Email copied to clipboard");
+    await navigator.clipboard.writeText(value);
+    toast.success(successMessage);
   } catch {
-    toast.error("Failed to copy email");
+    toast.error("Failed to copy");
   }
 }
 
@@ -54,40 +54,79 @@ export function participantsColumns({
       enableSorting: true,
       minSize: 160,
       maxSize: 280,
-      cell: (participant) => (
-        <div className="flex flex-col gap-0.5">
-          <Typography
-            variant="body3"
-            className="font-semibold capitalize text-primary"
-          >
-            {emptyFallback(participant.name)}
-          </Typography>
-          {participant.email ? (
-            <button
-              type="button"
-              onClick={() => copyEmail(participant.email!)}
-              className="group inline-flex max-w-full items-center gap-1 text-left"
-              title="Copy email"
-            >
-              <Typography
-                variant="label"
-                className="truncate normal-case lowercase text-muted-foreground group-hover:text-primary"
+      cell: (participant) => {
+        const displayName = emptyFallback(participant.name);
+        const hasName = Boolean(participant.name?.trim());
+
+        return (
+          <div className="flex flex-col gap-0.5">
+            {hasName ? (
+              <button
+                type="button"
+                onClick={() =>
+                  copyText(
+                    toTitleCase(participant.name),
+                    "Name copied to clipboard",
+                  )
+                }
+                className="group inline-flex max-w-full items-center gap-1 text-left"
+                title="Copy name"
               >
-                {participant.email}
+                <Typography
+                  variant="body3"
+                  className="font-semibold capitalize text-primary"
+                >
+                  {displayName}
+                </Typography>
+                <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            ) : (
+              <Typography
+                variant="body3"
+                className="font-semibold capitalize text-primary"
+              >
+                {displayName}
               </Typography>
-              <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
-            </button>
-          ) : null}
-          {participant.phone ? (
-            <Typography
-              variant="label"
-              className="normal-case text-muted-foreground"
-            >
-              {participant.phone}
-            </Typography>
-          ) : null}
-        </div>
-      ),
+            )}
+            {participant.email ? (
+              <button
+                type="button"
+                onClick={() =>
+                  copyText(participant.email!, "Email copied to clipboard")
+                }
+                className="group inline-flex max-w-full items-center gap-1 text-left"
+                title="Copy email"
+              >
+                <Typography
+                  variant="label"
+                  className="truncate normal-case lowercase text-muted-foreground group-hover:text-primary"
+                >
+                  {participant.email}
+                </Typography>
+                <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            ) : null}
+            {participant.phone ? (
+              <button
+                type="button"
+                onClick={() =>
+                  copyText(participant.phone!, "Phone copied to clipboard")
+                }
+                className="group inline-flex max-w-full items-center gap-1 text-left"
+                title="Copy phone"
+              >
+                <Typography
+                  variant="label"
+                  className="normal-case text-muted-foreground group-hover:text-primary"
+                >
+                  {participant.phone}
+                </Typography>
+                <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+              </button>
+            ) : null}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "occupation",

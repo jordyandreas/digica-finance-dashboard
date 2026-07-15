@@ -13,3 +13,15 @@ export function formatShortId(value?: unknown, maxLength = 7) {
   if (id.length <= maxLength) return id;
   return `${id.slice(0, maxLength)}....`;
 }
+
+export function toTitleCase(value?: unknown) {
+  const text = `${value ?? ""}`.trim();
+  if (isEmpty(text)) return "";
+  return text
+    .split(/\s+/)
+    .map((word) => {
+      if (isEmpty(word)) return word;
+      return `${word.charAt(0).toUpperCase()}${word.slice(1).toLowerCase()}`;
+    })
+    .join(" ");
+}
