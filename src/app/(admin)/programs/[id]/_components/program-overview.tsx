@@ -112,6 +112,34 @@ export function ProgramOverview({
               {program?.price != null ? formatCurrency(program.price) : "—"}
             </Typography>
           </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Promo Individual
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.promo_individual_price != null
+                ? formatCurrency(program.promo_individual_price)
+                : "—"}
+            </Typography>
+          </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Promo Bareng teman
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.promo_bareng_teman_price != null
+                ? formatCurrency(program.promo_bareng_teman_price)
+                : "—"}
+            </Typography>
+          </div>
 
           <div>
             <Typography
