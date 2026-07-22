@@ -49,6 +49,8 @@ export default function ParticipantsPage() {
       pagination={participantsResult?.pagination}
       programId={programId}
       programType={program?.type}
+      programName={program?.name}
+      programSlug={program?.public_slug}
       page={page}
       limit={limit}
       search={search}

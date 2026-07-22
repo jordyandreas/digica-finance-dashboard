@@ -8,15 +8,26 @@ import {
   DataTablePaginationControl,
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
-import { PAYMENT_STATUS_FILTER_OPTIONS } from "@/constants/payment-status";
+import {
+  formatPaymentStatusLabel,
+  PAYMENT_STATUS_FILTER_OPTIONS,
+} from "@/constants/payment-status";
 import {
   SECURE_SEAT_INTEREST_ALL,
   SECURE_SEAT_INTEREST_FILTER_OPTIONS,
 } from "@/constants/secure-seat-interest";
+import { occupationOptions } from "@/schemas/participant-schema";
 import { type Participant } from "@/services/participants.service";
 import type { ProgramType } from "@/services/programs.service";
 import { type PaginationMeta } from "@/types/pagination";
-import { Plus } from "lucide-react";
+import {
+  buildParticipantsCsv,
+  downloadCsv,
+  sanitizeCsvFilename,
+} from "@/utils/export-csv";
+import { toTitleCase } from "@/utils/string";
+import { Download, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useAddParticipant } from "../_hooks/use-add-participant";
 import { useParticipants } from "../_hooks/use-participants";
 import { ParticipantsTable } from "../_table";
@@ -26,6 +37,8 @@ interface ParticipantsContentProps {
   pagination?: PaginationMeta;
   programId: string;
   programType?: ProgramType | null;
+  programName?: string | null;
+  programSlug?: string | null;
   page: number;
   limit: number;
   search: string;
@@ -41,11 +54,23 @@ interface ParticipantsContentProps {
   isFetching?: boolean;
 }
 
+function getOccupationLabel(occupation: string | null): string {
+  if (!occupation) {
+    return "";
+  }
+  return (
+    occupationOptions.find((option) => option.value === occupation)?.label ??
+    occupation
+  );
+}
+
 export function ParticipantsContent({
   participants,
   pagination,
   programId,
   programType,
+  programName,
+  programSlug,
   page,
   limit,
   search,
@@ -77,6 +102,32 @@ export function ParticipantsContent({
   const showSkeleton = isPending && participants.length === 0;
   const isWorkshop = programType === "workshop";
   const skeletonColumns = isWorkshop ? 9 : 10;
+  const exportParticipants = allParticipants ?? [];
+
+  const handleExportCsv = () => {
+    if (exportParticipants.length === 0) {
+      toast.error("No participants to export");
+      return;
+    }
+
+    const rows = exportParticipants
+      .map((participant) => ({
+        name: toTitleCase(participant.name),
+        phone: participant.phone ?? "",
+        email: participant.email ?? "",
+        occupation: getOccupationLabel(participant.occupation),
+        organization: participant.organization ?? "",
+        paymentStatus: formatPaymentStatusLabel(participant.payment_status),
+      }))
+      .sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
+      );
+
+    const baseName = sanitizeCsvFilename(
+      programSlug || programName || "participants",
+    );
+    downloadCsv(`${baseName}-participants.csv`, buildParticipantsCsv(rows));
+  };
 
   return (
     <>
@@ -95,26 +146,40 @@ export function ParticipantsContent({
         </div>
 
         <div className="space-y-3">
-          <DataTableFilters
-            search={search}
-            onSearchChange={onSearchChange}
-            searchPlaceholder="Search name, email, or phone"
-            status={status}
-            onStatusChange={onStatusChange}
-            statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
-            statusPlaceholder="Payment status"
-            {...(isWorkshop
-              ? {
-                  secondaryFilter: secureSeatInterest,
-                  onSecondaryFilterChange: onSecureSeatInterestChange,
-                  secondaryFilterOptions: [
-                    ...SECURE_SEAT_INTEREST_FILTER_OPTIONS,
-                  ],
-                  secondaryFilterPlaceholder: "Secure seat",
-                  secondaryFilterAllValue: SECURE_SEAT_INTEREST_ALL,
-                }
-              : {})}
-          />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <DataTableFilters
+                search={search}
+                onSearchChange={onSearchChange}
+                searchPlaceholder="Search name, email, or phone"
+                status={status}
+                onStatusChange={onStatusChange}
+                statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
+                statusPlaceholder="Payment status"
+                {...(isWorkshop
+                  ? {
+                      secondaryFilter: secureSeatInterest,
+                      onSecondaryFilterChange: onSecureSeatInterestChange,
+                      secondaryFilterOptions: [
+                        ...SECURE_SEAT_INTEREST_FILTER_OPTIONS,
+                      ],
+                      secondaryFilterPlaceholder: "Secure seat",
+                      secondaryFilterAllValue: SECURE_SEAT_INTEREST_ALL,
+                    }
+                  : {})}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="shrink-0 self-end sm:self-start"
+              onClick={handleExportCsv}
+              disabled={showSkeleton || exportParticipants.length === 0}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
           <Card
             className={
               isFetching && !showSkeleton ? "opacity-60 transition-opacity" : undefined

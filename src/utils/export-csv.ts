@@ -5,10 +5,44 @@ function escapeCsvValue(value: string): string {
   return value;
 }
 
+export type ParticipantCsvRow = {
+  name: string;
+  phone: string;
+  email: string;
+  occupation: string;
+  organization: string;
+  paymentStatus: string;
+};
+
+const PARTICIPANT_CSV_HEADERS = [
+  "Name",
+  "Phone",
+  "Email",
+  "Occupation",
+  "Organization",
+  "Payment Status",
+] as const;
+
 /** Build a single-column CSV with header `Name` for Canva bulk create. */
 export function buildAttendanceNamesCsv(names: string[]): string {
   const rows = names.map((name) => escapeCsvValue(name));
   return ["Name", ...rows].join("\n");
+}
+
+/** Build a multi-column CSV of participant info. */
+export function buildParticipantsCsv(rows: ParticipantCsvRow[]): string {
+  const header = PARTICIPANT_CSV_HEADERS.join(",");
+  const body = rows.map((row) =>
+    [
+      escapeCsvValue(row.name),
+      escapeCsvValue(row.phone),
+      escapeCsvValue(row.email),
+      escapeCsvValue(row.occupation),
+      escapeCsvValue(row.organization),
+      escapeCsvValue(row.paymentStatus),
+    ].join(","),
+  );
+  return [header, ...body].join("\n");
 }
 
 export function sanitizeCsvFilename(name: string): string {

@@ -10,7 +10,12 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export const PAYMENT_STATUS_ALL = "all";
 
-function formatPaymentStatusLabel(status: PaymentStatus): string {
+export function formatPaymentStatusLabel(
+  status: string | null | undefined,
+): string {
+  if (!status) {
+    return "";
+  }
   return status.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
