@@ -16,10 +16,14 @@ export const PAYMENT_TYPES = ["tenor", "full", "scholarship"] as const;
 
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
 
+function isAmountPresent(amount: number | null | undefined): amount is number {
+  return amount !== null && amount !== undefined;
+}
+
 export const paymentSchema = z
   .object({
     participant_id: z.string().trim().min(1, "Participant is required"),
-    amount: z.number(),
+    amount: z.number().nullable().optional(),
     payment_type: z.enum(PAYMENT_TYPES, {
       message: "Payment type is required",
     }),
@@ -75,6 +79,21 @@ export const paymentSchema = z
   )
   .refine(
     (data) => {
+      if (data.status === "paid") {
+        return isAmountPresent(data.amount);
+      }
+      return true;
+    },
+    {
+      message: "Amount is required when status is Paid",
+      path: ["amount"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (!isAmountPresent(data.amount)) {
+        return true;
+      }
       if (data.payment_type === "scholarship") {
         return data.amount >= 0;
       }

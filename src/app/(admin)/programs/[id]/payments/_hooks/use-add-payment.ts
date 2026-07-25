@@ -204,7 +204,7 @@ export function useAddPayment({
   const handleSubmit = form.handleSubmit(async (values: PaymentFormState) => {
     const validation = paymentSchema.safeParse({
       participant_id: values.participant_id,
-      amount: values.amount ?? 0,
+      amount: values.amount ?? null,
       payment_type: values.payment_type as PaymentType,
       tenor:
         values.payment_type === "tenor" && values.tenor
@@ -245,7 +245,7 @@ export function useAddPayment({
       const { createPayment } = await import("@/services/payments.service");
 
       const paymentData: CreatePaymentInput = {
-        amount: values.amount as number,
+        amount: values.amount ?? null,
         participant_id: values.participant_id,
         program_id: values.program_id || resolvedProgramId,
         payment_type: values.payment_type as PaymentType,
@@ -304,11 +304,16 @@ export function useAddPayment({
     }
   });
 
+  const amountMissing = amount === undefined || amount === null;
+  const amountInvalid =
+    !amountMissing && paymentType !== "scholarship" && amount <= 0;
+  const amountRequiredMissing = status === "paid" && amountMissing;
+
   const applyDisabled =
     loading ||
     !participantId?.trim() ||
-    amount === undefined ||
-    (paymentType !== "scholarship" && amount <= 0) ||
+    amountRequiredMissing ||
+    amountInvalid ||
     !paymentType ||
     !status?.trim() ||
     (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));

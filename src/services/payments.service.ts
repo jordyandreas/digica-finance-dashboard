@@ -29,7 +29,7 @@ export interface Payment {
 }
 
 export interface CreatePaymentInput {
-  amount: number;
+  amount: number | null;
   participant_id: string;
   program_id: string;
   payment_type: "tenor" | "full" | "scholarship";
@@ -43,7 +43,7 @@ export interface CreatePaymentInput {
 }
 
 export interface UpdatePaymentInput {
-  amount?: number;
+  amount?: number | null;
   participant_id?: string;
   program_id?: string;
   payment_type?: "tenor" | "full" | "scholarship";
@@ -194,7 +194,7 @@ export async function getPaymentsSummary(
     return { data: { total: 0, count: 0 }, error: null };
   }
 
-  let query = supabase.from("payments").select("amount");
+  let query = supabase.from("payments").select("amount").eq("status", "paid");
 
   if (programId) {
     query = query.eq("program_id", programId);

@@ -156,8 +156,10 @@ export function PaymentFormFields({
   const { formatNumberValue, createNumberInputHandler } = useNumberInput();
   const amount = form.watch("amount");
   const paymentType = form.watch("payment_type");
+  const status = form.watch("status");
   const selectedTenor = form.watch("tenor");
   const selectedParticipantId = form.watch("participant_id");
+  const isAmountRequired = status === "paid";
 
   const paidTenorOptions = selectedTenor
     ? Array.from({ length: Number.parseInt(selectedTenor, 10) }, (_, index) => {
@@ -231,12 +233,12 @@ export function PaymentFormFields({
           form={form}
           name="amount"
           label="Amount"
-          required
+          required={isAmountRequired}
           placeholder="Enter amount"
           componentProps={{
             input: {
               type: "text",
-              required: true,
+              required: isAmountRequired,
               className: amount !== undefined ? "pr-9" : undefined,
               value: formatNumberValue(amount),
               onChange: createNumberInputHandler(form, "amount", true),
