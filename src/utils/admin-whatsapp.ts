@@ -41,3 +41,21 @@ export function buildPaymentWhatsAppUrl(input: {
 
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
 }
+
+export function buildOtherProgramsWhatsAppUrl(input: {
+  programName: string;
+}): string | null {
+  const adminNumber = getAdminWhatsAppNumber();
+  if (!adminNumber) {
+    return null;
+  }
+
+  const text = [
+    "Halo Admin Digica,",
+    `Saya tertarik dengan program ${input.programName}, tapi programnya sudah selesai.`,
+    "",
+    "Boleh info program Digica lainnya yang masih dibuka?",
+  ].join("\n");
+
+  return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
+}

@@ -2,11 +2,19 @@
 
 import * as React from "react";
 import Image from "next/image";
-import { AlertCircle, CalendarDays, Clock3, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  MessageCircle,
+  Sparkles,
+} from "lucide-react";
 import {
   RegistrationForm,
   type RegistrationPageData,
 } from "@/app/registration/[programId]/_components/registration-form";
+import { Button } from "@/components/atoms/button";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { buildOtherProgramsWhatsAppUrl } from "@/utils/admin-whatsapp";
 import {
   formatProgramDateRange,
   formatProgramTimeRange,
@@ -132,6 +141,10 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
   const registrationBannerAlt = data
     ? `${data.program.name} banner`
     : "Registration banner";
+  const isProgramCompleted = data?.program.status === "completed";
+  const otherProgramsWhatsAppUrl = data
+    ? buildOtherProgramsWhatsAppUrl({ programName: data.program.name })
+    : null;
 
   return (
     <RegistrationPageShell>
@@ -170,6 +183,36 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
             We couldn&apos;t load this registration page right now.
           </p>
           <p className="text-sm text-destructive">{errorMessage}</p>
+        </div>
+      ) : data && isProgramCompleted ? (
+        <div className="space-y-4 rounded-2xl border border-brand-periwinkle/60 bg-brand-pale/20 p-6 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-pale text-brand-deep">
+            <CheckCircle2 className="h-6 w-6" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-xl font-semibold text-brand-deep">
+              Program completed
+            </h1>
+            <p className="text-sm font-medium text-brand-deep">
+              {data.program.name}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Pendaftaran untuk program ini sudah ditutup. Tertarik ikut program
+              Digica lainnya? Chat admin kami lewat WhatsApp.
+            </p>
+          </div>
+          {otherProgramsWhatsAppUrl ? (
+            <Button asChild className="h-11 w-full gap-2">
+              <a
+                href={otherProgramsWhatsAppUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Tanya Program Lainnya
+              </a>
+            </Button>
+          ) : null}
         </div>
       ) : data ? (
         <div className="flex flex-col gap-5">

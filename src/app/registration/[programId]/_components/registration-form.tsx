@@ -37,13 +37,14 @@ import { buildPaymentWhatsAppUrl } from "@/utils/admin-whatsapp";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import { resolvePublicAppOrigin } from "@/utils/program-public-link";
 import { appendRegistrationSource } from "@/utils/registration-source-url";
-import type { ProgramType } from "@/services/programs.service";
+import type { ProgramStatus, ProgramType } from "@/services/programs.service";
 
 export interface RegistrationPageData {
   program: {
     id: string;
     name: string;
     type: ProgramType;
+    status: ProgramStatus;
     summary_html: string | null;
     start_date: string | null;
     end_date: string | null;

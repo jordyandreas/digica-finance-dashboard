@@ -12,12 +12,13 @@ import {
   resolveProgramIdByIdentifier,
   resolvePublicAppOrigin,
 } from "@/utils/program-public-link";
-import type { ProgramType } from "@/services/programs.service";
+import type { ProgramStatus, ProgramType } from "@/services/programs.service";
 
 export interface ProgramRegistrationPublicData {
   id: string;
   name: string;
   type: ProgramType;
+  status: ProgramStatus;
   start_date: string | null;
   end_date: string | null;
   start_time: string | null;
@@ -80,7 +81,7 @@ export async function getProgramRegistrationPublicData(
   const { data, error } = await supabase
     .from("programs")
     .select(
-      "id, name, type, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug, price, promo_individual_price, promo_bareng_teman_price",
+      "id, name, type, status, start_date, end_date, start_time, end_time, registration_link, wa_group_link, public_code, public_slug, price, promo_individual_price, promo_bareng_teman_price",
     )
     .eq("id", resolvedProgramId)
     .single();
@@ -130,6 +131,7 @@ export async function getProgramRegistrationPublicData(
 
   return {
     ...data,
+    status: data.status as ProgramStatus,
     price: toNullablePrice(data.price),
     promo_individual_price: toNullablePrice(data.promo_individual_price),
     promo_bareng_teman_price: toNullablePrice(data.promo_bareng_teman_price),

@@ -64,6 +64,16 @@ export async function POST(
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
 
+    if (program.status === "completed") {
+      return NextResponse.json(
+        {
+          error:
+            "This program has completed and is no longer accepting registrations",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const isPaidProgram =
       program.type === "bootcamp" || program.type === "mini_bootcamp";
