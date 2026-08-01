@@ -87,7 +87,7 @@ export function useAddParticipant({
     });
   };
 
-  const handlePaymentSuccess = async () => {
+  const invalidateOverviewData = async () => {
     if (!resolvedProgramId) {
       return;
     }
@@ -101,6 +101,10 @@ export function useAddParticipant({
       queryKey: dashboardProgramSummaryQueryKey(resolvedProgramId),
     });
     await invalidateParticipants();
+  };
+
+  const handlePaymentSuccess = async () => {
+    await invalidateOverviewData();
   };
 
   const handleSuccess = async () => {
@@ -154,7 +158,7 @@ export function useAddParticipant({
     setIsDeleting(true);
     try {
       await deleteParticipant(deleteConfirmation.item.id);
-      await invalidateParticipants();
+      await invalidateOverviewData();
       toast.success("Participant deleted successfully");
     } catch (error) {
       console.error("Error deleting participant:", error);
