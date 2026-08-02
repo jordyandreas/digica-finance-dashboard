@@ -106,47 +106,6 @@ export function ProgramOverview({
               tagName="dt"
               className="text-muted-foreground"
             >
-              Price
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.price != null ? formatCurrency(program.price) : "—"}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Promo Individual
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.promo_individual_price != null
-                ? formatCurrency(program.promo_individual_price)
-                : "—"}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Promo Bareng teman
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.promo_bareng_teman_price != null
-                ? formatCurrency(program.promo_bareng_teman_price)
-                : "—"}
-            </Typography>
-          </div>
-
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
               Status
             </Typography>
             <Typography variant="body2" tagName="dd">
@@ -200,7 +159,47 @@ export function ProgramOverview({
               })()}
             </Typography>
           </div>
-          
+          <div className="hidden sm:block" aria-hidden />
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Default Price
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.price != null ? formatCurrency(program.price) : "—"}
+            </Typography>
+          </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Promo Individual
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.promo_individual_price != null
+                ? formatCurrency(program.promo_individual_price)
+                : "—"}
+            </Typography>
+          </div>
+          <div>
+            <Typography
+              variant="caption"
+              tagName="dt"
+              className="text-muted-foreground"
+            >
+              Promo Bareng teman
+            </Typography>
+            <Typography variant="body2" tagName="dd">
+              {program?.promo_bareng_teman_price != null
+                ? formatCurrency(program.promo_bareng_teman_price)
+                : "—"}
+            </Typography>
+          </div>
         </dl>
 
         <div className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-2">
