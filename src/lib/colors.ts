@@ -1,5 +1,5 @@
 /**
- * Digica Finance Dashboard — brand color palette
+ * Digica Academy Dashboard — brand color palette
  * @see src/app/globals.css for CSS variables and theme tokens
  */
 export const colors = {

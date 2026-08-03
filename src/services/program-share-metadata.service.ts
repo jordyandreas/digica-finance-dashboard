@@ -141,9 +141,42 @@ export async function getProgramRegistrationPublicData(
   };
 }
 
+type ProgramShareKind = "registration" | "check-in";
+
+function buildProgramShareDescription(
+  program: ProgramRegistrationPublicData,
+  kind: ProgramShareKind,
+  dateRange: string,
+  timeRange: string,
+): string {
+  const summaryText = program.summary_html
+    ? truncate(stripHtml(program.summary_html), 160)
+    : "";
+
+  const schedulePart = [dateRange, timeRange].filter(Boolean).join(" · ");
+  let description =
+    kind === "check-in"
+      ? `Absensi program ${program.name}.`
+      : `Daftar program ${program.name}.`;
+
+  if (schedulePart) {
+    description += ` ${schedulePart}.`;
+  }
+
+  if (summaryText && kind === "registration") {
+    const remaining = 200 - description.length - 1;
+    if (remaining > 20) {
+      description += ` ${truncate(summaryText, remaining)}`;
+    }
+  }
+
+  return description;
+}
+
 export function buildProgramShareMetadata(
   program: ProgramRegistrationPublicData,
   identifier: string,
+  kind: ProgramShareKind = "registration",
 ): ProgramShareMetadata {
   const dateRange = formatProgramDateRange(
     program.start_date,
@@ -156,32 +189,20 @@ export function buildProgramShareMetadata(
 
   const origin = resolvePublicAppOrigin();
   const normalizedIdentifier = identifier.trim();
-  const canonicalUrl = `${origin}/r/${normalizedIdentifier}`;
+  const pathPrefix = kind === "check-in" ? "c" : "r";
+  const canonicalUrl = `${origin}/${pathPrefix}/${normalizedIdentifier}`;
   const configuredOgImageUrl =
     program.og_image_url ??
     (normalizedIdentifier === "fw-sql3" ? "/og/fw-sql3.png" : null);
 
-  const summaryText = program.summary_html
-    ? truncate(stripHtml(program.summary_html), 160)
-    : "";
-
-  const schedulePart = [dateRange, timeRange].filter(Boolean).join(" · ");
-  let description = `Daftar program ${program.name}.`;
-
-  if (schedulePart) {
-    description += ` ${schedulePart}.`;
-  }
-
-  if (summaryText) {
-    const remaining = 200 - description.length - 1;
-    if (remaining > 20) {
-      description += ` ${truncate(summaryText, remaining)}`;
-    }
-  }
-
   return {
     title: program.name,
-    description,
+    description: buildProgramShareDescription(
+      program,
+      kind,
+      dateRange,
+      timeRange,
+    ),
     canonicalUrl,
     dateRange,
     timeRange,
@@ -200,5 +221,17 @@ export async function getProgramRegistrationShareMetadata(
     return null;
   }
 
-  return buildProgramShareMetadata(program, identifier);
+  return buildProgramShareMetadata(program, identifier, "registration");
+}
+
+export async function getProgramCheckInShareMetadata(
+  identifier: string,
+): Promise<ProgramShareMetadata | null> {
+  const program = await getProgramRegistrationPublicData(identifier);
+
+  if (!program) {
+    return null;
+  }
+
+  return buildProgramShareMetadata(program, identifier, "check-in");
 }

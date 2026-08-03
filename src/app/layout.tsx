@@ -21,9 +21,9 @@ const publicAppUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),
-  title: "Digica Finance Dashboard",
+  title: "Digica Academy Dashboard",
   description:
-    "Finance dashboard for managing programs, participants, payments, and expenses",
+    "Dashboard for managing Digica Academy programs, participants, payments, and expenses",
 };
 
 export default function RootLayout({
