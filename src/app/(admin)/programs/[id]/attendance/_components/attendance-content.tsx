@@ -130,7 +130,8 @@ export function AttendanceContent({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
         <p className="text-muted-foreground">
-          Set session dates and mark each participant as present or absent
+          Set session dates and mark each participant as present, absent, or
+          leave permit
         </p>
       </div>
 

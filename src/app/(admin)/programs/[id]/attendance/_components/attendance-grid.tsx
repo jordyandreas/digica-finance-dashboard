@@ -22,28 +22,30 @@ interface AttendanceGridProps {
   search?: string;
 }
 
-function countPresentSessions(
+function countSessionsByStatus(
   participantId: string,
   sessions: ProgramSession[],
   attendance: AttendanceGrid,
+  status: AttendanceStatus,
 ): number {
   const participantAttendance = attendance[participantId] ?? {};
 
   return sessions.reduce(
     (count, session) =>
-      participantAttendance[session.id] === "present" ? count + 1 : count,
+      participantAttendance[session.id] === status ? count + 1 : count,
     0,
   );
 }
 
-function countPresentParticipants(
+function countParticipantsByStatus(
   sessionId: string,
   participants: Participant[],
   attendance: AttendanceGrid,
+  status: AttendanceStatus,
 ): number {
   return participants.reduce(
     (count, participant) =>
-      attendance[participant.id]?.[sessionId] === "present" ? count + 1 : count,
+      attendance[participant.id]?.[sessionId] === status ? count + 1 : count,
     0,
   );
 }
@@ -158,10 +160,17 @@ export function AttendanceGridTable({
               Participant
             </th>
             {sessions.map((session) => {
-              const sessionPresentCount = countPresentParticipants(
+              const sessionPresentCount = countParticipantsByStatus(
                 session.id,
                 visibleParticipants,
                 localAttendance,
+                "present",
+              );
+              const sessionLeaveCount = countParticipantsByStatus(
+                session.id,
+                visibleParticipants,
+                localAttendance,
+                "leave",
               );
 
               return (
@@ -178,6 +187,10 @@ export function AttendanceGridTable({
                   <div className="mt-1 text-xs font-medium text-green-700">
                     {sessionPresentCount}/{visibleParticipants.length} present
                   </div>
+                  <div className="text-xs font-medium text-amber-700">
+                    {sessionLeaveCount}/{visibleParticipants.length} leave
+                    excused
+                  </div>
                 </th>
               );
             })}
@@ -185,10 +198,17 @@ export function AttendanceGridTable({
         </thead>
         <tbody>
           {visibleParticipants.map((participant) => {
-            const presentCount = countPresentSessions(
+            const presentCount = countSessionsByStatus(
               participant.id,
               sessions,
               localAttendance,
+              "present",
+            );
+            const leaveCount = countSessionsByStatus(
+              participant.id,
+              sessions,
+              localAttendance,
+              "leave",
             );
 
             return (
@@ -204,6 +224,9 @@ export function AttendanceGridTable({
                 ) : null}
                 <div className="mt-1 text-xs font-medium text-green-700">
                   {presentCount}/{sessions.length} present
+                </div>
+                <div className="text-xs font-medium text-amber-700">
+                  {leaveCount}/{sessions.length} leave excused
                 </div>
               </td>
               {sessions.map((session) => {
