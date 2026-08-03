@@ -6,6 +6,10 @@ import {
   DataTablePaginationControl,
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
+import {
+  FinancialVisibilityToggle,
+  formatMaskedCurrency,
+} from "@/components/molecules/financial-visibility";
 import { YearFilterSelect } from "@/components/molecules/year-filter-select";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import {
@@ -14,7 +18,7 @@ import {
   toYearFilterParam,
   type YearFilterValue,
 } from "@/constants/dashboard-year";
-import { formatCurrency } from "@/utils/currency";
+import { useFinancialVisibility } from "@/hooks/use-financial-visibility";
 import {
   useDashboardProgramSummaryPaginated,
   useDashboardStats,
@@ -32,6 +36,7 @@ export default function DashboardPage() {
   const { data: summaryResult, error, isLoading } =
     useDashboardProgramSummaryPaginated(page, limit, selectedYear);
   const { data: dashboardStats } = useDashboardStats(selectedYear);
+  const { isVisible } = useFinancialVisibility();
 
   const totals = {
     totalRevenue: dashboardStats?.totalRevenue ?? 0,
@@ -42,21 +47,25 @@ export default function DashboardPage() {
   const stats = [
     {
       title: "Total Revenue",
-      value: formatCurrency(totals.totalRevenue),
+      value: formatMaskedCurrency(totals.totalRevenue, isVisible),
       description: `Total revenue from payments in ${yearLabel}`,
-      valueClassName: totals.totalRevenue >= 0 ? "text-brand-royal" : "text-red-600",
+      valueClassName: isVisible
+        ? totals.totalRevenue >= 0
+          ? "text-brand-royal"
+          : "text-red-600"
+        : "text-muted-foreground",
     },
     {
       title: "Total Expense",
-      value: formatCurrency(totals.totalExpense),
+      value: formatMaskedCurrency(totals.totalExpense, isVisible),
       description: `Total expenses across programs in ${yearLabel}`,
-      valueClassName: "text-red-600",
+      valueClassName: isVisible ? "text-red-600" : "text-muted-foreground",
     },
     {
       title: "Net Profit",
-      value: formatCurrency(totals.netProfit),
+      value: formatMaskedCurrency(totals.netProfit, isVisible),
       description: `Revenue minus expenses in ${yearLabel}`,
-      valueClassName: "text-brand-royal",
+      valueClassName: isVisible ? "text-brand-royal" : "text-muted-foreground",
     },
   ];
 
@@ -75,7 +84,10 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <YearFilterSelect value={yearFilter} onChange={handleYearChange} />
+        <div className="flex items-center gap-2">
+          <FinancialVisibilityToggle />
+          <YearFilterSelect value={yearFilter} onChange={handleYearChange} />
+        </div>
       </div>
 
       {error && (

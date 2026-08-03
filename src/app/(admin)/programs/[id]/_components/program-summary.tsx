@@ -1,7 +1,11 @@
- "use client";
+"use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency } from "@/utils/currency";
+import {
+  FinancialVisibilityToggle,
+  formatMaskedCurrency,
+} from "@/components/molecules/financial-visibility";
+import { useFinancialVisibility } from "@/hooks/use-financial-visibility";
 import { useDashboardProgramSummary } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
 
 type ProgramSummaryProps = {
@@ -10,6 +14,7 @@ type ProgramSummaryProps = {
 
 export function ProgramSummary({ programId }: ProgramSummaryProps) {
   const { data, error, isLoading } = useDashboardProgramSummary(programId);
+  const { isVisible } = useFinancialVisibility();
   const summary = data?.[0];
   const totalRevenue = summary?.total_revenue ?? 0;
   const totalExpense = summary?.total_expense ?? 0;
@@ -18,26 +23,34 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
   const stats = [
     {
       title: "Total Revenue",
-      value: formatCurrency(totalRevenue),
+      value: formatMaskedCurrency(totalRevenue, isVisible),
       description: "Total revenue from program payments",
-      valueClassName: totalRevenue >= 0 ? "text-brand-royal" : "text-red-600",
+      valueClassName: isVisible
+        ? totalRevenue >= 0
+          ? "text-brand-royal"
+          : "text-red-600"
+        : "text-muted-foreground",
     },
     {
       title: "Total Expenses",
-      value: formatCurrency(totalExpense),
+      value: formatMaskedCurrency(totalExpense, isVisible),
       description: "Total expenses for this program",
-      valueClassName: "text-red-600",
+      valueClassName: isVisible ? "text-red-600" : "text-muted-foreground",
     },
     {
       title: "Net Profit",
-      value: formatCurrency(netProfit),
+      value: formatMaskedCurrency(netProfit, isVisible),
       description: "Revenue minus expenses",
-      valueClassName: "text-brand-royal",
+      valueClassName: isVisible ? "text-brand-royal" : "text-muted-foreground",
     },
   ];
 
   return (
-    <>
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <FinancialVisibilityToggle />
+      </div>
+
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           <p className="font-medium">Error loading program totals</p>
@@ -80,6 +93,6 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
