@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 const publicAppUrl =
   process.env.NEXT_PUBLIC_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-  "https://digica-academy.vercel.app";
+  "https://www.digica-academy.web.id";
 
 export const metadata: Metadata = {
   metadataBase: new URL(publicAppUrl),

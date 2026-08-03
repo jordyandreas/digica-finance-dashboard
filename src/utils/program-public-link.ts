@@ -12,6 +12,8 @@ export function isUuid(value: string): boolean {
   return UUID_PATTERN.test(value.trim());
 }
 
+const DEFAULT_PUBLIC_APP_URL = "https://www.digica-academy.web.id";
+
 export function resolvePublicAppOrigin(browserOrigin = ""): string {
   const configured = process.env.NEXT_PUBLIC_PUBLIC_APP_URL?.trim().replace(
     /\/$/,
@@ -21,7 +23,12 @@ export function resolvePublicAppOrigin(browserOrigin = ""): string {
     return configured;
   }
 
-  return browserOrigin.replace(/\/$/, "");
+  const fromBrowser = browserOrigin.replace(/\/$/, "");
+  if (fromBrowser) {
+    return fromBrowser;
+  }
+
+  return DEFAULT_PUBLIC_APP_URL;
 }
 
 export function resolvePublicIdentifier(
