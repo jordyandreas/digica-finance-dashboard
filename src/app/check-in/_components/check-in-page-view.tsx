@@ -6,6 +6,7 @@ import {
   CheckInForm,
   type CheckInData,
 } from "@/app/check-in/[programId]/_components/check-in-form";
+import { CheckInTodayProgramPicker } from "@/app/check-in/_components/check-in-today-program-picker";
 
 function CheckInPageShell({ children }: { children: React.ReactNode }) {
   return (
@@ -99,6 +100,7 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
             Check-in unavailable
           </h1>
           <p className="text-sm text-muted-foreground">{errorMessage}</p>
+          <CheckInTodayProgramPicker />
         </div>
       ) : data ? (
         <div className="flex flex-col gap-4">
@@ -115,6 +117,9 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
             ) : null}
           </div>
           <CheckInForm programId={identifier} data={data} />
+          {!canCheckIn && data.sessions.length === 0 ? (
+            <CheckInTodayProgramPicker />
+          ) : null}
         </div>
       ) : null}
     </CheckInPageShell>

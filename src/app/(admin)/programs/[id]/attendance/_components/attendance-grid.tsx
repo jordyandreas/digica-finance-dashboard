@@ -178,11 +178,11 @@ export function AttendanceGridTable({
         </span>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="max-h-[min(70vh,calc(100dvh-14rem))] overflow-auto rounded-lg border">
         <table className="w-full min-w-max border-collapse text-sm">
           <thead>
-            <tr className="border-b bg-muted/50">
-              <th className="sticky left-0 z-20 min-w-[180px] border-r bg-muted px-4 py-3 text-left font-medium">
+            <tr className="border-b bg-muted">
+              <th className="sticky left-0 top-0 z-30 min-w-[180px] border-r bg-muted px-4 py-3 text-left font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
                 Participant
               </th>
               {sessions.map((session) => {
@@ -202,7 +202,7 @@ export function AttendanceGridTable({
                 return (
                   <th
                     key={session.id}
-                    className="min-w-[88px] px-2 py-3 text-center font-medium"
+                    className="sticky top-0 z-20 min-w-[88px] bg-muted px-2 py-3 text-center font-medium"
                   >
                     <div>Session {session.session_number}</div>
                     <div className="text-xs font-normal text-muted-foreground">
@@ -241,7 +241,7 @@ export function AttendanceGridTable({
 
               return (
                 <tr key={participant.id} className="border-b last:border-b-0">
-                  <td className="sticky left-0 z-10 border-r bg-background px-4 py-3">
+                  <td className="sticky left-0 z-10 border-r bg-background px-4 py-3 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
                     <div className="font-medium capitalize">
                       {participant.name || "Unnamed participant"}
                     </div>
