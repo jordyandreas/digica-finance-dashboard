@@ -135,6 +135,20 @@ export async function getPrograms(): Promise<{
   return { data, error };
 }
 
+export async function getActivePrograms(limit = 5): Promise<{
+  data: Program[] | null;
+  error: PostgrestError | null;
+}> {
+  const { data, error } = await supabase
+    .from("programs")
+    .select("*")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  return { data, error };
+}
+
 export interface ProgramsListParams extends PaginationParams {
   year?: number;
 }

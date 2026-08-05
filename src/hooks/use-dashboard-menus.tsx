@@ -2,6 +2,7 @@
 
 import { ReactElement } from "react";
 import { FolderKanban, LayoutDashboard } from "lucide-react";
+import { useActivePrograms } from "@/app/(admin)/programs/_hooks/use-programs";
 
 type MenuSubItem = {
   label: string;
@@ -14,9 +15,12 @@ export type MenuItem = {
   pathname: string;
   icon: ReactElement;
   items: Array<MenuSubItem>;
+  isLoadingItems?: boolean;
 };
 
 export function useDashboardMenus() {
+  const { data: activePrograms = [], isLoading } = useActivePrograms(5);
+
   const menus: MenuItem[] = [
     {
       label: "Dashboard",
@@ -28,7 +32,11 @@ export function useDashboardMenus() {
       label: "Programs",
       pathname: "/programs",
       icon: <FolderKanban className="h-5 w-5" />,
-      items: [],
+      isLoadingItems: isLoading,
+      items: activePrograms.map((program) => ({
+        label: program.name,
+        pathname: `/programs/${program.id}/participants`,
+      })),
     },
   ];
 

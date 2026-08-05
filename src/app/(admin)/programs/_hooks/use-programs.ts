@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   type Program,
+  getActivePrograms,
   getPrograms,
   getProgramsPaginated,
 } from "@/services/programs.service";
@@ -15,6 +16,9 @@ export const programsPaginatedQueryKey = (
   limit: number,
   year?: number,
 ) => ["programs", "paginated", page, limit, year ?? "all"] as const;
+
+export const activeProgramsQueryKey = (limit: number) =>
+  ["programs", "active", limit] as const;
 
 export function usePrograms() {
   return useQuery<Program[]>({
@@ -47,5 +51,19 @@ export function useProgramsPaginated(
       }
       return data!;
     },
+  });
+}
+
+export function useActivePrograms(limit = 5) {
+  return useQuery<Program[]>({
+    queryKey: activeProgramsQueryKey(limit),
+    queryFn: async () => {
+      const { data, error } = await getActivePrograms(limit);
+      if (error) {
+        throw error;
+      }
+      return data ?? [];
+    },
+    staleTime: 60_000,
   });
 }
