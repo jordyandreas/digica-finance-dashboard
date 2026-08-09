@@ -533,8 +533,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
         >
           {isWorkshop ? (
             <>
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
-                <DialogHeader className="items-center text-center sm:text-center">
+              <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-6 pb-4 pt-6">
+                <DialogHeader className="w-full min-w-0 items-center text-center sm:text-center">
                   <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
                     <CheckCircle2 className="h-7 w-7" />
                   </div>
@@ -542,7 +542,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                     Terima kasih!
                   </DialogTitle>
                   <DialogDescription asChild>
-                    <div className="space-y-3 text-left text-sm leading-relaxed text-muted-foreground">
+                    <div className="w-full min-w-0 space-y-3 break-words text-left text-sm leading-relaxed text-muted-foreground">
                       <p>
                         Terima kasih sudah mengikuti workshop dan mengisi form
                         ini! 🙌
@@ -556,7 +556,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                         bersama Digica Academy.
                       </p>
                       {showSecureSeatCta ? (
-                        <div className="space-y-2 rounded-lg border border-brand-periwinkle/50 bg-brand-pale/40 p-3">
+                        <div className="w-full min-w-0 space-y-2 rounded-lg border border-brand-periwinkle/50 bg-brand-pale/40 p-3">
                           <p>
                             <strong className="font-semibold text-foreground">
                               Slot terbatas!
@@ -565,12 +565,12 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                             {batchSeatLabel ? ` ${batchSeatLabel}` : ""} lewat
                             link di bawah (sama seperti di banner).
                           </p>
-                          <div className="flex items-center gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
                             <a
                               href={bootcampRegistrationUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="min-w-0 flex-1 truncate font-medium text-brand-royal underline underline-offset-2"
+                              className="min-w-0 flex-1 break-all font-medium text-brand-royal underline underline-offset-2"
                             >
                               {bootcampRegistrationUrl}
                             </a>
