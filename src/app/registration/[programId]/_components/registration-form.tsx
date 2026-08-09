@@ -394,6 +394,8 @@ export function RegistrationForm({
             selectedPackage: result.selected_package,
             packagePrice: result.package_price,
             source: result.registration_source,
+            friendName: values.friend_name,
+            friendPhone: values.friend_phone,
           }),
         );
       } else {

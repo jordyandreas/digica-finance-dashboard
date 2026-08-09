@@ -4,6 +4,11 @@ import {
   type RegistrationSource,
 } from "@/constants/registration-offers";
 
+const PROMO_LABELS: Record<RegistrationSource, string> = {
+  workshop_promo: "Workshop",
+  social: "Social",
+};
+
 export function getAdminWhatsAppNumber(): string | null {
   const raw = process.env.NEXT_PUBLIC_ADMIN_WHATSAPP?.trim() ?? "";
   if (!raw) {
@@ -21,6 +26,8 @@ export function buildPaymentWhatsAppUrl(input: {
   selectedPackage: RegistrationPackage;
   packagePrice: number;
   source: RegistrationSource;
+  friendName?: string | null;
+  friendPhone?: string | null;
 }): string | null {
   const adminNumber = getAdminWhatsAppNumber();
   if (!adminNumber) {
@@ -28,13 +35,24 @@ export function buildPaymentWhatsAppUrl(input: {
   }
 
   const packageLabel = formatRegistrationPackage(input.selectedPackage);
+  const promoLabel = PROMO_LABELS[input.source];
+  const friendName = input.friendName?.trim() || null;
+  const friendPhone = input.friendPhone?.trim() || null;
+  const includeFriend =
+    input.selectedPackage === "bareng_teman" &&
+    Boolean(friendName) &&
+    Boolean(friendPhone);
+
   const text = [
     "Halo Admin Digica,",
     `Saya sudah registrasi ${input.programName}.`,
+    `Promo: ${promoLabel}`,
     `Nama: ${input.participantName}`,
     `No.Hp: ${input.phone}`,
     `Paket: ${packageLabel}`,
-    `Source: ${input.source}`,
+    ...(includeFriend
+      ? [`Nama teman: ${friendName}`, `No.Hp teman: ${friendPhone}`]
+      : []),
     "",
     "Saya mau minta detail pembayaran.",
   ].join("\n");
