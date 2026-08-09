@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 import type { AttendanceStatus } from "@/constants/attendance-status";
 import type { ProgramSession } from "@/services/program-sessions.service";
+import { fetchAllPages } from "@/utils/supabase-fetch-all";
 
 export interface AttendanceRecord {
   id: string;
@@ -42,10 +43,19 @@ export async function getAttendanceByProgram(programId: string): Promise<{
     return { data: {}, error: null };
   }
 
-  const { data, error } = await supabase
-    .from("attendance")
-    .select("participant_id, session_id, status")
-    .in("session_id", sessionIds);
+  const { data, error } = await fetchAllPages<{
+    participant_id: string;
+    session_id: string;
+    status: string;
+  }>((from, to) =>
+    supabase
+      .from("attendance")
+      .select("participant_id, session_id, status")
+      .in("session_id", sessionIds)
+      .order("participant_id", { ascending: true })
+      .order("session_id", { ascending: true })
+      .range(from, to),
+  );
 
   if (error) {
     return { data: {}, error };
@@ -53,7 +63,7 @@ export async function getAttendanceByProgram(programId: string): Promise<{
 
   const grid: AttendanceGrid = {};
 
-  for (const row of data ?? []) {
+  for (const row of data) {
     if (!grid[row.participant_id]) {
       grid[row.participant_id] = {};
     }

@@ -15,6 +15,7 @@ import {
   type PaginatedResponse,
 } from "@/types/pagination";
 import { toOrIlikeFilter } from "@/utils/search";
+import { fetchAllPages } from "@/utils/supabase-fetch-all";
 
 export interface Participant {
   id: string;
@@ -79,18 +80,24 @@ export async function getParticipants(programId?: string): Promise<{
   data: Participant[] | null;
   error: PostgrestError | null;
 }> {
-  let query = supabase
-    .from("participants")
-    .select("*")
-    .order("created_at", { ascending: true });
+  const { data, error } = await fetchAllPages<Participant>((from, to) => {
+    let query = supabase
+      .from("participants")
+      .select("*")
+      .order("created_at", { ascending: true });
 
-  if (programId) {
-    query = query.eq("program_id", programId);
+    if (programId) {
+      query = query.eq("program_id", programId);
+    }
+
+    return query.range(from, to);
+  });
+
+  if (error) {
+    return { data: null, error };
   }
 
-  const { data, error } = await query;
-
-  return { data, error };
+  return { data, error: null };
 }
 
 export async function getParticipantsPaginated(

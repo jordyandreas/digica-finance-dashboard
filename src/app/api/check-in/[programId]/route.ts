@@ -5,6 +5,7 @@ import { isSecureSeatInterest } from "@/constants/secure-seat-interest";
 import type { ProgramType } from "@/services/programs.service";
 import { getPublicCheckInSessions } from "@/utils/check-in-sessions";
 import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
+import { fetchAllPages } from "@/utils/supabase-fetch-all";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface CheckInRouteParams {
@@ -93,11 +94,15 @@ async function loadProgramContext(programId: string) {
     return null;
   }
 
-  const { data: participants, error: participantsError } = await supabase
-    .from("participants")
-    .select("id, name, email, phone")
-    .eq("program_id", programId)
-    .order("name", { ascending: true });
+  const { data: participants, error: participantsError } = await fetchAllPages(
+    (from, to) =>
+      supabase
+        .from("participants")
+        .select("id, name, email, phone")
+        .eq("program_id", programId)
+        .order("name", { ascending: true })
+        .range(from, to),
+  );
 
   if (participantsError) {
     throw participantsError;
@@ -153,7 +158,7 @@ async function loadProgramContext(programId: string) {
         (publicContent?.promo_banner_url as string | null) ?? null,
       secure_seat_target_type: secureSeatTargetType,
     },
-    participants: participants ?? [],
+    participants,
     sessions: sessions ?? [],
   };
 }
