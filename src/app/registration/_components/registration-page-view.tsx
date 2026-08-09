@@ -22,15 +22,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { buildOtherProgramsWhatsAppUrl } from "@/utils/admin-whatsapp";
+import { RegistrationWhatsAppFab } from "@/app/registration/_components/registration-whatsapp-fab";
+import {
+  buildInquiryWhatsAppUrl,
+  buildOtherProgramsWhatsAppUrl,
+} from "@/utils/admin-whatsapp";
 import {
   formatProgramDateRange,
   formatProgramTimeRange,
 } from "@/utils/program-public";
+import { cn } from "@/lib/utils";
 
-function RegistrationPageShell({ children }: { children: React.ReactNode }) {
+function RegistrationPageShell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-premium px-4 py-10">
+    <div
+      className={cn(
+        "flex min-h-screen flex-col items-center justify-center bg-gradient-premium px-4 py-10",
+        className,
+      )}
+    >
       <div className="flex w-full max-w-md flex-col gap-5 rounded-2xl border border-brand-periwinkle/70 bg-card p-5 shadow-sm sm:p-6">
         <div className="flex justify-center">
           <div className="flex flex-col items-center gap-1">
@@ -145,10 +161,21 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
   const otherProgramsWhatsAppUrl = data
     ? buildOtherProgramsWhatsAppUrl({ programName: data.program.name })
     : null;
+  const isInquiryProgramType =
+    data?.program.type === "bootcamp" ||
+    data?.program.type === "mini_bootcamp" ||
+    data?.program.type === "workshop";
+  const showInquiryFab =
+    Boolean(data) && !isLoading && !errorMessage && !isProgramCompleted && isInquiryProgramType;
+  const inquiryWhatsAppUrl =
+    showInquiryFab && data
+      ? buildInquiryWhatsAppUrl({ programName: data.program.name })
+      : null;
 
   return (
-    <RegistrationPageShell>
-      {isLoading ? (
+    <>
+      <RegistrationPageShell className={inquiryWhatsAppUrl ? "pb-24" : undefined}>
+        {isLoading ? (
         <div className="space-y-5">
           <div className="space-y-3 rounded-2xl border border-brand-periwinkle/50 bg-muted/20 p-5">
             <div className="mx-auto h-6 w-24 animate-pulse rounded-full bg-brand-pale/60" />
@@ -352,6 +379,10 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
           ) : null}
         </div>
       ) : null}
-    </RegistrationPageShell>
+      </RegistrationPageShell>
+      {showInquiryFab ? (
+        <RegistrationWhatsAppFab href={inquiryWhatsAppUrl} />
+      ) : null}
+    </>
   );
 }

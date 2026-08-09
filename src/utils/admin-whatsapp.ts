@@ -79,3 +79,16 @@ export function buildOtherProgramsWhatsAppUrl(input: {
 
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
 }
+
+export function buildInquiryWhatsAppUrl(input: {
+  programName: string;
+}): string | null {
+  const adminNumber = getAdminWhatsAppNumber();
+  if (!adminNumber) {
+    return null;
+  }
+
+  const text = `Halo Admin Digica, Saya ingin bertanya mengenai ${input.programName}`;
+
+  return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
+}
