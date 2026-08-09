@@ -28,15 +28,32 @@ import {
 import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { cn } from "@/lib/utils";
 
-const INITIAL_SLOTS = 15;
-const MIN_SLOTS = 3;
-const TICK_MS = 25_000;
+const MINI_BOOTCAMP_INITIAL_SLOTS = 20;
+const BOOTCAMP_INITIAL_SLOTS = 30;
+const TICK_MS = 20_000;
 
-function getSlotNumberClass(slots: number): string {
-  if (slots <= 6) {
+type SecureSeatTargetType = Extract<ProgramType, "mini_bootcamp" | "bootcamp">;
+
+function getInitialSlots(
+  targetType: SecureSeatTargetType | null | undefined,
+): number {
+  return targetType === "bootcamp"
+    ? BOOTCAMP_INITIAL_SLOTS
+    : MINI_BOOTCAMP_INITIAL_SLOTS;
+}
+
+function getMinSlots(initialSlots: number): number {
+  return Math.max(3, Math.round(initialSlots * 0.2));
+}
+
+function getSlotNumberClass(slots: number, initialSlots: number): string {
+  const criticalAt = Math.round((initialSlots * 6) / 15);
+  const warningAt = Math.round((initialSlots * 10) / 15);
+
+  if (slots <= criticalAt) {
     return "text-destructive";
   }
-  if (slots <= 10) {
+  if (slots <= warningAt) {
     return "text-amber-600";
   }
   return "text-brand-deep";
@@ -66,6 +83,7 @@ export interface CheckInData {
     public_code: string | null;
     public_slug: string | null;
     promo_banner_url: string | null;
+    secure_seat_target_type?: SecureSeatTargetType | null;
   };
   participants: CheckInParticipant[];
   sessions: CheckInSession[];
@@ -92,10 +110,12 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [isBannerPreviewOpen, setIsBannerPreviewOpen] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
-  const [remainingSlots, setRemainingSlots] = React.useState(INITIAL_SLOTS);
+  const isWorkshop = data.program.type === "workshop";
+  const initialSlots = getInitialSlots(data.program.secure_seat_target_type);
+  const minSlots = getMinSlots(initialSlots);
+  const [remainingSlots, setRemainingSlots] = React.useState(initialSlots);
   const [slotTickPulse, setSlotTickPulse] = React.useState(false);
 
-  const isWorkshop = data.program.type === "workshop";
   const promoBannerSrc = data.program.promo_banner_url?.trim() || null;
   const promoBannerAlt = `Promo secure seat — ${data.program.name}`;
   const hasPromoBanner = Boolean(promoBannerSrc);
@@ -105,8 +125,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     data.program.batch >= 1
       ? data.program.batch
       : null;
-  const batchSeatLabel =
-    batchNumber != null ? `Batch ${batchNumber}` : null;
+  const batchSeatLabel = batchNumber != null ? `Batch ${batchNumber}` : null;
 
   const form = useForm<CheckInFormState>({
     defaultValues: {
@@ -128,7 +147,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
 
     const intervalId = window.setInterval(() => {
       setRemainingSlots((current) => {
-        if (current <= MIN_SLOTS) {
+        if (current <= minSlots) {
           window.clearInterval(intervalId);
           return current;
         }
@@ -137,10 +156,10 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     }, TICK_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isWorkshop]);
+  }, [isWorkshop, minSlots]);
 
   React.useEffect(() => {
-    if (!isWorkshop || remainingSlots >= INITIAL_SLOTS) {
+    if (!isWorkshop || remainingSlots >= initialSlots) {
       return;
     }
 
@@ -150,7 +169,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     }, 300);
 
     return () => window.clearTimeout(timeoutId);
-  }, [isWorkshop, remainingSlots]);
+  }, [initialSlots, isWorkshop, remainingSlots]);
 
   React.useEffect(() => {
     if (!selectedParticipantId) {
@@ -303,9 +322,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
         {isWorkshop ? (
           <div className="space-y-3 rounded-xl border border-brand-periwinkle/50 bg-brand-pale/15 p-4">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-brand-deep">
-                Absensi
-              </p>
+              <p className="text-sm font-semibold text-brand-deep">Absensi</p>
               <p className="text-xs text-muted-foreground">
                 Pilih nama dan sesi hari ini untuk catat kehadiranmu.
               </p>
@@ -468,7 +485,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
               <span
                 className={cn(
                   "inline-block font-bold transition-all duration-300",
-                  getSlotNumberClass(remainingSlots),
+                  getSlotNumberClass(remainingSlots, initialSlots),
                   slotTickPulse && "scale-110",
                 )}
               >
@@ -493,7 +510,10 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
       </form>
 
       {hasPromoBanner && promoBannerSrc ? (
-        <Dialog open={isBannerPreviewOpen} onOpenChange={setIsBannerPreviewOpen}>
+        <Dialog
+          open={isBannerPreviewOpen}
+          onOpenChange={setIsBannerPreviewOpen}
+        >
           <DialogContent className="w-[calc(100%-1.5rem)] border-brand-periwinkle/70 p-3 sm:max-w-md">
             <DialogHeader className="sr-only">
               <DialogTitle>{promoBannerAlt}</DialogTitle>
@@ -608,8 +628,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                       </p>
                       <div className="space-y-1">
                         <p>
-                          📱 Tetap terhubung dan dapatkan insight menarik seputar
-                          Data &amp; Tech:
+                          📱 Tetap terhubung dan dapatkan insight menarik
+                          seputar Data &amp; Tech:
                         </p>
                         <p>
                           🔹 Follow kami di Instagram, TikTok dan Threads:

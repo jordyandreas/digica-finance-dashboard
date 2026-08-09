@@ -5,9 +5,77 @@ import { isSecureSeatInterest } from "@/constants/secure-seat-interest";
 import type { ProgramType } from "@/services/programs.service";
 import { getPublicCheckInSessions } from "@/utils/check-in-sessions";
 import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 interface CheckInRouteParams {
   params: Promise<{ programId: string }>;
+}
+
+type SecureSeatTargetType = Extract<
+  ProgramType,
+  "mini_bootcamp" | "bootcamp"
+>;
+
+function extractProgramIdentifierFromUrl(url: string): string | null {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const hasOrigin = /^https?:\/\//i.test(trimmed);
+    const parsed = hasOrigin
+      ? new URL(trimmed)
+      : new URL(trimmed, "https://placeholder.local");
+    const match = parsed.pathname.match(
+      /\/(?:r|registration|c|check-in)\/([^/]+)/i,
+    );
+    if (!match?.[1]) {
+      return null;
+    }
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+async function resolveSecureSeatTargetType(
+  supabase: SupabaseClient,
+  bootcampRegistrationLink: string | null,
+): Promise<SecureSeatTargetType | null> {
+  if (!bootcampRegistrationLink?.trim()) {
+    return null;
+  }
+
+  const identifier = extractProgramIdentifierFromUrl(bootcampRegistrationLink);
+  if (!identifier) {
+    return null;
+  }
+
+  const linkedProgramId = await resolveProgramIdByIdentifier(
+    supabase,
+    identifier,
+  );
+  if (!linkedProgramId) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("programs")
+    .select("type")
+    .eq("id", linkedProgramId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  const type = data?.type;
+  if (type === "mini_bootcamp" || type === "bootcamp") {
+    return type;
+  }
+
+  return null;
 }
 
 async function loadProgramContext(programId: string) {
@@ -51,6 +119,14 @@ async function loadProgramContext(programId: string) {
     .eq("program_id", programId)
     .maybeSingle();
 
+  const secureSeatTargetType =
+    (program.type as ProgramType) === "workshop"
+      ? await resolveSecureSeatTargetType(
+          supabase,
+          (program.bootcamp_registration_link as string | null) ?? null,
+        )
+      : null;
+
   return {
     program: {
       id: program.id as string,
@@ -75,6 +151,7 @@ async function loadProgramContext(programId: string) {
       public_slug: (program.public_slug as string | null) ?? null,
       promo_banner_url:
         (publicContent?.promo_banner_url as string | null) ?? null,
+      secure_seat_target_type: secureSeatTargetType,
     },
     participants: participants ?? [],
     sessions: sessions ?? [],
@@ -121,6 +198,7 @@ export async function GET(_request: Request, { params }: CheckInRouteParams) {
         public_code: context.program.public_code,
         public_slug: context.program.public_slug,
         promo_banner_url: context.program.promo_banner_url,
+        secure_seat_target_type: context.program.secure_seat_target_type,
       },
       participants: context.participants.map((participant) => ({
         id: participant.id,
