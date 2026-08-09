@@ -11,23 +11,40 @@ import { Button } from "@/components/atoms/button";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { PaymentType } from "@/schemas/payment-schema";
 import type { Participant } from "@/services/participants.service";
+import type { ProgramType } from "@/services/programs.service";
 import { formatNumber } from "@/utils/number";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { type UseFormReturn } from "react-hook-form";
+import { useProgram } from "../../_hooks/useProgram";
 
-const PRESET_AMOUNTS = [
-  149000, 179000, 199000, 249000, 299000, 349000, 399000, 449000, 499000,
+const MINI_BOOTCAMP_PRESET_AMOUNTS = [
+  149000, 179000, 199000, 249000, 299000, 349000, 399000, 449000, 499000, 549000,
+] as const;
+
+const BOOTCAMP_PRESET_AMOUNTS = [
+  249000, 299000, 349000, 399000, 449000, 499000, 549000, 599000, 649000, 699000,
   749000, 799000, 999000,
 ] as const;
+
+function getPresetAmountsForProgramType(
+  programType: ProgramType | null | undefined,
+): readonly number[] {
+  if (programType === "bootcamp") {
+    return BOOTCAMP_PRESET_AMOUNTS;
+  }
+  return MINI_BOOTCAMP_PRESET_AMOUNTS;
+}
 
 const PRESET_SCROLL_STEP = 160;
 
 interface PresetAmountScrollRowProps {
+  amounts: readonly number[];
   selectedAmount: number | undefined;
   onSelect: (amount: number) => void;
 }
 
 function PresetAmountScrollRow({
+  amounts,
   selectedAmount,
   onSelect,
 }: PresetAmountScrollRowProps) {
@@ -60,7 +77,7 @@ function PresetAmountScrollRow({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [updateScrollButtons]);
+  }, [amounts, updateScrollButtons]);
 
   const scrollByStep = (direction: "left" | "right") => {
     const element = scrollRef.current;
@@ -94,7 +111,7 @@ function PresetAmountScrollRow({
         onScroll={updateScrollButtons}
       >
         <div className="flex items-center gap-2">
-          {PRESET_AMOUNTS.map((presetAmount) => (
+          {amounts.map((presetAmount) => (
             <Button
               key={presetAmount}
               type="button"
@@ -159,6 +176,9 @@ export function PaymentFormFields({
   const status = form.watch("status");
   const selectedTenor = form.watch("tenor");
   const selectedParticipantId = form.watch("participant_id");
+  const programId = form.watch("program_id");
+  const { data: program } = useProgram(programId);
+  const presetAmounts = getPresetAmountsForProgramType(program?.type);
   const isAmountRequired = status === "paid";
 
   const paidTenorOptions = selectedTenor
@@ -263,6 +283,7 @@ export function PaymentFormFields({
         </TextInputController>
 
         <PresetAmountScrollRow
+          amounts={presetAmounts}
           selectedAmount={amount}
           onSelect={(presetAmount) => {
             form.setValue("amount", presetAmount, {
