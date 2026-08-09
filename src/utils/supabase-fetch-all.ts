@@ -13,7 +13,7 @@ type FetchPageResult<T> = {
  * Avoids silent truncation when a table exceeds Supabase's ~1000-row default limit.
  */
 export async function fetchAllPages<T>(
-  fetchPage: (from: number, to: number) => Promise<FetchPageResult<T>>,
+  fetchPage: (from: number, to: number) => PromiseLike<FetchPageResult<T>>,
 ): Promise<{ data: T[]; error: PostgrestError | null }> {
   const all: T[] = [];
   let from = 0;
