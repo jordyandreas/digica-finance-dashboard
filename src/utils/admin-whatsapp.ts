@@ -54,7 +54,9 @@ export function buildPaymentWhatsAppUrl(input: {
       ? [`Nama teman: ${friendName}`, `No.Hp teman: ${friendPhone}`]
       : []),
     "",
-    "Saya mau minta detail pembayaran.",
+    "Saya mau minta detail pembayaran dong.",
+    "",
+    "Terima kasih.",
   ].join("\n");
 
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
