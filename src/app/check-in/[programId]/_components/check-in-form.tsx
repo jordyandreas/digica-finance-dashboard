@@ -570,9 +570,9 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                               href={bootcampRegistrationUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="min-w-0 flex-1 break-all font-medium text-brand-royal underline underline-offset-2"
+                              className="min-w-0 flex-1 font-medium text-brand-royal underline underline-offset-2"
                             >
-                              {bootcampRegistrationUrl}
+                              Buka link pendaftaran
                             </a>
                             <Button
                               type="button"
