@@ -5,6 +5,7 @@ import {
   type RegistrationPackage,
   type RegistrationSource,
 } from "@/constants/registration-offers";
+import { isValidParticipantPhone } from "@/utils/phone";
 
 export const registrationOccupationOptions = [
   { label: "Mahasiswa", value: "mahasiswa" },
@@ -26,6 +27,14 @@ const registrationOccupationOptionValues = registrationOccupationOptions.map(
   "other",
 ];
 
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Phone number is required")
+  .refine(isValidParticipantPhone, {
+    message: "Phone number must be a valid WhatsApp number",
+  });
+
 const baseParticipantRegistrationSchema = z.object({
   name: z.string().trim().min(1, "Full name is required"),
   email: z
@@ -33,7 +42,7 @@ const baseParticipantRegistrationSchema = z.object({
     .trim()
     .min(1, "Email is required")
     .email("Email must be valid"),
-  phone: z.string().trim().min(1, "Phone number is required"),
+  phone: phoneSchema,
   occupation: z
     .string()
     .trim()
@@ -98,6 +107,12 @@ export const paidParticipantRegistrationSchema =
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Friend phone is required for Bareng teman package",
+            path: ["friend_phone"],
+          });
+        } else if (!isValidParticipantPhone(data.friend_phone)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Friend phone must be a valid WhatsApp number",
             path: ["friend_phone"],
           });
         }
