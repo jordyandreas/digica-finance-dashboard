@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Button } from "@/components/atoms/button";
 import {
+  PhoneInputController,
   SelectController,
   TextInputController,
 } from "@/components/controllers";
@@ -135,10 +136,6 @@ const defaultValues: RegistrationFormState = {
   friend_name: "",
   friend_phone: "",
 };
-
-function sanitizePhoneInput(value: string): string {
-  return value.replace(/[^\d+\s-]/g, "");
-}
 
 interface SuccessStepCardProps {
   title: string;
@@ -522,29 +519,13 @@ export function RegistrationForm({
             }}
           />
 
-          <TextInputController
+          <PhoneInputController
             form={form}
             name="phone"
             label="Nomor WhatsApp"
             required
-            placeholder="+62 812 000 0000"
-            description="Pakai nomor WhatsApp yang aktif."
-            componentProps={{
-              input: {
-                type: "tel",
-                inputMode: "tel",
-                required: true,
-                onChange: (event) => {
-                  const sanitized = sanitizePhoneInput(event.target.value);
-                  if (sanitized !== event.target.value) {
-                    form.setValue("phone", sanitized, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }
-                },
-              },
-            }}
+            placeholder="812 3456 7890"
+            description="Pilih kode negara, lalu isi nomor tanpa +62 atau angka 0 di depan."
           />
         </div>
 
@@ -670,29 +651,13 @@ export function RegistrationForm({
                     required
                     placeholder="Nama teman yang join bersama"
                   />
-                  <TextInputController
+                  <PhoneInputController
                     form={form}
                     name="friend_phone"
                     label="WhatsApp Teman"
                     required
-                    placeholder="+62 812 000 0000"
-                    componentProps={{
-                      input: {
-                        type: "tel",
-                        inputMode: "tel",
-                        onChange: (event) => {
-                          const sanitized = sanitizePhoneInput(
-                            event.target.value,
-                          );
-                          if (sanitized !== event.target.value) {
-                            form.setValue("friend_phone", sanitized, {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            });
-                          }
-                        },
-                      },
-                    }}
+                    placeholder="812 3456 7890"
+                    description="Pilih kode negara, lalu isi nomor tanpa +62 atau angka 0 di depan."
                   />
                 </div>
               ) : null}

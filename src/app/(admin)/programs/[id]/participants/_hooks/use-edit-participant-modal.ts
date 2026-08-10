@@ -13,6 +13,10 @@ import {
   type ParticipantFormState,
 } from "../_components/participant-form";
 import type { EditParticipantModalProps } from "../_modals/edit-participant";
+import {
+  normalizeParticipantPhoneForSubmit,
+  parsePhoneForInput,
+} from "@/utils/phone";
 
 const buildFormState = (
   participant: Participant | null | undefined,
@@ -20,7 +24,8 @@ const buildFormState = (
 ): ParticipantFormState => ({
   name: participant?.name || "",
   email: participant?.email || "",
-  phone: participant?.phone || "",
+  phone:
+    parsePhoneForInput(participant?.phone)?.e164 || participant?.phone || "",
   occupation: participant?.occupation || "",
   organization: participant?.organization || "",
   status: participant?.status || "active",
@@ -101,9 +106,7 @@ export function useEditParticipantModal({
         const participantData: UpdateParticipantInput = {
           name: values.name.toLowerCase(),
           email: values.email,
-          phone: values.phone.trim().startsWith("+62")
-            ? values.phone.trim()
-            : `+62${values.phone.trim()}`,
+          phone: normalizeParticipantPhoneForSubmit(values.phone),
           occupation: values.occupation || undefined,
           organization: values.organization?.toLowerCase() || undefined,
           status: values.status || undefined,

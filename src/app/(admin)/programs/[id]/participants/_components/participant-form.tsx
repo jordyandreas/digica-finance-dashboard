@@ -2,6 +2,7 @@
 
 import {
   DatePickerController,
+  PhoneInputController,
   SelectController,
   TextInputController,
   TextareaController,
@@ -85,18 +86,13 @@ export function ParticipantFormFields({
             },
           }}
         />
-        <TextInputController
+        <PhoneInputController
           form={form}
           name="phone"
           label="Phone"
           required
-          placeholder="+62 812 000 0000"
-          componentProps={{
-            input: {
-              type: "tel",
-              required: true,
-            },
-          }}
+          placeholder="812 3456 7890"
+          description="Select country code, then enter the number without +62 or leading 0."
         />
       </div>
 

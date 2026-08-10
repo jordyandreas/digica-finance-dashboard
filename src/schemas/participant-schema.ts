@@ -1,6 +1,7 @@
 "use client";
 
 import { z } from "zod";
+import { isValidParticipantPhone } from "@/utils/phone";
 
 export const occupationOptions = [
   { label: "mahasiswa", value: "mahasiswa" },
@@ -27,7 +28,13 @@ export const participantSchema = z.object({
     .trim()
     .min(1, "Email is required")
     .email("Email must be valid"),
-  phone: z.string().trim().min(1, "Phone is required"),
+  phone: z
+    .string()
+    .trim()
+    .min(1, "Phone is required")
+    .refine(isValidParticipantPhone, {
+      message: "Phone number must be a valid WhatsApp number",
+    }),
   occupation: z
     .enum(occupationOptionValues, {
       message: "Occupation must be one of the provided options",

@@ -160,3 +160,21 @@
     display: none;
   }
 }
+
+/* react-phone-number-input integration */
+.PhoneInput {
+  --PhoneInputCountrySelect-marginRight: 0.5rem;
+  --PhoneInput-color--focus: hsl(var(--ring));
+  --PhoneInputCountryFlag-borderColor: hsl(var(--border));
+  --PhoneInputCountryFlag-borderColor--focus: hsl(var(--ring));
+}
+
+.PhoneInputInput {
+  height: 100%;
+}
+
+.PhoneInput .PhoneInputCountryIcon {
+  width: 1.25rem;
+  height: 0.875rem;
+}
+
