@@ -37,6 +37,13 @@ import { buildPaymentWhatsAppUrl } from "@/utils/admin-whatsapp";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import { resolvePublicAppOrigin } from "@/utils/program-public-link";
 import { appendRegistrationSource } from "@/utils/registration-source-url";
+import {
+  getPromoInitialSlots,
+  getPromoMinSlots,
+  getPromoSlotNumberClass,
+  PROMO_SLOT_TICK_MS,
+  type PromoSlotProgramType,
+} from "@/utils/promo-slot-countdown";
 import type { ProgramStatus, ProgramType } from "@/services/programs.service";
 
 export interface RegistrationPageData {
@@ -84,8 +91,8 @@ interface RegistrationFormProps {
 }
 
 const defaultOrganizationCopy = {
-  placeholder: "Enter your company, school, university, or organization name",
-  helper: "Ex: Google, Universitas Indonesia, SMAK 1 Penabur",
+  placeholder: "Masukkan nama perusahaan, sekolah, atau organisasi",
+  helper: "Contoh: Google, Universitas Indonesia, SMAK 1 Penabur",
 } as const;
 
 const organizationCopyByOccupation: Record<
@@ -93,28 +100,28 @@ const organizationCopyByOccupation: Record<
   { placeholder: string; helper: string }
 > = {
   mahasiswa: {
-    placeholder: "Enter your school or university name",
-    helper: "Ex: Universitas Indonesia, Universitas Bina Nusantara",
+    placeholder: "Masukkan nama sekolah atau universitas",
+    helper: "Contoh: Universitas Indonesia, Universitas Bina Nusantara",
   },
   fresh_graduate: {
-    placeholder: "Enter your last school or university",
-    helper: "Ex: Universitas Indonesia, Universitas Bina Nusantara",
+    placeholder: "Masukkan sekolah atau universitas terakhir",
+    helper: "Contoh: Universitas Indonesia, Universitas Bina Nusantara",
   },
   karyawan: {
-    placeholder: "Enter your company name",
-    helper: "Ex: Google, Tokopedia, PT Telkom Indonesia",
+    placeholder: "Masukkan nama perusahaan",
+    helper: "Contoh: Google, Tokopedia, PT Telkom Indonesia",
   },
   freelance: {
-    placeholder: "Enter your business agency, or personal brand (optional)",
-    helper: "Ex: Jasa Desain, Self-Employed, John Creative",
+    placeholder: "Masukkan nama bisnis, agensi, atau personal brand",
+    helper: "Contoh: Jasa Desain, Self-Employed, John Creative",
   },
   job_seeker: {
-    placeholder: "Enter your last company or school (optional)",
-    helper: "Ex: PT ABC, Universitas Gadjah Mada",
+    placeholder: "Masukkan perusahaan atau sekolah terakhir",
+    helper: "Contoh: PT ABC, Universitas Gadjah Mada",
   },
   other: {
-    placeholder: "Enter your profession or organization name",
-    helper: "Ex: Ibu Rumah Tangga, Online Shop, Komunitas Belajar",
+    placeholder: "Masukkan nama pekerjaan atau organisasi",
+    helper: "Contoh: Ibu Rumah Tangga, Online Shop, Komunitas Belajar",
   },
 };
 
@@ -201,6 +208,8 @@ export function RegistrationForm({
   );
   const isBootcampProgram =
     programType === "bootcamp" || programType === "mini_bootcamp";
+  const isWorkshopPromo =
+    isBootcampProgram && registrationSource === "workshop_promo";
   const offers = React.useMemo(
     () =>
       isBootcampProgram
@@ -208,6 +217,15 @@ export function RegistrationForm({
         : [],
     [isBootcampProgram, offerPrices, registrationSource],
   );
+
+  const promoSlotTargetType: PromoSlotProgramType | null =
+    programType === "bootcamp" || programType === "mini_bootcamp"
+      ? programType
+      : null;
+  const initialSlots = getPromoInitialSlots(promoSlotTargetType);
+  const minSlots = getPromoMinSlots(initialSlots);
+  const [remainingSlots, setRemainingSlots] = React.useState(initialSlots);
+  const [slotTickPulse, setSlotTickPulse] = React.useState(false);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
@@ -217,6 +235,41 @@ export function RegistrationForm({
     string | null
   >(null);
   const form = useForm<RegistrationFormState>({ defaultValues });
+
+  React.useEffect(() => {
+    setRemainingSlots(initialSlots);
+  }, [initialSlots]);
+
+  React.useEffect(() => {
+    if (!isWorkshopPromo) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRemainingSlots((current) => {
+        if (current <= minSlots) {
+          window.clearInterval(intervalId);
+          return current;
+        }
+        return current - 1;
+      });
+    }, PROMO_SLOT_TICK_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [isWorkshopPromo, minSlots]);
+
+  React.useEffect(() => {
+    if (!isWorkshopPromo || remainingSlots >= initialSlots) {
+      return;
+    }
+
+    setSlotTickPulse(true);
+    const timeoutId = window.setTimeout(() => {
+      setSlotTickPulse(false);
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [initialSlots, isWorkshopPromo, remainingSlots]);
 
   const name = form.watch("name");
   const email = form.watch("email");
@@ -432,12 +485,12 @@ export function RegistrationForm({
       >
         <div className="space-y-2">
           <h2 className="text-lg font-semibold text-brand-deep">
-            Participant Information
+            Data Peserta
           </h2>
           <p className="text-sm text-muted-foreground">
-            Fields marked with{" "}
-            <span className="font-semibold text-destructive">*</span> are
-            required.
+            Kolom bertanda{" "}
+            <span className="font-semibold text-destructive">*</span> wajib
+            diisi.
           </p>
         </div>
 
@@ -445,9 +498,9 @@ export function RegistrationForm({
           <TextInputController
             form={form}
             name="name"
-            label="Full Name"
+            label="Nama Lengkap"
             required
-            placeholder="Enter your full name"
+            placeholder="Masukkan nama lengkapmu"
             componentProps={{
               input: {
                 required: true,
@@ -460,7 +513,7 @@ export function RegistrationForm({
             name="email"
             label="Email"
             required
-            placeholder="name@example.com"
+            placeholder="nama@email.com"
             componentProps={{
               input: {
                 type: "email",
@@ -472,10 +525,10 @@ export function RegistrationForm({
           <TextInputController
             form={form}
             name="phone"
-            label="Phone Number"
+            label="Nomor WhatsApp"
             required
             placeholder="+62 812 000 0000"
-            description="Use your active WhatsApp number."
+            description="Pakai nomor WhatsApp yang aktif."
             componentProps={{
               input: {
                 type: "tel",
@@ -498,11 +551,10 @@ export function RegistrationForm({
         <div className="space-y-4 rounded-xl border bg-muted/20 p-4">
           <div className="space-y-1">
             <p className="text-sm font-medium text-brand-deep">
-              Background Information
+              Informasi Latar Belakang
             </p>
             <p className="text-xs text-muted-foreground">
-              These optional details help us understand your current background
-              better.
+              Detail ini membantu kami mengenal background-mu lebih baik.
             </p>
           </div>
 
@@ -511,10 +563,11 @@ export function RegistrationForm({
             name="occupation"
             label={
               <span>
-                Occupation <span className="ml-1 text-destructive">*</span>
+                Pekerjaan / Status{" "}
+                <span className="ml-1 text-destructive">*</span>
               </span>
             }
-            placeholder="Select occupation"
+            placeholder="Pilih status"
             options={[...registrationOccupationOptions]}
             componentProps={{
               selectTrigger: { className: "mt-2", id: "occupation" },
@@ -524,7 +577,7 @@ export function RegistrationForm({
           <TextInputController
             form={form}
             name="organization"
-            label="Organization"
+            label="Institusi / Organisasi"
             required
             placeholder={organizationCopy.placeholder}
             description={organizationCopy.helper}
@@ -533,15 +586,24 @@ export function RegistrationForm({
 
         {isBootcampProgram ? (
           <div className="space-y-3">
+            {isWorkshopPromo ? (
+              <div className="rounded-xl border border-brand-periwinkle/60 bg-brand-pale/30 px-4 py-3 text-sm text-brand-deep">
+                <p className="font-medium leading-snug">
+                  Kamu datang dari absensi workshop — pilih paket di bawah untuk
+                  kunci harga spesial.
+                </p>
+              </div>
+            ) : null}
+
             <div className="space-y-2">
               <h2 className="text-lg font-semibold text-brand-deep">
                 Pilih paket <span className="text-destructive">*</span>
               </h2>
-              <p className="text-sm text-muted-foreground">
-                {registrationSource === "workshop_promo"
-                  ? "Harga spesial untuk peserta workshop."
-                  : "Harga registrasi standar."}
-              </p>
+              {isWorkshopPromo ? (
+                <p className="text-sm text-muted-foreground">
+                  Harga spesial untuk peserta workshop.
+                </p>
+              ) : null}
             </div>
 
             <div className="space-y-2 rounded-xl border bg-muted/20 p-4">
@@ -583,19 +645,35 @@ export function RegistrationForm({
                 })
               )}
 
+              {isWorkshopPromo ? (
+                <p className="pt-1 text-sm font-medium text-muted-foreground">
+                  tersisa{" "}
+                  <span
+                    className={cn(
+                      "inline-block font-bold transition-all duration-300",
+                      getPromoSlotNumberClass(remainingSlots, initialSlots),
+                      slotTickPulse && "scale-110",
+                    )}
+                  >
+                    {remainingSlots}
+                  </span>{" "}
+                  slot
+                </p>
+              ) : null}
+
               {isBarengTeman ? (
                 <div className="space-y-3 pt-2">
                   <TextInputController
                     form={form}
                     name="friend_name"
-                    label="Friend Name"
+                    label="Nama Teman"
                     required
                     placeholder="Nama teman yang join bersama"
                   />
                   <TextInputController
                     form={form}
                     name="friend_phone"
-                    label="Friend WhatsApp"
+                    label="WhatsApp Teman"
                     required
                     placeholder="+62 812 000 0000"
                     componentProps={{
@@ -630,13 +708,24 @@ export function RegistrationForm({
         ) : null}
 
         <div className="space-y-3">
-          <div className="flex items-start gap-3 rounded-xl border bg-brand-pale/20 px-4 py-3 text-sm text-muted-foreground">
-            <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-royal" />
-            <p>
-              After you submit, your registration will be saved directly to this
-              program.
-            </p>
-          </div>
+          {isBootcampProgram ? (
+            <div className="rounded-xl border border-brand-royal/25 bg-brand-pale/60 px-4 py-3 text-sm leading-snug text-brand-deep">
+              <p className="font-semibold">
+                Daftar dulu, abis itu chat admin WhatsApp buat minta detail
+                bayarnya ya 💬
+              </p>
+              <p className="mt-1 text-brand-royal">
+                {isWorkshopPromo
+                  ? "Slotnya terbatas lho — jangan sampai kehabisan!"
+                  : "Slot early bird-nya terbatas lho — jangan sampai kehabisan!"}
+              </p>
+            </div>
+          ) : (
+            <div className="flex items-start gap-3 rounded-xl border bg-brand-pale/20 px-4 py-3 text-sm text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand-royal" />
+              <p>Setelah kirim, datamu langsung tersimpan di program ini.</p>
+            </div>
+          )}
 
           <Button
             type="submit"
@@ -651,9 +740,7 @@ export function RegistrationForm({
               !packageReady
             }
           >
-            {isSubmitting
-              ? "Submitting registration..."
-              : "Complete Registration"}
+            {isSubmitting ? "Mengirim pendaftaran..." : "Daftar Sekarang"}
           </Button>
         </div>
       </form>

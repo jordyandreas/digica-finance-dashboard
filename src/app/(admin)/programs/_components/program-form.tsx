@@ -8,6 +8,10 @@ import {
 import { RichTextEditor } from "@/components/molecules/rich-text-editor";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { UseFormReturn } from "react-hook-form";
+import {
+  normalizeScheduleDays,
+  SCHEDULE_DAY_OPTIONS,
+} from "@/utils/programs";
 
 import type { ProgramFormState } from "../_hooks/use-add-program";
 import { ProgramBannerUploadField } from "./program-banner-upload-field";
@@ -30,6 +34,7 @@ export function ProgramForm({
   const { formatNumberValue, createNumberInputHandler } = useNumberInput();
   const price = form.watch("price");
   const programType = form.watch("type");
+  const scheduleDays = form.watch("schedule_days") ?? [];
   const isWorkshop = programType === "workshop";
 
   return (
@@ -193,6 +198,43 @@ export function ProgramForm({
             },
           }}
         />
+      </div>
+
+      <div className="space-y-2">
+        <div>
+          <p className="text-sm font-medium text-foreground">Schedule days</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Weekdays this program meets (e.g. Monday &amp; Wednesday). Optional.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {SCHEDULE_DAY_OPTIONS.map((option) => {
+            const checked = scheduleDays.includes(option.value);
+            return (
+              <label
+                key={option.value}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm has-checked:border-brand-royal has-checked:bg-brand-royal/5"
+              >
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-brand-royal"
+                  checked={checked}
+                  onChange={() => {
+                    const next = checked
+                      ? scheduleDays.filter((day) => day !== option.value)
+                      : [...scheduleDays, option.value];
+                    form.setValue(
+                      "schedule_days",
+                      normalizeScheduleDays(next),
+                      { shouldDirty: true },
+                    );
+                  }}
+                />
+                <span>{option.label}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

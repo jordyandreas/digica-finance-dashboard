@@ -1,10 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  FinancialVisibilityToggle,
-  formatMaskedCurrency,
-} from "@/components/molecules/financial-visibility";
+import { formatMaskedCurrency } from "@/components/molecules/financial-visibility";
 import { useFinancialVisibility } from "@/hooks/use-financial-visibility";
 import { useDashboardProgramSummary } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
 
@@ -47,10 +44,6 @@ export function ProgramSummary({ programId }: ProgramSummaryProps) {
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-end">
-        <FinancialVisibilityToggle />
-      </div>
-
       {error && (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           <p className="font-medium">Error loading program totals</p>

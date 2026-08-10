@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import {
   AlertCircle,
   CalendarDays,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RegistrationWhatsAppFab } from "@/app/registration/_components/registration-whatsapp-fab";
+import { resolveRegistrationSource } from "@/constants/registration-offers";
 import {
   buildInquiryWhatsAppUrl,
   buildOtherProgramsWhatsAppUrl,
@@ -30,8 +32,31 @@ import {
 import {
   formatProgramDateRange,
   formatProgramTimeRange,
+  isRegistrationClosed,
 } from "@/utils/program-public";
 import { cn } from "@/lib/utils";
+
+function WorkshopPromoHeadline() {
+  const searchParams = useSearchParams();
+  const registrationSource = resolveRegistrationSource(
+    searchParams.get("source"),
+  );
+
+  if (registrationSource !== "workshop_promo") {
+    return null;
+  }
+
+  return (
+    <div className="rounded-xl border border-brand-periwinkle/60 bg-brand-pale/40 px-4 py-3 text-center">
+      <p className="text-sm font-semibold leading-snug text-brand-deep">
+        Tinggal selangkah lagi buat dapat harga spesial workshop!
+      </p>
+      <p className="mt-1 text-xs leading-snug text-muted-foreground">
+        Isi data di bawah, pilih paket, lalu lanjut chat admin untuk pembayaran.
+      </p>
+    </div>
+  );
+}
 
 function RegistrationPageShell({
   children,
@@ -157,7 +182,13 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
   const registrationBannerAlt = data
     ? `${data.program.name} banner`
     : "Registration banner";
-  const isProgramCompleted = data?.program.status === "completed";
+  const isClosed = data
+    ? isRegistrationClosed({
+        status: data.program.status,
+        start_date: data.program.start_date,
+        end_date: data.program.end_date,
+      })
+    : false;
   const otherProgramsWhatsAppUrl = data
     ? buildOtherProgramsWhatsAppUrl({ programName: data.program.name })
     : null;
@@ -166,7 +197,7 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
     data?.program.type === "mini_bootcamp" ||
     data?.program.type === "workshop";
   const showInquiryFab =
-    Boolean(data) && !isLoading && !errorMessage && !isProgramCompleted && isInquiryProgramType;
+    Boolean(data) && !isLoading && !errorMessage && !isClosed && isInquiryProgramType;
   const inquiryWhatsAppUrl =
     showInquiryFab && data
       ? buildInquiryWhatsAppUrl({ programName: data.program.name })
@@ -211,7 +242,7 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
           </p>
           <p className="text-sm text-destructive">{errorMessage}</p>
         </div>
-      ) : data && isProgramCompleted ? (
+      ) : data && isClosed ? (
         <div className="space-y-4 rounded-2xl border border-brand-periwinkle/60 bg-brand-pale/20 p-6 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-pale text-brand-deep">
             <CheckCircle2 className="h-6 w-6" />
@@ -224,8 +255,9 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
               {data.program.name}
             </p>
             <p className="text-sm text-muted-foreground">
-              Pendaftaran untuk program ini sudah ditutup. Tertarik ikut program
-              Digica lainnya? Chat admin kami lewat WhatsApp.
+              Pendaftaran untuk program ini sudah ditutup karena tanggalnya
+              sudah lewat. Tertarik ikut program Digica yang sedang aktif?
+              Chat admin kami lewat WhatsApp.
             </p>
           </div>
           {otherProgramsWhatsAppUrl ? (
@@ -236,13 +268,17 @@ export function RegistrationPageView({ identifier }: RegistrationPageViewProps) 
                 rel="noopener noreferrer"
               >
                 <MessageCircle className="h-4 w-4" />
-                Tanya Program Lainnya
+                Tanya Program Aktif
               </a>
             </Button>
           ) : null}
         </div>
       ) : data ? (
         <div className="flex flex-col gap-5">
+          <React.Suspense fallback={null}>
+            <WorkshopPromoHeadline />
+          </React.Suspense>
+
           {registrationBannerUrl ? (
             <button
               type="button"

@@ -7,12 +7,12 @@ import {
 } from "@/constants/registration-offers";
 
 export const registrationOccupationOptions = [
-  { label: "mahasiswa", value: "mahasiswa" },
-  { label: "fresh graduate", value: "fresh_graduate" },
-  { label: "karyawan", value: "karyawan" },
-  { label: "freelance", value: "freelance" },
-  { label: "job seeker", value: "job_seeker" },
-  { label: "other", value: "other" },
+  { label: "Mahasiswa", value: "mahasiswa" },
+  { label: "Fresh graduate", value: "fresh_graduate" },
+  { label: "Karyawan", value: "karyawan" },
+  { label: "Freelance", value: "freelance" },
+  { label: "Job seeker", value: "job_seeker" },
+  { label: "Lainnya", value: "other" },
 ] as const;
 
 const registrationOccupationOptionValues = registrationOccupationOptions.map(

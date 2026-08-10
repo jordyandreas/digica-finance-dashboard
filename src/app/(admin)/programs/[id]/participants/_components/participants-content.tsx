@@ -25,8 +25,9 @@ import {
   downloadCsv,
   sanitizeCsvFilename,
 } from "@/utils/export-csv";
+import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { toTitleCase } from "@/utils/string";
-import { Download, Plus } from "lucide-react";
+import { Copy, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAddParticipant } from "../_hooks/use-add-participant";
 import { useParticipants } from "../_hooks/use-participants";
@@ -39,6 +40,7 @@ interface ParticipantsContentProps {
   programType?: ProgramType | null;
   programName?: string | null;
   programSlug?: string | null;
+  bootcampRegistrationLink?: string | null;
   page: number;
   limit: number;
   search: string;
@@ -71,6 +73,7 @@ export function ParticipantsContent({
   programType,
   programName,
   programSlug,
+  bootcampRegistrationLink,
   page,
   limit,
   search,
@@ -103,6 +106,28 @@ export function ParticipantsContent({
   const isWorkshop = programType === "workshop";
   const skeletonColumns = isWorkshop ? 9 : 10;
   const exportParticipants = allParticipants ?? [];
+  const bootcampRegistrationUrl = (() => {
+    const raw = bootcampRegistrationLink?.trim() ?? "";
+    if (!raw) {
+      return "";
+    }
+    return appendRegistrationSource(raw, "workshop_promo");
+  })();
+  const showYesFollowUpCallout = isWorkshop && secureSeatInterest === "yes";
+
+  const handleCopyBootcampRegistrationLink = async () => {
+    if (!bootcampRegistrationUrl) {
+      toast.error("Bootcamp registration link is not configured");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(bootcampRegistrationUrl);
+      toast.success("Bootcamp registration link copied");
+    } catch {
+      toast.error("Failed to copy registration link");
+    }
+  };
 
   const handleExportCsv = () => {
     if (exportParticipants.length === 0) {
@@ -180,9 +205,37 @@ export function ParticipantsContent({
               Export CSV
             </Button>
           </div>
+
+          {showYesFollowUpCallout ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-brand-periwinkle/60 bg-brand-pale/25 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-brand-deep">
+                These participants showed promo interest. Follow up if they have
+                not registered on the linked bootcamp yet.
+              </p>
+              {bootcampRegistrationUrl ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0"
+                  onClick={handleCopyBootcampRegistrationLink}
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy link daftar bootcamp
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground sm:text-right">
+                  Set the bootcamp registration link on this workshop to copy it
+                  here.
+                </p>
+              )}
+            </div>
+          ) : null}
+
           <Card
             className={
-              isFetching && !showSkeleton ? "opacity-60 transition-opacity" : undefined
+              isFetching && !showSkeleton
+                ? "opacity-60 transition-opacity"
+                : undefined
             }
           >
             {error ? (

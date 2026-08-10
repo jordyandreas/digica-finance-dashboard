@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Typography } from "@/components/atoms/typography";
+import { FinancialVisibilityToggle } from "@/components/molecules/financial-visibility";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
@@ -16,7 +17,9 @@ import {
   formatProgramShortDateRange,
   formatProgramShortTimeRange,
   formatProgramType,
+  formatScheduleDays,
 } from "@/utils/programs";
+import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { emptyFallback } from "@/utils/string";
 import { ParticipantLinkRow } from "./participant-link-row";
 import { useProgram } from "../_hooks/useProgram";
@@ -57,168 +60,200 @@ export function ProgramOverview({
       })}`
     : `/registration/${programId}`;
 
+  const workshopRegistrationUrl = registrationUrl
+    ? appendRegistrationSource(registrationUrl, "workshop_promo")
+    : "";
+  const workshopRegistrationFallback = appendRegistrationSource(
+    registrationFallback,
+    "workshop_promo",
+  );
+
   const waGroupUrl = program?.wa_group_link?.trim() ?? "";
+  const scheduleDaysLabel = formatScheduleDays(program?.schedule_days);
 
   return (
     <div className="w-full space-y-4">
-      <div>
-      <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-      <p className="text-muted-foreground">
-        Overview of program performance and activity
-      </p>
-    </div>
-    <Card>
-      <CardHeader className={cn("space-y-0", !isOpen && "pb-6")}>
-        <button
-          type="button"
-          onClick={() => setIsOpen((prev) => !prev)}
-          aria-expanded={isOpen}
-          className="flex w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-        >
-          <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
-            Overview
-          </CardTitle>
-          {isOpen ? (
-            <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
-          )}
-        </button>
-      </CardHeader>
-      {isOpen && (
-      <CardContent>
-        <dl className="grid gap-4 sm:grid-cols-3">
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Type
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {emptyFallback(formatProgramType(program?.type))}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Status
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              <StatusBadge status={program?.status ?? "Unknown"} />
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Sessions
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.session_count != null && program.session_count > 0
-                ? program.session_count
-                : "—"}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Date
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {formatProgramShortDateRange(
-                program?.start_date ?? null,
-                program?.end_date ?? null,
-              )}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Time
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {(() => {
-                const timeRange = formatProgramShortTimeRange(
-                  program?.start_time ?? null,
-                  program?.end_time ?? null,
-                );
-                return timeRange === "—" ? timeRange : `${timeRange} WIB`;
-              })()}
-            </Typography>
-          </div>
-          <div className="hidden sm:block" aria-hidden />
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Default Price
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.price != null ? formatCurrency(program.price) : "—"}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Promo Individual
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.promo_individual_price != null
-                ? formatCurrency(program.promo_individual_price)
-                : "—"}
-            </Typography>
-          </div>
-          <div>
-            <Typography
-              variant="caption"
-              tagName="dt"
-              className="text-muted-foreground"
-            >
-              Promo Bareng teman
-            </Typography>
-            <Typography variant="body2" tagName="dd">
-              {program?.promo_bareng_teman_price != null
-                ? formatCurrency(program.promo_bareng_teman_price)
-                : "—"}
-            </Typography>
-          </div>
-        </dl>
-
-        <div className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-2">
-          <ParticipantLinkRow
-            label="Registration link"
-            url={registrationUrl}
-            fallback={registrationFallback}
-            successMessage="Registration link copied to clipboard"
-          />
-          <ParticipantLinkRow
-            label="WhatsApp group link"
-            url={waGroupUrl}
-            emptyLabel="Not configured"
-            successMessage="WhatsApp group link copied to clipboard"
-          />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <p className="text-muted-foreground">
+            Overview of program performance and activity
+          </p>
         </div>
-      </CardContent>
-      )}
-    </Card>
+        <FinancialVisibilityToggle />
+      </div>
+      <Card>
+        <CardHeader className={cn("space-y-0", !isOpen && "pb-6")}>
+          <button
+            type="button"
+            onClick={() => setIsOpen((prev) => !prev)}
+            aria-expanded={isOpen}
+            className="flex w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+          >
+            <CardTitle className="text-2xl font-semibold leading-none tracking-tight">
+              Overview
+            </CardTitle>
+            {isOpen ? (
+              <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+        </CardHeader>
+        {isOpen && (
+          <CardContent>
+            <dl className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
+                  Type
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  {emptyFallback(formatProgramType(program?.type))}
+                </Typography>
+              </div>
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
+                  Status
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  <StatusBadge status={program?.status ?? "Unknown"} />
+                </Typography>
+              </div>
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
+                  Sessions
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  {program?.session_count != null && program.session_count > 0
+                    ? program.session_count
+                    : "—"}
+                </Typography>
+              </div>
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
+                  Date
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  {formatProgramShortDateRange(
+                    program?.start_date ?? null,
+                    program?.end_date ?? null,
+                  )}
+                </Typography>
+                {scheduleDaysLabel ? (
+                  <Typography
+                    variant="caption"
+                    tagName="dd"
+                    className="mt-0.5 text-muted-foreground"
+                  >
+                    {scheduleDaysLabel}
+                  </Typography>
+                ) : null}
+              </div>
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
+                  Time
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  {(() => {
+                    const timeRange = formatProgramShortTimeRange(
+                      program?.start_time ?? null,
+                      program?.end_time ?? null,
+                    );
+                    return timeRange === "—" ? timeRange : `${timeRange} WIB`;
+                  })()}
+                </Typography>
+              </div>
+            </dl>
+
+            <div className="mt-6 space-y-3 rounded-xl border bg-muted/20 p-4">
+              <p className="text-sm font-medium text-foreground">Pricing</p>
+              <dl className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <Typography
+                    variant="caption"
+                    tagName="dt"
+                    className="text-muted-foreground"
+                  >
+                    Default
+                  </Typography>
+                  <Typography variant="body2" tagName="dd" className="font-medium">
+                    {program?.price != null ? formatCurrency(program.price) : "—"}
+                  </Typography>
+                </div>
+                <div>
+                  <Typography
+                    variant="caption"
+                    tagName="dt"
+                    className="text-muted-foreground"
+                  >
+                    Individual
+                  </Typography>
+                  <Typography variant="body2" tagName="dd" className="font-medium">
+                    {program?.promo_individual_price != null
+                      ? formatCurrency(program.promo_individual_price)
+                      : "—"}
+                  </Typography>
+                </div>
+                <div>
+                  <Typography
+                    variant="caption"
+                    tagName="dt"
+                    className="text-muted-foreground"
+                  >
+                    Bareng Teman
+                  </Typography>
+                  <Typography variant="body2" tagName="dd" className="font-medium">
+                    {program?.promo_bareng_teman_price != null
+                      ? formatCurrency(program.promo_bareng_teman_price)
+                      : "—"}
+                  </Typography>
+                </div>
+              </dl>
+            </div>
+
+            <div className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-3">
+              <ParticipantLinkRow
+                label="Default Registration Link"
+                url={registrationUrl}
+                fallback={registrationFallback}
+                successMessage="Registration link copied to clipboard"
+              />
+              <ParticipantLinkRow
+                label="Workshop Registration Link"
+                url={workshopRegistrationUrl}
+                fallback={workshopRegistrationFallback}
+                successMessage="Workshop registration link copied to clipboard"
+              />
+              <ParticipantLinkRow
+                label="WhatsApp Link"
+                url={waGroupUrl}
+                emptyLabel="Not configured"
+                successMessage="WhatsApp group link copied to clipboard"
+              />
+            </div>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 }

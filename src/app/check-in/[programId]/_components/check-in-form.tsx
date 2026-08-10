@@ -28,36 +28,9 @@ import {
 import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { cn } from "@/lib/utils";
 
-const MINI_BOOTCAMP_INITIAL_SLOTS = 20;
-const BOOTCAMP_INITIAL_SLOTS = 30;
-const TICK_MS = 20_000;
+const PROMO_NUDGE_DELAY_MS = 5_000;
 
 type SecureSeatTargetType = Extract<ProgramType, "mini_bootcamp" | "bootcamp">;
-
-function getInitialSlots(
-  targetType: SecureSeatTargetType | null | undefined,
-): number {
-  return targetType === "bootcamp"
-    ? BOOTCAMP_INITIAL_SLOTS
-    : MINI_BOOTCAMP_INITIAL_SLOTS;
-}
-
-function getMinSlots(initialSlots: number): number {
-  return Math.max(3, Math.round(initialSlots * 0.2));
-}
-
-function getSlotNumberClass(slots: number, initialSlots: number): string {
-  const criticalAt = Math.round((initialSlots * 6) / 15);
-  const warningAt = Math.round((initialSlots * 10) / 15);
-
-  if (slots <= criticalAt) {
-    return "text-destructive";
-  }
-  if (slots <= warningAt) {
-    return "text-amber-600";
-  }
-  return "text-brand-deep";
-}
 
 export interface CheckInParticipant {
   id: string;
@@ -109,23 +82,14 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     React.useState<SecureSeatInterest | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = React.useState(false);
   const [isBannerPreviewOpen, setIsBannerPreviewOpen] = React.useState(false);
+  const [isDeferConfirmOpen, setIsDeferConfirmOpen] = React.useState(false);
+  const [showPromoNudge, setShowPromoNudge] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
   const isWorkshop = data.program.type === "workshop";
-  const initialSlots = getInitialSlots(data.program.secure_seat_target_type);
-  const minSlots = getMinSlots(initialSlots);
-  const [remainingSlots, setRemainingSlots] = React.useState(initialSlots);
-  const [slotTickPulse, setSlotTickPulse] = React.useState(false);
 
   const promoBannerSrc = data.program.promo_banner_url?.trim() || null;
   const promoBannerAlt = `Promo secure seat — ${data.program.name}`;
   const hasPromoBanner = Boolean(promoBannerSrc);
-  const batchNumber =
-    typeof data.program.batch === "number" &&
-    Number.isFinite(data.program.batch) &&
-    data.program.batch >= 1
-      ? data.program.batch
-      : null;
-  const batchSeatLabel = batchNumber != null ? `Batch ${batchNumber}` : null;
 
   const form = useForm<CheckInFormState>({
     defaultValues: {
@@ -139,37 +103,6 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
   const selectedSessionId = form.watch("session_id");
   const selectedSecureSeatInterest = form.watch("secure_seat_interest");
   const isSessionSelectEnabled = Boolean(selectedParticipantId);
-
-  React.useEffect(() => {
-    if (!isWorkshop) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setRemainingSlots((current) => {
-        if (current <= minSlots) {
-          window.clearInterval(intervalId);
-          return current;
-        }
-        return current - 1;
-      });
-    }, TICK_MS);
-
-    return () => window.clearInterval(intervalId);
-  }, [isWorkshop, minSlots]);
-
-  React.useEffect(() => {
-    if (!isWorkshop || remainingSlots >= initialSlots) {
-      return;
-    }
-
-    setSlotTickPulse(true);
-    const timeoutId = window.setTimeout(() => {
-      setSlotTickPulse(false);
-    }, 300);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [initialSlots, isWorkshop, remainingSlots]);
 
   React.useEffect(() => {
     if (!selectedParticipantId) {
@@ -194,6 +127,24 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     isWorkshop &&
     successSecureSeatInterest === "yes" &&
     Boolean(bootcampRegistrationUrl);
+  const showUndecidedConvertCta =
+    isWorkshop &&
+    successSecureSeatInterest === "undecided" &&
+    Boolean(bootcampRegistrationUrl);
+
+  React.useEffect(() => {
+    if (!isSuccessModalOpen || !showSecureSeatCta) {
+      setShowPromoNudge(false);
+      return;
+    }
+
+    setShowPromoNudge(false);
+    const timeoutId = window.setTimeout(() => {
+      setShowPromoNudge(true);
+    }, PROMO_NUDGE_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isSuccessModalOpen, showSecureSeatCta]);
 
   const duplicateNames = React.useMemo(
     () => getDuplicateParticipantNames(data.participants),
@@ -207,8 +158,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
 
   const sessionOptions = data.sessions.map((session) => ({
     label: session.session_date
-      ? `Session ${session.session_number} — ${formatDate(session.session_date)}`
-      : `Session ${session.session_number} — No date set`,
+      ? `Sesi ${session.session_number} — ${formatDate(session.session_date)}`
+      : `Sesi ${session.session_number} — Tanggal belum diatur`,
     value: session.id,
   }));
 
@@ -217,16 +168,39 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
     Boolean(selectedSessionId) &&
     (!isWorkshop || Boolean(selectedSecureSeatInterest));
 
+  const resetSuccessState = () => {
+    setSuccessSessionNumber(null);
+    setSuccessSecureSeatInterest(null);
+    setShowPromoNudge(false);
+    setIsDeferConfirmOpen(false);
+    form.reset({
+      participant_id: "",
+      session_id: "",
+      secure_seat_interest: "",
+    });
+  };
+
   const handleSuccessModalChange = (open: boolean) => {
     setIsSuccessModalOpen(open);
     if (!open) {
-      setSuccessSessionNumber(null);
-      setSuccessSecureSeatInterest(null);
-      form.reset({
-        participant_id: "",
-        session_id: "",
-        secure_seat_interest: "",
-      });
+      resetSuccessState();
+    }
+  };
+
+  const handleDeferClick = () => {
+    setIsDeferConfirmOpen(true);
+  };
+
+  const handleConfirmDefer = () => {
+    setIsDeferConfirmOpen(false);
+    handleSuccessModalChange(false);
+  };
+
+  const handleConfirmRegisterNow = () => {
+    setShowPromoNudge(false);
+    setIsDeferConfirmOpen(false);
+    if (bootcampRegistrationUrl) {
+      window.open(bootcampRegistrationUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -296,7 +270,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           <Users className="h-6 w-6" />
         </div>
         <p className="text-sm text-muted-foreground">
-          No participants registered yet.
+          Belum ada peserta terdaftar.
         </p>
       </div>
     );
@@ -309,8 +283,8 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           <CalendarX className="h-6 w-6" />
         </div>
         <p className="text-sm text-muted-foreground">
-          No class scheduled for check-in today. Contact your Administrator if
-          you think this is a mistake.
+          Tidak ada kelas untuk absensi hari ini. Hubungi admin jika ini
+          sepertinya salah.
         </p>
       </div>
     );
@@ -322,7 +296,9 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
         {isWorkshop ? (
           <div className="space-y-3 rounded-xl border border-brand-periwinkle/50 bg-brand-pale/15 p-4">
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-brand-deep">Absensi</p>
+              <p className="text-sm font-semibold text-brand-deep">
+                Langkah 1: Absensi
+              </p>
               <p className="text-xs text-muted-foreground">
                 Pilih nama dan sesi hari ini untuk catat kehadiranmu.
               </p>
@@ -331,10 +307,10 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
             <SelectController
               form={form}
               name="participant_id"
-              label="Your name"
-              placeholder="Select your name"
+              label="Nama kamu"
+              placeholder="Pilih namamu"
               searchable
-              searchPlaceholder="Search name..."
+              searchPlaceholder="Cari nama..."
               options={participantOptions}
               componentProps={{
                 selectTrigger: { className: "mt-2", id: "participant_id" },
@@ -344,16 +320,14 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
             <SelectController
               form={form}
               name="session_id"
-              label="Session"
+              label="Sesi"
               placeholder={
-                isSessionSelectEnabled
-                  ? "Select session"
-                  : "Select your name first"
+                isSessionSelectEnabled ? "Pilih sesi" : "Pilih nama dulu"
               }
               description={
                 isSessionSelectEnabled
                   ? undefined
-                  : "Choose your name before selecting a session."
+                  : "Pilih nama dulu sebelum pilih sesi."
               }
               options={sessionOptions}
               componentProps={{
@@ -371,10 +345,10 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
             <SelectController
               form={form}
               name="participant_id"
-              label="Your name"
-              placeholder="Select your name"
+              label="Nama kamu"
+              placeholder="Pilih namamu"
               searchable
-              searchPlaceholder="Search name..."
+              searchPlaceholder="Cari nama..."
               options={participantOptions}
               componentProps={{
                 selectTrigger: { className: "mt-2", id: "participant_id" },
@@ -384,16 +358,14 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
             <SelectController
               form={form}
               name="session_id"
-              label="Session"
+              label="Sesi"
               placeholder={
-                isSessionSelectEnabled
-                  ? "Select session"
-                  : "Select your name first"
+                isSessionSelectEnabled ? "Pilih sesi" : "Pilih nama dulu"
               }
               description={
                 isSessionSelectEnabled
                   ? undefined
-                  : "Choose your name before selecting a session."
+                  : "Pilih nama dulu sebelum pilih sesi."
               }
               options={sessionOptions}
               componentProps={{
@@ -412,11 +384,11 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           <div className="space-y-3 rounded-xl border border-brand-periwinkle/60 bg-brand-pale/25 p-4">
             <div className="space-y-1">
               <p className="text-sm font-semibold text-brand-deep">
-                Secure promo
+                Langkah 2: Minat promo bootcamp (opsional)
               </p>
               <p className="text-sm leading-snug text-brand-deep/90">
-                Mau amankan seat dengan harga spesial workshop? Slot promo
-                terbatas — pilih sekarang sebelum kehabisan!
+                Mau lanjut daftar bootcamp dengan harga spesial workshop? Promo
+                terbatas — lanjut daftar di langkah berikutnya.
               </p>
             </div>
 
@@ -480,19 +452,17 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
               })}
             </div>
 
-            <p className="text-sm font-medium text-muted-foreground">
-              tersisa{" "}
-              <span
-                className={cn(
-                  "inline-block font-bold transition-all duration-300",
-                  getSlotNumberClass(remainingSlots, initialSlots),
-                  slotTickPulse && "scale-110",
-                )}
-              >
-                {remainingSlots}
-              </span>{" "}
-              slot
-            </p>
+            {selectedSecureSeatInterest === "yes" ||
+            selectedSecureSeatInterest === "undecided" ? (
+              <div className="rounded-lg border border-brand-royal/25 bg-brand-pale/70 px-3 py-2 text-sm leading-snug text-brand-deep">
+                <p className="font-semibold">
+                  Absensi ini cuma buat catat kehadiran ya ✍️
+                </p>
+                <p className="mt-1 text-brand-royal">
+                  Mau dapat promo? Lanjut daftar di halaman bootcamp dulu!
+                </p>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -505,7 +475,7 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           className="w-full"
           disabled={isSubmitting || !canSubmit}
         >
-          {isSubmitting ? "Checking in..." : "Check in"}
+          {isSubmitting ? "Menyimpan..." : "Kirim Absensi"}
         </Button>
       </form>
 
@@ -554,63 +524,87 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
           {isWorkshop ? (
             <>
               <div className="min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto px-6 pb-4 pt-6">
-                <DialogHeader className="w-full min-w-0 items-center text-center sm:text-center">
-                  <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
-                    <CheckCircle2 className="h-7 w-7" />
+                <DialogHeader className="w-full min-w-0 space-y-3 text-left sm:text-left">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-brand-pale text-brand-royal ring-4 ring-brand-pale/50">
+                      <CheckCircle2 className="h-7 w-7" />
+                    </div>
+                    <DialogTitle className="text-center text-brand-deep">
+                      Terima kasih
+                    </DialogTitle>
                   </div>
-                  <DialogTitle className="text-brand-deep">
-                    Terima kasih!
-                  </DialogTitle>
                   <DialogDescription asChild>
                     <div className="w-full min-w-0 space-y-3 break-words text-left text-sm leading-relaxed text-muted-foreground">
-                      <p>
-                        Terima kasih sudah mengikuti workshop dan mengisi form
-                        ini! 🙌
-                      </p>
-                      <p>
-                        Kami sangat menghargai waktumu dan antusiasme untuk
-                        belajar{" "}
-                        <strong className="font-semibold text-foreground">
-                          {data.program.name}
-                        </strong>{" "}
-                        bersama Digica Academy.
-                      </p>
                       {showSecureSeatCta ? (
-                        <div className="w-full min-w-0 space-y-2 rounded-lg border border-brand-periwinkle/50 bg-brand-pale/40 p-3">
-                          <p>
-                            <strong className="font-semibold text-foreground">
-                              Slot terbatas!
-                            </strong>{" "}
-                            Karena kamu mau secure promo sekarang, amankan seat
-                            {batchSeatLabel ? ` ${batchSeatLabel}` : ""} lewat
-                            link di bawah (sama seperti di banner).
-                          </p>
-                          <div className="flex min-w-0 items-center gap-2">
-                            <a
-                              href={bootcampRegistrationUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="min-w-0 flex-1 font-medium text-brand-royal underline underline-offset-2"
-                            >
-                              Buka link pendaftaran
-                            </a>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              onClick={handleCopyRegistrationLink}
-                              aria-label="Salin link registrasi"
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
+                        <div className="w-full min-w-0 space-y-3 rounded-xl border border-brand-periwinkle/60 bg-brand-pale/30 p-4">
+                          <div className="space-y-2">
+                            <p>
+                              Absensimu untuk{" "}
+                              <strong className="font-semibold text-foreground">
+                                {data.program.name}
+                              </strong>{" "}
+                              sudah tercatat ya!
+                            </p>
+                            <p className="rounded-lg border border-brand-royal/25 bg-brand-pale/70 px-3 py-2 text-sm font-semibold leading-snug text-brand-deep">
+                              Harga spesialnya belum didapatkan — lanjut daftar
+                              bootcamp dulu ya!
+                            </p>
                           </div>
-                          <p>
-                            Jangan sampai kehabisan — makin cepat daftar, makin
-                            aman seat-nya.
-                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-10 w-full"
+                            onClick={handleCopyRegistrationLink}
+                          >
+                            <Copy className="h-4 w-4" />
+                            Klik disini untuk salin link pendaftaran
+                          </Button>
+                          {showPromoNudge ? (
+                            <p
+                              className="animate-nudge-shake rounded-lg border border-brand-royal/30 bg-brand-royal/10 px-3 py-2 text-sm font-semibold text-brand-royal"
+                              role="status"
+                            >
+                              Yuk daftar bootcampnya dulu biar kamu dapat
+                              promo-nya. Slotnya terbatas, buruan ya! 😊
+                            </p>
+                          ) : null}
                         </div>
-                      ) : null}
+                      ) : (
+                        <div className="w-full min-w-0 space-y-3">
+                          <p>
+                            Absensimu untuk{" "}
+                            <strong className="font-semibold text-foreground">
+                              {data.program.name}
+                            </strong>{" "}
+                            sudah tercatat ya! 🙌
+                          </p>
+                          {showUndecidedConvertCta ? (
+                            <div className="w-full min-w-0 space-y-3 rounded-xl border border-brand-periwinkle/60 bg-brand-pale/30 p-4">
+                              <p className="rounded-lg border border-brand-royal/25 bg-brand-pale/70 px-3 py-2 text-sm font-semibold leading-snug text-brand-deep">
+                                Absensi workshop bukan pendaftaran bootcamp —
+                                promo belum terkunci dari check-in ini.
+                              </p>
+                              <p className="text-sm leading-snug text-brand-deep">
+                                Masih mikir-mikir? Jangan sampai kelewatan harga
+                                spesial workshop — slotnya terbatas lho.
+                              </p>
+                              <Button
+                                type="button"
+                                className="h-11 w-full"
+                                asChild
+                              >
+                                <a
+                                  href={bootcampRegistrationUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  Jangan Lewatkan — Daftar Bootcamp
+                                </a>
+                              </Button>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
                       <p>
                         ✅{" "}
                         <strong className="font-semibold text-foreground">
@@ -637,12 +631,18 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                           👉 @digica.academy
                         </p>
                       </div>
-                      <p>
-                        🎓 Siap belajar lebih dalam? Nantikan info tentang
-                        bootcamp dan kelas lainnya!
-                        <br />
-                        Sampai jumpa di program Digica Academy berikutnya 🚀
-                      </p>
+                      {showSecureSeatCta || showUndecidedConvertCta ? (
+                        <p>
+                          Sampai jumpa di program Digica Academy berikutnya 🚀
+                        </p>
+                      ) : (
+                        <p>
+                          🎓 Siap belajar lebih dalam? Nantikan info tentang
+                          bootcamp dan kelas lainnya!
+                          <br />
+                          Sampai jumpa di program Digica Academy berikutnya 🚀
+                        </p>
+                      )}
                       <p className="font-medium text-foreground">
                         #MakeITHappen
                       </p>
@@ -650,14 +650,44 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                   </DialogDescription>
                 </DialogHeader>
               </div>
-              <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
-                <Button
-                  type="button"
-                  className="h-11 w-full"
-                  onClick={() => handleSuccessModalChange(false)}
-                >
-                  Done
-                </Button>
+              <DialogFooter
+                className={cn(
+                  "shrink-0 border-t px-6 py-4",
+                  showSecureSeatCta
+                    ? "flex-col gap-0 sm:flex-col sm:space-x-0"
+                    : "sm:justify-center",
+                )}
+              >
+                {showSecureSeatCta ? (
+                  <div className="grid w-full grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full"
+                      onClick={handleDeferClick}
+                    >
+                      Nanti Dulu
+                    </Button>
+                    <Button type="button" className="h-11 w-full" asChild>
+                      <a
+                        href={bootcampRegistrationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setShowPromoNudge(false)}
+                      >
+                        Lanjut Daftar Bootcamp
+                      </a>
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    className="h-11 w-full"
+                    onClick={() => handleSuccessModalChange(false)}
+                  >
+                    Selesai
+                  </Button>
+                )}
               </DialogFooter>
             </>
           ) : (
@@ -667,12 +697,12 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                   <CheckCircle2 className="h-7 w-7" />
                 </div>
                 <DialogTitle className="text-brand-deep">
-                  You&apos;re checked in
+                  Absensi berhasil
                 </DialogTitle>
                 <DialogDescription>
                   {successSessionNumber != null
-                    ? `Attendance recorded for Session ${successSessionNumber}.`
-                    : "Your attendance has been recorded."}
+                    ? `Kehadiran tercatat untuk Sesi ${successSessionNumber}.`
+                    : "Kehadiranmu sudah tercatat."}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="sm:justify-center">
@@ -681,11 +711,51 @@ export function CheckInForm({ programId, data }: CheckInFormProps) {
                   className="w-full sm:w-auto"
                   onClick={() => handleSuccessModalChange(false)}
                 >
-                  Done
+                  Selesai
                 </Button>
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isDeferConfirmOpen} onOpenChange={setIsDeferConfirmOpen}>
+        <DialogContent className="w-[calc(100%-1.5rem)] border-brand-periwinkle/70 sm:max-w-md">
+          <DialogHeader className="text-left sm:text-left">
+            <DialogTitle className="text-brand-deep">
+              Yakin ditunda dulu?
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm leading-relaxed text-muted-foreground">
+                <p>
+                  Slot promo workshop terbatas lho. Kalau ditunda sekarang, bisa
+                  saja keburu penuh sebelum sempat daftar.
+                </p>
+                <p className="font-medium text-brand-deep">
+                  Mau amankan harga spesialnya sekarang aja?
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-0 sm:flex-col sm:space-x-0">
+            <div className="grid w-full grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 w-full"
+                onClick={handleConfirmDefer}
+              >
+                Ya, Nanti Saja
+              </Button>
+              <Button
+                type="button"
+                className="h-11 w-full"
+                onClick={handleConfirmRegisterNow}
+              >
+                Daftar Sekarang
+              </Button>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

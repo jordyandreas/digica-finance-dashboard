@@ -3,10 +3,12 @@
 import { ReactElement } from "react";
 import { FolderKanban, LayoutDashboard } from "lucide-react";
 import { useActivePrograms } from "@/app/(admin)/programs/_hooks/use-programs";
+import type { ProgramType } from "@/services/programs.service";
 
 type MenuSubItem = {
   label: string;
   pathname: string;
+  type: ProgramType;
   badgeCount?: number;
 };
 
@@ -36,6 +38,7 @@ export function useDashboardMenus() {
       items: activePrograms.map((program) => ({
         label: program.name,
         pathname: `/programs/${program.id}/participants`,
+        type: program.type,
       })),
     },
   ];

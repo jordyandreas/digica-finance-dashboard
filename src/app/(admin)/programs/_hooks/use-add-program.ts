@@ -8,6 +8,7 @@ import type {
   Program,
   ProgramStatus,
   ProgramType,
+  ScheduleDay,
   UpdateProgramInput,
 } from "@/services/programs.service";
 import { useModal } from "@/hooks/use-modal";
@@ -16,6 +17,7 @@ import type { ProgramModalProps } from "../_modals/add-program";
 import { programQueryKey } from "../[id]/_hooks/useProgram";
 import { programSessionsQueryKey } from "../[id]/attendance/_hooks/use-attendance";
 import { programPublicSlugSchema } from "@/schemas/program-public-slug-schema";
+import { normalizeScheduleDays } from "@/utils/programs";
 
 export type ProgramFormState = {
   name: string;
@@ -30,6 +32,7 @@ export type ProgramFormState = {
   end_date: string;
   start_time: string;
   end_time: string;
+  schedule_days: ScheduleDay[];
   registration_link: string;
   bootcamp_registration_link: string;
   wa_group_link: string;
@@ -59,6 +62,7 @@ const defaultFormState = (): ProgramFormState => ({
   end_date: "",
   start_time: "",
   end_time: "",
+  schedule_days: [],
   registration_link: "",
   bootcamp_registration_link: "",
   wa_group_link: "",
@@ -88,6 +92,7 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
     end_date: program.end_date ? program.end_date.split("T")[0] : "",
     start_time: program.start_time ?? "",
     end_time: program.end_time ?? "",
+    schedule_days: normalizeScheduleDays(program.schedule_days),
     registration_link: program.registration_link ?? "",
     bootcamp_registration_link: program.bootcamp_registration_link ?? "",
     wa_group_link: program.wa_group_link ?? "",
@@ -147,6 +152,7 @@ const buildProgramInput = (
     end_date: nullableString(values.end_date),
     start_time: nullableString(values.start_time),
     end_time: nullableString(values.end_time),
+    schedule_days: normalizeScheduleDays(values.schedule_days),
     registration_link: nullableString(values.registration_link),
     bootcamp_registration_link: nullableString(values.bootcamp_registration_link),
     wa_group_link: nullableString(values.wa_group_link),
@@ -358,6 +364,9 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
         });
         await queryClient.invalidateQueries({
           queryKey: programSessionsQueryKey(savedProgram.id),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: ["programs"],
         });
       }
 

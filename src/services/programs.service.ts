@@ -18,6 +18,55 @@ export type ProgramStatus =
   | "active"
   | "completed";
 
+/** Active first, then draft, then completed; within each group newest start_date first. */
+const PROGRAM_STATUS_SORT: Record<ProgramStatus, number> = {
+  active: 0,
+  draft: 1,
+  completed: 2,
+};
+
+export type ProgramSortFields = {
+  status: ProgramStatus;
+  start_date: string | null;
+  created_at: string;
+};
+
+export function compareProgramsByStatusAndDate(
+  a: ProgramSortFields,
+  b: ProgramSortFields,
+): number {
+  const statusDiff =
+    (PROGRAM_STATUS_SORT[a.status] ?? 99) - (PROGRAM_STATUS_SORT[b.status] ?? 99);
+  if (statusDiff !== 0) {
+    return statusDiff;
+  }
+
+  const aDate = a.start_date?.split("T")[0] ?? "";
+  const bDate = b.start_date?.split("T")[0] ?? "";
+  if (aDate !== bDate) {
+    if (!aDate) return 1;
+    if (!bDate) return -1;
+    return bDate.localeCompare(aDate);
+  }
+
+  return b.created_at.localeCompare(a.created_at);
+}
+
+function sortProgramsByStatusAndDate<T extends ProgramSortFields>(
+  programs: T[],
+): T[] {
+  return [...programs].sort(compareProgramsByStatusAndDate);
+}
+
+export type ScheduleDay =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
 export interface Program {
   id: string;
   name: string;
@@ -28,6 +77,7 @@ export interface Program {
   end_date: string | null;
   start_time: string | null;
   end_time: string | null;
+  schedule_days: ScheduleDay[];
   registration_link: string | null;
   bootcamp_registration_link: string | null;
   wa_group_link: string | null;
@@ -50,6 +100,7 @@ export interface CreateProgramInput {
   end_date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
+  schedule_days?: ScheduleDay[];
   registration_link?: string | null;
   bootcamp_registration_link?: string | null;
   wa_group_link?: string | null;
@@ -70,6 +121,7 @@ export interface UpdateProgramInput {
   end_date?: string | null;
   start_time?: string | null;
   end_time?: string | null;
+  schedule_days?: ScheduleDay[];
   registration_link?: string | null;
   bootcamp_registration_link?: string | null;
   wa_group_link?: string | null;
@@ -127,12 +179,13 @@ export async function getPrograms(): Promise<{
   data: Program[] | null;
   error: PostgrestError | null;
 }> {
-  const { data, error } = await supabase
-    .from("programs")
-    .select("*")
-    .order("status", { ascending: true });
+  const { data, error } = await supabase.from("programs").select("*");
 
-  return { data, error };
+  if (error) {
+    return { data: null, error };
+  }
+
+  return { data: sortProgramsByStatusAndDate(data ?? []), error: null };
 }
 
 export async function getActivePrograms(limit = 5): Promise<{
@@ -143,7 +196,7 @@ export async function getActivePrograms(limit = 5): Promise<{
     .from("programs")
     .select("*")
     .eq("status", "active")
-    .order("created_at", { ascending: false })
+    .order("start_date", { ascending: false, nullsFirst: false })
     .limit(limit);
 
   return { data, error };
@@ -162,26 +215,25 @@ export async function getProgramsPaginated({
   error: PostgrestError | null;
 }> {
   const from = (page - 1) * limit;
-  const to = from + limit - 1;
+  const to = from + limit;
 
-  let query = supabase
-    .from("programs")
-    .select("*", { count: "exact" })
-    .order("status", { ascending: true });
+  let query = supabase.from("programs").select("*", { count: "exact" });
 
   if (year != null) {
     query = query.eq("year", year);
   }
 
-  const { data, error, count } = await query.range(from, to);
+  const { data, error, count } = await query;
 
   if (error) {
     return { data: null, error };
   }
 
+  const sorted = sortProgramsByStatusAndDate(data ?? []);
+
   return {
     data: {
-      data: data ?? [],
+      data: sorted.slice(from, to),
       pagination: buildPaginationMeta(count ?? 0, page, limit),
     },
     error: null,
@@ -256,7 +308,10 @@ export async function updateProgram(
 
   const { data, error } = await supabase
     .from("programs")
-    .update(payload)
+    .update({
+      ...payload,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .select()
     .single();

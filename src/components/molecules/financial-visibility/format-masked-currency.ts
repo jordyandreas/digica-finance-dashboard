@@ -1,6 +1,6 @@
 import { formatCurrency } from "@/utils/currency";
 
-const MASKED_CURRENCY = "••••••";
+const MASKED_CURRENCY = "Rp.••••••";
 
 export function formatMaskedCurrency(
   value: number | null | undefined,

@@ -74,7 +74,7 @@ export function buildOtherProgramsWhatsAppUrl(input: {
     "Halo Admin Digica,",
     `Saya tertarik dengan program ${input.programName}, tapi programnya sudah selesai.`,
     "",
-    "Boleh info program Digica lainnya yang masih dibuka?",
+    "Boleh info program Digica yang sedang aktif saat ini?",
   ].join("\n");
 
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
@@ -89,6 +89,32 @@ export function buildInquiryWhatsAppUrl(input: {
   }
 
   const text = `Halo Admin Digica, Saya ingin bertanya mengenai ${input.programName}`;
+
+  return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
+}
+
+export function buildCheckInLinkHelpWhatsAppUrl(input?: {
+  programName?: string | null;
+}): string | null {
+  const adminNumber = getAdminWhatsAppNumber();
+  if (!adminNumber) {
+    return null;
+  }
+
+  const programName = input?.programName?.trim();
+  const text = programName
+    ? [
+        "Halo Admin Digica,",
+        `Saya membuka link absensi untuk ${programName}, tapi sepertinya linknya tidak sesuai / tidak bisa dipakai.`,
+        "",
+        "Boleh minta link absensi yang benar?",
+      ].join("\n")
+    : [
+        "Halo Admin Digica,",
+        "Saya membuka link absensi, tapi sepertinya linknya tidak sesuai / tidak bisa dipakai.",
+        "",
+        "Boleh minta link absensi yang benar?",
+      ].join("\n");
 
   return `https://wa.me/${adminNumber}?text=${encodeURIComponent(text)}`;
 }

@@ -2,6 +2,7 @@
 
 import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
 import { Typography } from "@/components/atoms";
+import { StatusBadge } from "@/components/atoms/status-badge";
 import { formatMaskedCurrency } from "@/components/molecules/financial-visibility";
 import type { DashboardProgramSummary } from "@/services/dashboard.service";
 
@@ -80,6 +81,12 @@ export function getDashboardColumns(
           {formatMaskedCurrency(summary.net_profit, isVisible)}
         </Typography>
       ),
+    },
+    {
+      accessorKey: "status",
+      header: "Status",
+      enableSorting: true,
+      cell: (summary) => <StatusBadge status={summary.status} />,
     },
   ];
 }

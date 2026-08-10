@@ -2,12 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { GraduationCap, Layers, Presentation, type LucideIcon } from "lucide-react";
 import { Typography } from "@/components/atoms/typography";
 import { cn } from "@/lib/utils";
+import type { ProgramType } from "@/services/programs.service";
+
+const PROGRAM_TYPE_ICONS: Record<ProgramType, LucideIcon> = {
+  bootcamp: GraduationCap,
+  mini_bootcamp: Layers,
+  workshop: Presentation,
+};
 
 export type SidebarProgramItem = {
   label: string;
   pathname: string;
+  type: ProgramType;
 };
 
 interface SidebarProgramListProps {
@@ -58,13 +67,14 @@ export function SidebarProgramList({
         const programId = extractProgramId(item.pathname);
         const isActive =
           Boolean(programId) && pathname.includes(`/programs/${programId}`);
+        const Icon = PROGRAM_TYPE_ICONS[item.type];
 
         return (
           <Link
             key={item.pathname}
             href={item.pathname}
             className={cn(
-              "block truncate rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-2 truncate rounded-md px-3 py-2 text-sm font-medium transition-colors",
               isActive
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -72,10 +82,11 @@ export function SidebarProgramList({
             )}
             title={item.label}
           >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden />
             <Typography
               variant="body2"
               tagName="span"
-              className="block truncate text-inherit"
+              className="min-w-0 flex-1 truncate text-inherit"
             >
               {item.label}
             </Typography>

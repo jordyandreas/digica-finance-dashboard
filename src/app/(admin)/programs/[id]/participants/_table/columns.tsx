@@ -1,5 +1,5 @@
 import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
-import { formatDate } from "@/utils/date";
+import { formatDateTime } from "@/utils/date";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
@@ -15,6 +15,7 @@ import {
 } from "@/constants/registration-offers";
 import type { ProgramType } from "@/services/programs.service";
 import { formatCurrency } from "@/utils/currency";
+import { SeeMoreText } from "@/components/molecules/see-more-text";
 
 interface ParticipantsColumnsProps {
   programType?: ProgramType | null;
@@ -270,23 +271,21 @@ export function participantsColumns({
       header: "Notes",
       enableSorting: true,
       minSize: 60,
-      maxSize: 180,
-      cell: (participant) => (
-        <Typography variant="body3" className="truncate">
-          {emptyFallback(participant.notes)}
-        </Typography>
-      ),
+      maxSize: 220,
+      cell: (participant) => <SeeMoreText text={participant.notes} />,
     },
     {
       accessorKey: "joined_date",
       header: "Joined Date",
       enableSorting: true,
-      minSize: 100,
-      maxSize: 130,
+      minSize: 120,
+      maxSize: 160,
       cell: (participant) => (
         <Typography variant="body3" className="whitespace-nowrap">
           {emptyFallback(
-            participant.joined_date ? formatDate(participant.joined_date) : "",
+            participant.joined_date
+              ? formatDateTime(participant.joined_date)
+              : "",
           )}
         </Typography>
       ),

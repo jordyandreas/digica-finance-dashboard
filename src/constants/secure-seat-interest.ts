@@ -11,7 +11,7 @@ export const SECURE_SEAT_INTEREST_ALL = "all";
 
 export const SECURE_SEAT_INTEREST_LABELS: Record<SecureSeatInterest, string> =
   {
-    yes: "Ya, aku mau secure promo sekarang",
+    yes: "Ya, aku mau lanjut daftar bootcamp untuk dapat promo",
     undecided: "Masih mempertimbangkan",
     no: "Belum bisa join saat ini",
   };

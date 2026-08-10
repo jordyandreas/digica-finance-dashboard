@@ -2,11 +2,36 @@
 
 import * as React from "react";
 import Image from "next/image";
+import { MessageCircle } from "lucide-react";
 import {
   CheckInForm,
   type CheckInData,
 } from "@/app/check-in/[programId]/_components/check-in-form";
-import { CheckInTodayProgramPicker } from "@/app/check-in/_components/check-in-today-program-picker";
+import { Button } from "@/components/atoms/button";
+import { buildCheckInLinkHelpWhatsAppUrl } from "@/utils/admin-whatsapp";
+
+function CheckInAdminHelp({
+  whatsappUrl,
+}: {
+  whatsappUrl: string | null;
+}) {
+  return (
+    <div className="space-y-3 border-t border-brand-periwinkle/40 pt-4 text-center">
+      <p className="text-xs text-muted-foreground">
+        Jika Anda yakin ini kesalahan, minta link absensi yang benar ke admin
+        Digica.
+      </p>
+      {whatsappUrl ? (
+        <Button asChild variant="outline" className="h-10 w-full gap-2">
+          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+            <MessageCircle className="h-4 w-4" />
+            Chat Admin WhatsApp
+          </a>
+        </Button>
+      ) : null}
+    </div>
+  );
+}
 
 function CheckInPageShell({ children }: { children: React.ReactNode }) {
   return (
@@ -83,6 +108,9 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
 
   const canCheckIn =
     (data?.participants.length ?? 0) > 0 && (data?.sessions.length ?? 0) > 0;
+  const adminHelpWhatsAppUrl = buildCheckInLinkHelpWhatsAppUrl({
+    programName: data?.program.name,
+  });
 
   return (
     <CheckInPageShell>
@@ -100,7 +128,7 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
             Check-in unavailable
           </h1>
           <p className="text-sm text-muted-foreground">{errorMessage}</p>
-          <CheckInTodayProgramPicker />
+          <CheckInAdminHelp whatsappUrl={adminHelpWhatsAppUrl} />
         </div>
       ) : data ? (
         <div className="flex flex-col gap-4">
@@ -108,17 +136,15 @@ export function CheckInPageView({ identifier }: CheckInPageViewProps) {
             <h1 className="text-xl font-semibold text-brand-deep">
               {data.program.name}
             </h1>
-            {canCheckIn ? (
+            {canCheckIn && data.program.type !== "workshop" ? (
               <p className="text-sm text-muted-foreground">
-                {data.program.type === "workshop"
-                  ? "Isi absensi, lalu jawab promo khusus workshop di bawah."
-                  : "Select your name and session to mark your attendance."}
+                Pilih nama dan sesi untuk mencatat kehadiranmu.
               </p>
             ) : null}
           </div>
           <CheckInForm programId={identifier} data={data} />
           {!canCheckIn && data.sessions.length === 0 ? (
-            <CheckInTodayProgramPicker />
+            <CheckInAdminHelp whatsappUrl={adminHelpWhatsAppUrl} />
           ) : null}
         </div>
       ) : null}

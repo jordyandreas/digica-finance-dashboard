@@ -40,6 +40,31 @@
   --color-brand-periwinkle: #c1c8fa;
   --color-brand-tint: #ccb6dd;
   --color-brand-surface: #f2f3fc;
+
+  --animate-nudge-shake: nudge-shake 3s ease-in-out infinite;
+}
+
+@keyframes nudge-shake {
+  0%,
+  82%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  85% {
+    transform: translate3d(-3px, 0, 0);
+  }
+  88% {
+    transform: translate3d(3px, 0, 0);
+  }
+  91% {
+    transform: translate3d(-2px, 0, 0);
+  }
+  94% {
+    transform: translate3d(2px, 0, 0);
+  }
+  97% {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 @layer base {

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Typography } from "@/components/atoms";
 import { Button } from "@/components/atoms/button";
 import { emptyFallback } from "@/utils/string";
 import { cn } from "@/lib/utils";
+
+const SEE_MORE_CHAR_LIMIT = 30;
 
 interface SeeMoreTextProps {
   text?: string | null;
@@ -12,28 +14,8 @@ interface SeeMoreTextProps {
 
 export function SeeMoreText({ text }: SeeMoreTextProps) {
   const [expanded, setExpanded] = useState(false);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  const textRef = useRef<HTMLDivElement>(null);
   const normalized = `${text ?? ""}`.trim();
   const display = emptyFallback(normalized);
-
-  useEffect(() => {
-    const el = textRef.current;
-    if (!el || display === "-" || expanded) {
-      return;
-    }
-
-    const checkOverflow = () => {
-      setIsOverflowing(el.scrollWidth > el.clientWidth);
-    };
-
-    checkOverflow();
-
-    const observer = new ResizeObserver(checkOverflow);
-    observer.observe(el);
-
-    return () => observer.disconnect();
-  }, [display, expanded]);
 
   if (display === "-") {
     return (
@@ -43,21 +25,24 @@ export function SeeMoreText({ text }: SeeMoreTextProps) {
     );
   }
 
-  const showToggle = expanded || isOverflowing;
+  const needsToggle = normalized.length > SEE_MORE_CHAR_LIMIT;
+  const visibleText =
+    needsToggle && !expanded
+      ? `${normalized.slice(0, SEE_MORE_CHAR_LIMIT)}…`
+      : display;
 
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
       <Typography
-        ref={textRef}
         variant="body3"
         className={cn(
           "normal-case",
           expanded ? "whitespace-pre-wrap wrap-break-word" : "truncate",
         )}
       >
-        {display}
+        {visibleText}
       </Typography>
-      {showToggle ? (
+      {needsToggle ? (
         <Button
           type="button"
           variant="link"

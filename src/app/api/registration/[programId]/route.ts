@@ -14,6 +14,7 @@ import {
 } from "@/schemas/participant-registration-schema";
 import { getProgramRegistrationPublicData } from "@/services/program-share-metadata.service";
 import { normalizeParticipantPhoneForSubmit } from "@/utils/phone";
+import { isRegistrationClosed } from "@/utils/program-public";
 import { resolveProgramIdByIdentifier } from "@/utils/program-public-link";
 
 interface RegistrationRouteParams {
@@ -64,7 +65,13 @@ export async function POST(
       return NextResponse.json({ error: "Program not found" }, { status: 404 });
     }
 
-    if (program.status === "completed") {
+    if (
+      isRegistrationClosed({
+        status: program.status,
+        start_date: program.start_date,
+        end_date: program.end_date,
+      })
+    ) {
       return NextResponse.json(
         {
           error:

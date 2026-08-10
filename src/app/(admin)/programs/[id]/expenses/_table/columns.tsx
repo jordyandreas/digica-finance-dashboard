@@ -6,6 +6,7 @@ import { formatDate } from "@/utils/date";
 import { emptyFallback } from "@/utils/string";
 import { Expense } from "@/services/expenses.service";
 import { Pencil, Trash2 } from "lucide-react";
+import { SeeMoreText } from "@/components/molecules/see-more-text";
 
 const categoryLabelMap: Record<string, string> = {
   ads: "Ads",
@@ -65,11 +66,9 @@ export function expensesColumns({
       header: "Description",
       enableSorting: true,
       className: "max-w-md",
-      cell: (expense) => (
-        <Typography variant="body3">
-          {emptyFallback(expense.description)}
-        </Typography>
-      ),
+      minSize: 60,
+      maxSize: 220,
+      cell: (expense) => <SeeMoreText text={expense.description} />,
     },
     {
       id: "actions",

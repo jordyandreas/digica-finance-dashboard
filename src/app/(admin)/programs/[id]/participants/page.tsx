@@ -51,6 +51,7 @@ export default function ParticipantsPage() {
       programType={program?.type}
       programName={program?.name}
       programSlug={program?.public_slug}
+      bootcampRegistrationLink={program?.bootcamp_registration_link}
       page={page}
       limit={limit}
       search={search}
