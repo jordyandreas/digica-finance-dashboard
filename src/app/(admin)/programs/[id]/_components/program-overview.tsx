@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Typography } from "@/components/atoms/typography";
@@ -29,18 +29,25 @@ type ProgramOverviewProps = {
   totalParticipants?: number;
 };
 
-export function ProgramOverview({
-  programId,
-}: ProgramOverviewProps) {
+const subscribeToNothing = () => () => undefined;
 
+function getClientOrigin() {
+  return resolvePublicAppOrigin(window.location.origin);
+}
+
+function getServerOrigin() {
+  return resolvePublicAppOrigin();
+}
+
+export function ProgramOverview({ programId }: ProgramOverviewProps) {
   const { data: program, isLoading } = useProgram(programId);
   const title = isLoading ? "Loading..." : program?.name || "Program Details";
   const [isOpen, setIsOpen] = useState(false);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    setOrigin(resolvePublicAppOrigin(window.location.origin));
-  }, []);
+  const origin = useSyncExternalStore(
+    subscribeToNothing,
+    getClientOrigin,
+    getServerOrigin,
+  );
 
   const registrationUrl = resolveRegistrationLink(
     program?.registration_link,
@@ -147,6 +154,18 @@ export function ProgramOverview({
                   tagName="dt"
                   className="text-muted-foreground"
                 >
+                  Day
+                </Typography>
+                <Typography variant="body2" tagName="dd">
+                  {emptyFallback(scheduleDaysLabel)}
+                </Typography>
+              </div>
+              <div>
+                <Typography
+                  variant="caption"
+                  tagName="dt"
+                  className="text-muted-foreground"
+                >
                   Date
                 </Typography>
                 <Typography variant="body2" tagName="dd">
@@ -155,15 +174,6 @@ export function ProgramOverview({
                     program?.end_date ?? null,
                   )}
                 </Typography>
-                {scheduleDaysLabel ? (
-                  <Typography
-                    variant="caption"
-                    tagName="dd"
-                    className="mt-0.5 text-muted-foreground"
-                  >
-                    {scheduleDaysLabel}
-                  </Typography>
-                ) : null}
               </div>
               <div>
                 <Typography
@@ -196,8 +206,14 @@ export function ProgramOverview({
                   >
                     Default
                   </Typography>
-                  <Typography variant="body2" tagName="dd" className="font-medium">
-                    {program?.price != null ? formatCurrency(program.price) : "—"}
+                  <Typography
+                    variant="body2"
+                    tagName="dd"
+                    className="font-medium"
+                  >
+                    {program?.price != null
+                      ? formatCurrency(program.price)
+                      : "—"}
                   </Typography>
                 </div>
                 <div>
@@ -208,7 +224,11 @@ export function ProgramOverview({
                   >
                     Individual
                   </Typography>
-                  <Typography variant="body2" tagName="dd" className="font-medium">
+                  <Typography
+                    variant="body2"
+                    tagName="dd"
+                    className="font-medium"
+                  >
                     {program?.promo_individual_price != null
                       ? formatCurrency(program.promo_individual_price)
                       : "—"}
@@ -222,7 +242,11 @@ export function ProgramOverview({
                   >
                     Bareng Teman
                   </Typography>
-                  <Typography variant="body2" tagName="dd" className="font-medium">
+                  <Typography
+                    variant="body2"
+                    tagName="dd"
+                    className="font-medium"
+                  >
                     {program?.promo_bareng_teman_price != null
                       ? formatCurrency(program.promo_bareng_teman_price)
                       : "—"}
@@ -239,10 +263,10 @@ export function ProgramOverview({
                 successMessage="Registration link copied to clipboard"
               />
               <ParticipantLinkRow
-                label="Workshop Registration Link"
+                label="Registration Promo Link"
                 url={workshopRegistrationUrl}
                 fallback={workshopRegistrationFallback}
-                successMessage="Workshop registration link copied to clipboard"
+                successMessage="Promo registration link copied to clipboard"
               />
               <ParticipantLinkRow
                 label="WhatsApp Link"
