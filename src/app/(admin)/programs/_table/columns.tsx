@@ -9,9 +9,48 @@ import {
   formatProgramShortDateRange,
   formatProgramShortTimeRange,
   formatProgramType,
+  formatScheduleDays,
 } from "@/utils/programs";
 import { Program } from "@/services/programs.service";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  CalendarDays,
+  Clock3,
+  Eye,
+  Pencil,
+  Tag,
+  Trash2,
+  User,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+function IconMetaRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <p className="flex items-start gap-2 text-sm">
+      <Icon
+        className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground"
+        aria-hidden
+      />
+      <span className="sr-only">{label}: </span>
+      <span className="min-w-0 leading-snug">{value}</span>
+    </p>
+  );
+}
+
+const BOOTCAMP_TYPES = new Set(["bootcamp", "mini_bootcamp"]);
+
+function formatOptionalCurrency(amount: number | null | undefined): string {
+  return amount != null ? formatCurrency(amount) : "—";
+}
 
 interface ProgramsColumnsProps {
   onEdit?: (program: Program) => void;
@@ -51,21 +90,28 @@ export function programsColumns({
     },
     {
       accessorKey: "start_date",
-      header: "Dates",
+      header: "Schedule",
       enableSorting: true,
-      cell: (program) =>
-        formatProgramShortDateRange(program.start_date, program.end_date),
-    },
-    {
-      accessorKey: "start_time",
-      header: "Time",
-      enableSorting: false,
       cell: (program) => {
+        const dayLabel = formatScheduleDays(program.schedule_days) ?? "—";
+        const dateLabel = formatProgramShortDateRange(
+          program.start_date,
+          program.end_date,
+        );
         const timeRange = formatProgramShortTimeRange(
           program.start_time,
           program.end_time,
         );
-        return timeRange === "—" ? timeRange : `${timeRange} WIB`;
+        const timeLabel =
+          timeRange === "—" ? timeRange : `${timeRange} WIB`;
+
+        return (
+          <div className="flex min-w-[11rem] flex-col gap-1 py-0.5">
+            <IconMetaRow icon={CalendarDays} label="Day" value={dayLabel} />
+            <IconMetaRow icon={Calendar} label="Date" value={dateLabel} />
+            <IconMetaRow icon={Clock3} label="Time" value={timeLabel} />
+          </div>
+        );
       },
     },
     {
@@ -80,7 +126,31 @@ export function programsColumns({
       header: "Price",
       enableSorting: true,
       className: "text-left",
-      cell: (program) => formatCurrency(program.price),
+      cell: (program) => {
+        if (!BOOTCAMP_TYPES.has(program.type)) {
+          return formatCurrency(0);
+        }
+
+        return (
+          <div className="flex min-w-[9rem] flex-col gap-1 py-0.5">
+            <IconMetaRow
+              icon={Tag}
+              label="Default"
+              value={formatCurrency(program.price)}
+            />
+            <IconMetaRow
+              icon={User}
+              label="Individual"
+              value={formatOptionalCurrency(program.promo_individual_price)}
+            />
+            <IconMetaRow
+              icon={Users}
+              label="Bareng Teman"
+              value={formatOptionalCurrency(program.promo_bareng_teman_price)}
+            />
+          </div>
+        );
+      },
     },
     {
       accessorKey: "status",
