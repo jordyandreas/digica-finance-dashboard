@@ -19,7 +19,7 @@ export function SeeMoreText({ text }: SeeMoreTextProps) {
 
   if (display === "-") {
     return (
-      <Typography variant="body3" className="truncate normal-case">
+      <Typography variant="body3" className="normal-case">
         {display}
       </Typography>
     );
@@ -36,8 +36,8 @@ export function SeeMoreText({ text }: SeeMoreTextProps) {
       <Typography
         variant="body3"
         className={cn(
-          "normal-case",
-          expanded ? "whitespace-pre-wrap wrap-break-word" : "truncate",
+          "normal-case wrap-break-word",
+          expanded && "whitespace-pre-wrap",
         )}
       >
         {visibleText}
