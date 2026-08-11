@@ -275,20 +275,19 @@ export function participantsColumns({
       cell: (participant) => <SeeMoreText text={participant.notes} />,
     },
     {
-      accessorKey: "joined_date",
+      accessorKey: "created_at",
       header: "Joined Date",
       enableSorting: true,
       minSize: 120,
       maxSize: 160,
-      cell: (participant) => (
-        <Typography variant="body3" className="whitespace-nowrap">
-          {emptyFallback(
-            participant.joined_date
-              ? formatDateTime(participant.joined_date)
-              : "",
-          )}
-        </Typography>
-      ),
+      cell: (participant) => {
+        const joinedAt = participant.created_at ?? participant.joined_date;
+        return (
+          <Typography variant="body3" className="whitespace-nowrap">
+            {emptyFallback(joinedAt ? formatDateTime(joinedAt) : "")}
+          </Typography>
+        );
+      },
     },
     {
       id: "actions",

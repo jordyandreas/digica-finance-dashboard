@@ -140,7 +140,7 @@ const defaultValues: RegistrationFormState = {
 interface SuccessStepCardProps {
   title: string;
   description: string;
-  badge: "Required" | "Optional";
+  badge: "Required" | "Optional" | "Wajib" | "Opsional";
   emphasized?: boolean;
   children: React.ReactNode;
 }
@@ -152,7 +152,7 @@ function SuccessStepCard({
   emphasized = false,
   children,
 }: SuccessStepCardProps) {
-  const isRequired = badge === "Required";
+  const isRequired = badge === "Required" || badge === "Wajib";
 
   return (
     <div
@@ -338,6 +338,14 @@ export function RegistrationForm({
     "Your seat is confirmed. Share the invitation link with friends, and we'll invite you to the WhatsApp group 3 days before the program starts."
   );
 
+  const promoSuccessDescription = (
+    <>
+      Harga spesial workshop-mu sudah aktif. Chat admin sekarang untuk minta{" "}
+      <strong className="font-semibold text-foreground">detail pembayaran</strong>{" "}
+      dan kunci seat promo sebelum kuota habis.
+    </>
+  );
+
   const handleSuccessModalChange = (open: boolean) => {
     setIsSuccessModalOpen(open);
     if (!open) {
@@ -354,9 +362,15 @@ export function RegistrationForm({
 
     try {
       await navigator.clipboard.writeText(invitationUrl);
-      toast.success("Invitation link copied!");
+      toast.success(
+        isWorkshopPromo ? "Link undangan disalin!" : "Invitation link copied!",
+      );
     } catch {
-      toast.error("Failed to copy registration link");
+      toast.error(
+        isWorkshopPromo
+          ? "Gagal menyalin link undangan"
+          : "Failed to copy registration link",
+      );
     }
   };
 
@@ -367,9 +381,15 @@ export function RegistrationForm({
 
     try {
       await navigator.clipboard.writeText(waGroupUrl);
-      toast.success("WhatsApp link copied!");
+      toast.success(
+        isWorkshopPromo ? "Link WhatsApp disalin!" : "WhatsApp link copied!",
+      );
     } catch {
-      toast.error("Failed to copy WhatsApp group link");
+      toast.error(
+        isWorkshopPromo
+          ? "Gagal menyalin link WhatsApp"
+          : "Failed to copy WhatsApp group link",
+      );
     }
   };
 
@@ -712,117 +732,227 @@ export function RegistrationForm({
 
       <Dialog open={isSuccessModalOpen} onOpenChange={handleSuccessModalChange}>
         <DialogContent className="flex max-h-[90dvh] w-[calc(100%-1.5rem)] flex-col gap-0 overflow-hidden rounded-2xl border-brand-periwinkle/70 p-0 sm:w-[70%] sm:max-w-md">
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
-            <DialogHeader className="items-center space-y-3 text-center sm:text-center">
-              <DialogTitle className="text-xl text-brand-deep">
-                You&apos;re registered 🎉
-              </DialogTitle>
-              <DialogDescription className="text-center text-sm leading-relaxed">
-                {successDescription}
-              </DialogDescription>
-            </DialogHeader>
+          {isWorkshopPromo ? (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
+                <DialogHeader className="items-center space-y-3 text-center sm:text-center">
+                  <DialogTitle className="text-xl text-brand-deep">
+                    Promo seat kamu sudah terdaftar!
+                  </DialogTitle>
+                  <span className="rounded-full bg-brand-royal/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-brand-royal">
+                    Harga spesial workshop
+                  </span>
+                  <DialogDescription className="text-center text-sm leading-relaxed">
+                    {promoSuccessDescription}
+                  </DialogDescription>
+                </DialogHeader>
 
-            <div className="mt-6 space-y-4">
-              {isBootcampProgram ? (
-                <SuccessStepCard
-                  title="Chat admin untuk pembayaran"
-                  description="Kirim pesan untuk minta detail transfer. Kamu juga bisa tanya dulu kalau masih mempertimbangkan."
-                  badge="Required"
-                  emphasized
-                >
-                  {paymentWhatsAppUrl ? (
-                    <Button asChild className="h-11 w-full gap-2">
-                      <a
-                        href={paymentWhatsAppUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                        Chat Admin WhatsApp
-                      </a>
-                    </Button>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Hubungi admin Digica lewat WhatsApp untuk detail
-                      pembayaran.
-                    </p>
-                  )}
-                </SuccessStepCard>
-              ) : null}
+                <div className="mt-6 space-y-4">
+                  <SuccessStepCard
+                    title="Kunci harga promo lewat admin"
+                    description="Kirim pesan untuk minta detail transfer. Kalau masih ragu, boleh tanya dulu — admin siap bantu."
+                    badge="Wajib"
+                    emphasized
+                  >
+                    {paymentWhatsAppUrl ? (
+                      <Button asChild className="h-11 w-full gap-2">
+                        <a
+                          href={paymentWhatsAppUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          Chat Admin WhatsApp
+                        </a>
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Hubungi admin Digica lewat WhatsApp untuk detail
+                        pembayaran.
+                      </p>
+                    )}
+                  </SuccessStepCard>
 
-              {hasWaGroupLink ? (
-                <SuccessStepCard
-                  title="Join WhatsApp Group"
-                  description="Your e-certificate will be shared in this group after the program. Join now to receive it, along with class schedules and materials."
-                  badge="Required"
-                  emphasized={!isBootcampProgram}
-                >
-                  <div className="space-y-3">
-                    <Button asChild className="h-11 w-full">
-                      <a
-                        href={waGroupUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Join WhatsApp Group
-                      </a>
-                    </Button>
+                  {hasWaGroupLink ? (
+                    <SuccessStepCard
+                      title="Gabung Grup WhatsApp"
+                      description="E-sertifikat akan dibagikan di grup setelah program. Gabung sekarang untuk dapat jadwal kelas dan materi."
+                      badge="Wajib"
+                    >
+                      <div className="space-y-3">
+                        <Button asChild className="h-11 w-full">
+                          <a
+                            href={waGroupUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Gabung Grup WhatsApp
+                          </a>
+                        </Button>
 
-                    <div className="flex items-center gap-3 py-1">
-                      <div className="h-px flex-1 bg-border/80" />
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        Having trouble?
-                      </span>
-                      <div className="h-px flex-1 bg-border/80" />
-                    </div>
+                        <div className="flex items-center gap-3 py-1">
+                          <div className="h-px flex-1 bg-border/80" />
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            Ada kendala?
+                          </span>
+                          <div className="h-px flex-1 bg-border/80" />
+                        </div>
 
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-11 w-full gap-2"
+                          onClick={handleCopyWaGroupLink}
+                        >
+                          <Copy className="h-4 w-4" />
+                          Salin Link WhatsApp
+                        </Button>
+                      </div>
+                    </SuccessStepCard>
+                  ) : null}
+
+                  <SuccessStepCard
+                    title="Ajak teman pakai harga spesial"
+                    description="Bagikan link ini ke teman workshop. Mereka juga dapat harga promo yang sama."
+                    badge="Opsional"
+                  >
                     <Button
                       type="button"
                       variant="outline"
                       className="h-11 w-full gap-2"
-                      onClick={handleCopyWaGroupLink}
+                      onClick={handleCopyRegistrationLink}
+                      disabled={!invitationUrl}
                     >
                       <Copy className="h-4 w-4" />
-                      Copy WhatsApp Link
+                      Salin Link Undangan
                     </Button>
-                  </div>
-                </SuccessStepCard>
-              ) : null}
+                  </SuccessStepCard>
+                </div>
+              </div>
 
-              <SuccessStepCard
-                title="Invite your friends"
-                description={
-                  isBootcampProgram
-                    ? registrationSource === "workshop_promo"
-                      ? "Bagikan link ini ke teman. Mereka juga dapat harga spesial workshop."
-                      : "Bagikan link ini ke teman. Mereka daftar dengan harga yang sama."
-                    : "Learning is better together."
-                }
-                badge="Optional"
-              >
+              <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
                 <Button
                   type="button"
-                  variant="outline"
-                  className="h-11 w-full gap-2"
-                  onClick={handleCopyRegistrationLink}
-                  disabled={!invitationUrl}
+                  className="h-11 w-full"
+                  onClick={() => handleSuccessModalChange(false)}
                 >
-                  <Copy className="h-4 w-4" />
-                  Copy Invitation Link
+                  Selesai
                 </Button>
-              </SuccessStepCard>
-            </div>
-          </div>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4 pt-6">
+                <DialogHeader className="items-center space-y-3 text-center sm:text-center">
+                  <DialogTitle className="text-xl text-brand-deep">
+                    You&apos;re registered 🎉
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-sm leading-relaxed">
+                    {successDescription}
+                  </DialogDescription>
+                </DialogHeader>
 
-          <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
-            <Button
-              type="button"
-              className="h-11 w-full"
-              onClick={() => handleSuccessModalChange(false)}
-            >
-              Done
-            </Button>
-          </DialogFooter>
+                <div className="mt-6 space-y-4">
+                  {isBootcampProgram ? (
+                    <SuccessStepCard
+                      title="Chat admin untuk pembayaran"
+                      description="Kirim pesan untuk minta detail transfer. Kamu juga bisa tanya dulu kalau masih mempertimbangkan."
+                      badge="Required"
+                      emphasized
+                    >
+                      {paymentWhatsAppUrl ? (
+                        <Button asChild className="h-11 w-full gap-2">
+                          <a
+                            href={paymentWhatsAppUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                            Chat Admin WhatsApp
+                          </a>
+                        </Button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Hubungi admin Digica lewat WhatsApp untuk detail
+                          pembayaran.
+                        </p>
+                      )}
+                    </SuccessStepCard>
+                  ) : null}
+
+                  {hasWaGroupLink ? (
+                    <SuccessStepCard
+                      title="Join WhatsApp Group"
+                      description="Your e-certificate will be shared in this group after the program. Join now to receive it, along with class schedules and materials."
+                      badge="Required"
+                      emphasized={!isBootcampProgram}
+                    >
+                      <div className="space-y-3">
+                        <Button asChild className="h-11 w-full">
+                          <a
+                            href={waGroupUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Join WhatsApp Group
+                          </a>
+                        </Button>
+
+                        <div className="flex items-center gap-3 py-1">
+                          <div className="h-px flex-1 bg-border/80" />
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            Having trouble?
+                          </span>
+                          <div className="h-px flex-1 bg-border/80" />
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-11 w-full gap-2"
+                          onClick={handleCopyWaGroupLink}
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copy WhatsApp Link
+                        </Button>
+                      </div>
+                    </SuccessStepCard>
+                  ) : null}
+
+                  <SuccessStepCard
+                    title="Invite your friends"
+                    description={
+                      isBootcampProgram
+                        ? "Bagikan link ini ke teman. Mereka daftar dengan harga yang sama."
+                        : "Learning is better together."
+                    }
+                    badge="Optional"
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-11 w-full gap-2"
+                      onClick={handleCopyRegistrationLink}
+                      disabled={!invitationUrl}
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Invitation Link
+                    </Button>
+                  </SuccessStepCard>
+                </div>
+              </div>
+
+              <DialogFooter className="shrink-0 border-t px-6 py-4 sm:justify-center">
+                <Button
+                  type="button"
+                  className="h-11 w-full"
+                  onClick={() => handleSuccessModalChange(false)}
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </>
