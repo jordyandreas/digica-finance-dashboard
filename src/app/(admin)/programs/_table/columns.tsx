@@ -11,13 +11,16 @@ import {
   formatProgramType,
   formatScheduleDays,
 } from "@/utils/programs";
-import { Program } from "@/services/programs.service";
+import { Program, type ProgramType } from "@/services/programs.service";
 import {
   Calendar,
   CalendarDays,
   Clock3,
   Eye,
+  GraduationCap,
+  Layers,
   Pencil,
+  Presentation,
   Tag,
   Trash2,
   User,
@@ -46,7 +49,13 @@ function IconMetaRow({
   );
 }
 
-const BOOTCAMP_TYPES = new Set(["bootcamp", "mini_bootcamp"]);
+const PROGRAM_TYPE_ICONS: Record<ProgramType, LucideIcon> = {
+  bootcamp: GraduationCap,
+  mini_bootcamp: Layers,
+  workshop: Presentation,
+};
+
+const BOOTCAMP_TYPES = new Set<ProgramType>(["bootcamp", "mini_bootcamp"]);
 
 function formatOptionalCurrency(amount: number | null | undefined): string {
   return amount != null ? formatCurrency(amount) : "—";
@@ -76,11 +85,20 @@ export function programsColumns({
       accessorKey: "type",
       header: "Type",
       enableSorting: true,
-      cell: (program) => (
-        <span className="truncate capitalize">
-          {formatProgramType(program.type)}
-        </span>
-      ),
+      cell: (program) => {
+        const TypeIcon = PROGRAM_TYPE_ICONS[program.type];
+        return (
+          <span className="inline-flex items-center gap-2 capitalize">
+            {TypeIcon ? (
+              <TypeIcon
+                className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            ) : null}
+            <span className="truncate">{formatProgramType(program.type)}</span>
+          </span>
+        );
+      },
     },
     {
       accessorKey: "year",
