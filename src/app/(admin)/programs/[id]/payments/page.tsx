@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
@@ -16,11 +16,16 @@ import {
   PAYMENT_STATUS_ALL,
   PAYMENT_STATUS_FILTER_OPTIONS,
 } from "@/constants/payment-status";
+import {
+  PAYMENT_TYPE_ALL,
+  PAYMENT_TYPE_FILTER_OPTIONS,
+} from "@/constants/payment-type";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency } from "@/utils/currency";
 import { usePaymentsPaginated, usePaymentsSummary } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
 import { useParticipants } from "../participants/_hooks/use-participants";
+import { TenorFollowUpAlert } from "./_components/tenor-follow-up-alert";
 import { PaymentsTable } from "./_table";
 
 export default function PaymentsPage() {
@@ -30,11 +35,8 @@ export default function PaymentsPage() {
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(PAYMENT_STATUS_ALL);
+  const [paymentType, setPaymentType] = useState(PAYMENT_TYPE_ALL);
   const debouncedSearch = useDebouncedValue(search);
-
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch, status]);
 
   const {
     data: paymentsResult,
@@ -45,6 +47,7 @@ export default function PaymentsPage() {
     limit,
     search: debouncedSearch,
     status,
+    paymentType,
   });
   const payments = paymentsResult?.data ?? [];
   const showPaymentsSkeleton = isPaymentsPending && payments.length === 0;
@@ -76,62 +79,78 @@ export default function PaymentsPage() {
       </div>
 
       <>
-          <Card>
-            <CardHeader>
-              <CardTitle>Total Payments</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-brand-royal">
-                {formatCurrency(totalAmount)}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {summary?.count || 0} payment
-                {summary?.count !== 1 ? "s" : ""} recorded
-              </p>
-            </CardContent>
-          </Card>
+        <TenorFollowUpAlert programId={programId} />
 
-          <div className="space-y-3">
-            <DataTableFilters
-              search={search}
-              onSearchChange={setSearch}
-              searchPlaceholder="Search participant name"
-              status={status}
-              onStatusChange={setStatus}
-              statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
-              statusPlaceholder="Status"
-            />
-            <Card
-              className={
-                isPaymentsFetching && !showPaymentsSkeleton
-                  ? "opacity-60 transition-opacity"
-                  : undefined
-              }
-            >
-              {showPaymentsSkeleton ? (
-                <DataTableSkeleton rows={limit} columns={9} />
-              ) : (
-                <>
-                  <PaymentsTable
-                    data={payments}
-                    participantNamesById={participantNamesById}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                  <DataTablePaginationControl
-                    currentPage={paymentsResult?.pagination.page ?? page}
-                    totalPages={paymentsResult?.pagination.total_page ?? 1}
-                    onPageChange={setPage}
-                    pageSize={limit}
-                    onPageSizeChange={(nextLimit) => {
-                      setLimit(nextLimit);
-                      setPage(1);
-                    }}
-                  />
-                </>
-              )}
-            </Card>
-          </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Payments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-brand-royal">
+              {formatCurrency(totalAmount)}
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {summary?.count || 0} payment
+              {summary?.count !== 1 ? "s" : ""} recorded
+            </p>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-3">
+          <DataTableFilters
+            search={search}
+            onSearchChange={(nextSearch) => {
+              setSearch(nextSearch);
+              setPage(1);
+            }}
+            searchPlaceholder="Search participant name"
+            status={status}
+            onStatusChange={(nextStatus) => {
+              setStatus(nextStatus);
+              setPage(1);
+            }}
+            statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
+            statusPlaceholder="Status"
+            secondaryFilter={paymentType}
+            onSecondaryFilterChange={(nextPaymentType) => {
+              setPaymentType(nextPaymentType);
+              setPage(1);
+            }}
+            secondaryFilterOptions={PAYMENT_TYPE_FILTER_OPTIONS}
+            secondaryFilterPlaceholder="Payment type"
+            secondaryFilterAllValue={PAYMENT_TYPE_ALL}
+          />
+          <Card
+            className={
+              isPaymentsFetching && !showPaymentsSkeleton
+                ? "opacity-60 transition-opacity"
+                : undefined
+            }
+          >
+            {showPaymentsSkeleton ? (
+              <DataTableSkeleton rows={limit} columns={9} />
+            ) : (
+              <>
+                <PaymentsTable
+                  data={payments}
+                  participantNamesById={participantNamesById}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                />
+                <DataTablePaginationControl
+                  currentPage={paymentsResult?.pagination.page ?? page}
+                  totalPages={paymentsResult?.pagination.total_page ?? 1}
+                  onPageChange={setPage}
+                  pageSize={limit}
+                  onPageSizeChange={(nextLimit) => {
+                    setLimit(nextLimit);
+                    setPage(1);
+                  }}
+                />
+              </>
+            )}
+          </Card>
+        </div>
       </>
 
       <DeleteConfirmationModal

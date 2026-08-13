@@ -5,10 +5,11 @@ import {
   getPayments,
   getPaymentsPaginated,
   getPaymentsSummary,
+  type PaymentsListParams,
 } from "@/services/payments.service";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
-import type { ListParams } from "@/types/pagination";
+import { PAYMENT_TYPE_ALL } from "@/constants/payment-type";
 
 export const paymentsQueryKey = (programId: string) =>
   ["payments", programId] as const;
@@ -19,8 +20,18 @@ export const paymentsPaginatedQueryKey = (
   limit: number,
   search = "",
   status = PAYMENT_STATUS_ALL,
+  paymentType = PAYMENT_TYPE_ALL,
 ) =>
-  ["payments", programId, "paginated", page, limit, search, status] as const;
+  [
+    "payments",
+    programId,
+    "paginated",
+    page,
+    limit,
+    search,
+    status,
+    paymentType,
+  ] as const;
 
 export const paymentsSummaryQueryKey = (programId: string) =>
   ["payments-summary", programId] as const;
@@ -46,7 +57,8 @@ export function usePaymentsPaginated(
     limit = DEFAULT_PAGE_SIZE,
     search = "",
     status = PAYMENT_STATUS_ALL,
-  }: ListParams = {},
+    paymentType = PAYMENT_TYPE_ALL,
+  }: PaymentsListParams = {},
 ) {
   return useQuery({
     queryKey: paymentsPaginatedQueryKey(
@@ -55,6 +67,7 @@ export function usePaymentsPaginated(
       limit,
       search,
       status,
+      paymentType,
     ),
     queryFn: async () => {
       const { data, error } = await getPaymentsPaginated(programId, {
@@ -62,6 +75,7 @@ export function usePaymentsPaginated(
         limit,
         search,
         status,
+        paymentType,
       });
       if (error) {
         throw error;

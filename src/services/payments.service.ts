@@ -1,12 +1,17 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
+import { PAYMENT_TYPE_ALL } from "@/constants/payment-type";
 import {
   buildPaginationMeta,
   type ListParams,
   type PaginatedResponse,
 } from "@/types/pagination";
 import { toIlikePattern } from "@/utils/search";
+
+export type PaymentsListParams = ListParams & {
+  paymentType?: string;
+};
 
 export interface Payment {
   id: string;
@@ -106,7 +111,13 @@ export async function getPayments(programId?: string): Promise<{
 
 export async function getPaymentsPaginated(
   programId: string,
-  { page = 1, limit = 10, search, status }: ListParams = {},
+  {
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    paymentType,
+  }: PaymentsListParams = {},
 ): Promise<{
   data: PaginatedResponse<Payment> | null;
   error: PostgrestError | null;
@@ -139,6 +150,10 @@ export async function getPaymentsPaginated(
 
   if (status && status !== PAYMENT_STATUS_ALL) {
     query = query.eq("status", status);
+  }
+
+  if (paymentType && paymentType !== PAYMENT_TYPE_ALL) {
+    query = query.eq("payment_type", paymentType);
   }
 
   const { data, error, count } = await query
