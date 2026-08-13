@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { subDays } from "date-fns";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { getTodayDateString, parseDateString } from "@/lib/date-utils";
 import { groupIncompleteTenorCounts } from "@/utils/incomplete-tenor";
 import { toTitleCase } from "@/utils/string";
 import { useProgram } from "../../_hooks/useProgram";
@@ -19,21 +17,6 @@ function isBootcampLike(type: string | null | undefined): boolean {
   return type === "bootcamp" || type === "mini_bootcamp";
 }
 
-function isWithinFollowUpWindow(startDate: string | null | undefined): boolean {
-  const start = parseDateString(startDate);
-  if (!start) {
-    return false;
-  }
-
-  const windowStart = subDays(start, 7);
-  const today = parseDateString(getTodayDateString());
-  if (!today) {
-    return false;
-  }
-
-  return today >= windowStart;
-}
-
 export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
   const { data: program } = useProgram(programId);
   const { data: payments = [] } = usePayments(programId);
@@ -42,9 +25,7 @@ export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
   const incompleteGroups = groupIncompleteTenorCounts(payments);
 
   const shouldShow =
-    isBootcampLike(program?.type) &&
-    isWithinFollowUpWindow(program?.start_date) &&
-    incompleteGroups.length > 0;
+    isBootcampLike(program?.type) && incompleteGroups.length > 0;
 
   if (!shouldShow) {
     return null;
