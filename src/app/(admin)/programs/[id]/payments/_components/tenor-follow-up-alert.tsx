@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getTodayDateString, parseDateString } from "@/lib/date-utils";
 import { groupIncompleteTenorCounts } from "@/utils/incomplete-tenor";
+import { toTitleCase } from "@/utils/string";
 import { useProgram } from "../../_hooks/useProgram";
 import { usePayments } from "../_hooks/use-payments";
 
@@ -38,18 +39,18 @@ export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
   const { data: payments = [] } = usePayments(programId);
   const [isOpen, setIsOpen] = useState(true);
 
-  const incompleteCounts = groupIncompleteTenorCounts(payments);
+  const incompleteGroups = groupIncompleteTenorCounts(payments);
 
   const shouldShow =
     isBootcampLike(program?.type) &&
     isWithinFollowUpWindow(program?.start_date) &&
-    incompleteCounts.length > 0;
+    incompleteGroups.length > 0;
 
   if (!shouldShow) {
     return null;
   }
 
-  const totalIncomplete = incompleteCounts.reduce(
+  const totalIncomplete = incompleteGroups.reduce(
     (sum, item) => sum + item.count,
     0,
   );
@@ -77,18 +78,27 @@ export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
         </button>
       </CardHeader>
       {isOpen ? (
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-4">
           <p className="text-sm text-brand-deep">
             Follow up with these participants for their next installment.
           </p>
-          <ul className="space-y-1 text-sm text-brand-deep">
-            {incompleteCounts.map(({ paidTenor, count }) => (
-              <li key={paidTenor}>
-                {count} participant{count !== 1 ? "s" : ""} still on tenor-
-                {paidTenor}
-              </li>
+          <div className="space-y-3">
+            {incompleteGroups.map(({ paidTenor, count, participants }) => (
+              <div key={paidTenor} className="space-y-1.5">
+                <p className="text-sm font-medium text-brand-deep">
+                  {count} participant{count !== 1 ? "s" : ""} still on tenor-
+                  {paidTenor}
+                </p>
+                <ul className="list-disc space-y-0.5 pl-5 text-sm text-brand-deep">
+                  {participants.map((participant) => (
+                    <li key={participant.participantId}>
+                      {toTitleCase(participant.name)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-          </ul>
+          </div>
         </CardContent>
       ) : null}
     </Card>
