@@ -1,6 +1,9 @@
 import { supabase } from "@/lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
-import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
+import {
+  PAYMENT_STATUS_ALL,
+  REVENUE_PAYMENT_STATUSES,
+} from "@/constants/payment-status";
 import { PAYMENT_TYPE_ALL } from "@/constants/payment-type";
 import {
   buildPaginationMeta,
@@ -209,7 +212,10 @@ export async function getPaymentsSummary(
     return { data: { total: 0, count: 0 }, error: null };
   }
 
-  let query = supabase.from("payments").select("amount").eq("status", "paid");
+  let query = supabase
+    .from("payments")
+    .select("amount")
+    .in("status", [...REVENUE_PAYMENT_STATUSES]);
 
   if (programId) {
     query = query.eq("program_id", programId);

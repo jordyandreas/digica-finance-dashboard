@@ -8,6 +8,9 @@ export const PAYMENT_STATUSES = [
 
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
+/** Statuses whose amounts count toward revenue / payment totals. */
+export const REVENUE_PAYMENT_STATUSES = ["paid", "on_progress"] as const;
+
 export const PAYMENT_STATUS_ALL = "all";
 
 export function formatPaymentStatusLabel(
