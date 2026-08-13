@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
@@ -15,6 +15,7 @@ import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-
 import {
   PAYMENT_STATUS_ALL,
   PAYMENT_STATUS_FILTER_OPTIONS,
+  REVENUE_PAYMENT_STATUSES,
 } from "@/constants/payment-status";
 import {
   PAYMENT_TYPE_ALL,
@@ -22,11 +23,13 @@ import {
 } from "@/constants/payment-type";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency } from "@/utils/currency";
-import { usePaymentsPaginated, usePaymentsSummary } from "./_hooks/use-payments";
+import { usePayments, usePaymentsPaginated } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
 import { useParticipants } from "../participants/_hooks/use-participants";
 import { TenorFollowUpAlert } from "./_components/tenor-follow-up-alert";
 import { PaymentsTable } from "./_table";
+
+const REVENUE_STATUS_SET = new Set<string>(REVENUE_PAYMENT_STATUSES);
 
 export default function PaymentsPage() {
   const { id } = useParams<{ id?: string }>();
@@ -37,6 +40,10 @@ export default function PaymentsPage() {
   const [status, setStatus] = useState(PAYMENT_STATUS_ALL);
   const [paymentType, setPaymentType] = useState(PAYMENT_TYPE_ALL);
   const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, status, paymentType]);
 
   const {
     data: paymentsResult,
@@ -51,13 +58,22 @@ export default function PaymentsPage() {
   });
   const payments = paymentsResult?.data ?? [];
   const showPaymentsSkeleton = isPaymentsPending && payments.length === 0;
-  const { data: summary } = usePaymentsSummary(programId);
+  const { data: allPayments = [] } = usePayments(programId);
   const { data: participants } = useParticipants(programId);
+
+  const revenuePayments = allPayments.filter(
+    (payment) =>
+      payment.status != null && REVENUE_STATUS_SET.has(payment.status),
+  );
+  const totalAmount = revenuePayments.reduce(
+    (sum, payment) => sum + (Number(payment.amount) || 0),
+    0,
+  );
+  const revenuePaymentCount = revenuePayments.length;
 
   const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
     useAddPayment({ programId });
 
-  const totalAmount = summary?.total || 0;
   const participantNamesById = Object.fromEntries(
     (participants ?? []).map((participant) => [
       participant.id,
@@ -90,8 +106,8 @@ export default function PaymentsPage() {
               {formatCurrency(totalAmount)}
             </div>
             <p className="text-sm text-muted-foreground">
-              {summary?.count || 0} payment
-              {summary?.count !== 1 ? "s" : ""} recorded
+              {revenuePaymentCount} payment
+              {revenuePaymentCount !== 1 ? "s" : ""} recorded
             </p>
           </CardContent>
         </Card>
@@ -99,23 +115,14 @@ export default function PaymentsPage() {
         <div className="space-y-3">
           <DataTableFilters
             search={search}
-            onSearchChange={(nextSearch) => {
-              setSearch(nextSearch);
-              setPage(1);
-            }}
+            onSearchChange={setSearch}
             searchPlaceholder="Search participant name"
             status={status}
-            onStatusChange={(nextStatus) => {
-              setStatus(nextStatus);
-              setPage(1);
-            }}
+            onStatusChange={setStatus}
             statusOptions={PAYMENT_STATUS_FILTER_OPTIONS}
             statusPlaceholder="Status"
             secondaryFilter={paymentType}
-            onSecondaryFilterChange={(nextPaymentType) => {
-              setPaymentType(nextPaymentType);
-              setPage(1);
-            }}
+            onSecondaryFilterChange={setPaymentType}
             secondaryFilterOptions={PAYMENT_TYPE_FILTER_OPTIONS}
             secondaryFilterPlaceholder="Payment type"
             secondaryFilterAllValue={PAYMENT_TYPE_ALL}
