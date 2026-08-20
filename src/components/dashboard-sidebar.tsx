@@ -8,17 +8,20 @@ import { ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms/typography";
 import { SidebarProgramList } from "@/components/molecules/sidebar-program-list";
+import { SidebarUserProfile } from "@/components/molecules/sidebar-user-profile";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { AdminProfile } from "@/lib/profile-role";
 import { cn } from "@/lib/utils";
 import { useDashboardMenus, type MenuItem } from "@/hooks/use-dashboard-menus";
 
 interface DashboardSidebarProps {
   isCollapsed: boolean;
   onToggle: () => void;
+  userProfile?: AdminProfile | null;
 }
 
 const FLYOUT_CLOSE_DELAY_MS = 150;
@@ -26,6 +29,7 @@ const FLYOUT_CLOSE_DELAY_MS = 150;
 export function DashboardSidebar({
   isCollapsed,
   onToggle,
+  userProfile,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const menus = useDashboardMenus();
@@ -113,22 +117,30 @@ export function DashboardSidebar({
         ))}
       </nav>
 
-      <Link
-        href="/logout"
-        className={cn(
-          "mt-6 flex items-center rounded-lg text-sm font-medium transition-colors",
-          "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-          isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2",
-        )}
-        title="Logout"
-      >
-        <LogOut className="h-4 w-4 shrink-0" />
-        {!isCollapsed && (
-          <Typography variant="body2" tagName="span" className="text-inherit">
-            Logout
-          </Typography>
-        )}
-      </Link>
+      <div className="mt-auto border-t border-brand-periwinkle/60 pt-4">
+        {userProfile ? (
+          <div className="mb-2">
+            <SidebarUserProfile profile={userProfile} isCollapsed={isCollapsed} />
+          </div>
+        ) : null}
+
+        <Link
+          href="/logout"
+          className={cn(
+            "flex items-center rounded-lg text-sm font-medium transition-colors",
+            "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+            isCollapsed ? "justify-center p-2" : "gap-3 px-3 py-2",
+          )}
+          title="Logout"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!isCollapsed && (
+            <Typography variant="body2" tagName="span" className="text-inherit">
+              Logout
+            </Typography>
+          )}
+        </Link>
+      </div>
     </aside>
   );
 }

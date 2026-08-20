@@ -6,6 +6,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/atoms/button";
 import { TextInputController } from "@/components/controllers";
+import {
+  ADMIN_UNAUTHORIZED_MESSAGE,
+  getProfileRole,
+} from "@/lib/profile-role";
 import { supabase } from "@/lib/supabase";
 
 type LoginFormState = {
@@ -22,7 +26,11 @@ function LoginForm() {
   });
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(() =>
+    searchParams.get("error") === "unauthorized"
+      ? ADMIN_UNAUTHORIZED_MESSAGE
+      : null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const redirectPath = useMemo(() => {
@@ -43,6 +51,18 @@ function LoginForm() {
 
     if (error) {
       setErrorMessage(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const role = user ? await getProfileRole(supabase, user.id) : null;
+
+    if (role !== "admin") {
+      await supabase.auth.signOut();
+      setErrorMessage(ADMIN_UNAUTHORIZED_MESSAGE);
       setIsSubmitting(false);
       return;
     }
