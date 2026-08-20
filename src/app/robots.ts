@@ -5,8 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/r/", "/c/", "/registration/", "/check-in/", "/logo/"],
-        disallow: ["/dashboard/", "/programs/", "/api/"],
+        disallow: ["/", "/login", "/dashboard"],
       },
       {
         userAgent: [
@@ -16,7 +15,8 @@ export default function robots(): MetadataRoute.Robots {
           "WhatsApp",
           "LinkedInBot",
         ],
-        allow: ["/r/", "/c/", "/registration/", "/check-in/", "/logo/"],
+        allow: ["/r/", "/c/", "/registration/", "/check-in/"],
+        disallow: ["/login", "/dashboard"],
       },
     ],
   };

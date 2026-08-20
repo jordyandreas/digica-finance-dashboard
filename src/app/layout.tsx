@@ -15,15 +15,31 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const publicAppUrl =
-  process.env.NEXT_PUBLIC_PUBLIC_APP_URL?.trim().replace(/\/$/, "") ||
-  "https://www.digica-academy.web.id";
+function resolveAdminOrigin(): string {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (siteUrl) {
+    return siteUrl;
+  }
+
+  const vercelUrl = process.env.VERCEL_URL?.trim().replace(/\/$/, "");
+  if (vercelUrl) {
+    return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
+  }
+
+  return "http://localhost:3000";
+}
 
 export const metadata: Metadata = {
-  metadataBase: new URL(publicAppUrl),
-  title: "Digica Academy Dashboard",
-  description:
-    "Dashboard for managing Digica Academy programs, participants, payments, and expenses",
+  metadataBase: new URL(resolveAdminOrigin()),
+  title: "Digica Admin",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default function RootLayout({

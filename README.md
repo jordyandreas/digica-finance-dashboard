@@ -155,10 +155,6 @@ NEXT_PUBLIC_ADMIN_WHATSAPP=
 - `NEXT_PUBLIC_PUBLIC_APP_URL`: base public URL used for canonical/share links.
 - `NEXT_PUBLIC_ADMIN_WHATSAPP`: admin WhatsApp number used in inquiry/help/payment CTAs.
 
-## Auth and roles
-
-Admin routes require `public.profiles.role = 'admin'`. New Auth users default to `student`. Apply the latest SQL migration in this project's Supabase **before** deploying the app, then promote accounts as needed. See [SECURITY.md](SECURITY.md).
-
 ## Getting Started
 
 Install dependencies:
