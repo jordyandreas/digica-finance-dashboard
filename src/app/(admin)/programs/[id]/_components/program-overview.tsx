@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useSyncExternalStore } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil } from "lucide-react";
+import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { Typography } from "@/components/atoms/typography";
 import { FinancialVisibilityToggle } from "@/components/molecules/financial-visibility";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/currency";
 import { resolveRegistrationLink } from "@/utils/program-public";
@@ -41,6 +44,7 @@ function getServerOrigin() {
 
 export function ProgramOverview({ programId }: ProgramOverviewProps) {
   const { data: program, isLoading } = useProgram(programId);
+  const programModal = useModal<ProgramModalProps>("programModal");
   const title = isLoading ? "Loading..." : program?.name || "Program Details";
   const [isOpen, setIsOpen] = useState(false);
   const origin = useSyncExternalStore(
@@ -87,7 +91,22 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
             Overview of program performance and activity
           </p>
         </div>
-        <FinancialVisibilityToggle />
+        <div className="flex flex-wrap items-center justify-end gap-1">
+          <FinancialVisibilityToggle showLabel />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              if (!program) return;
+              programModal.open({ program });
+            }}
+            disabled={!program}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit Program
+          </Button>
+        </div>
       </div>
       <Card>
         <CardHeader className={cn("space-y-0", !isOpen && "pb-6")}>

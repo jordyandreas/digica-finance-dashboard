@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Auth and roles
+
+Admin routes require `public.profiles.role = 'admin'`. New Auth users default to `student`. Apply the latest SQL migration in this project's Supabase **before** deploying the app, then promote accounts as needed. See [SECURITY.md](SECURITY.md).
+
 ## Getting Started
 
 First, run the development server:
