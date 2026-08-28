@@ -10,6 +10,10 @@ import type {
   RegistrationSource,
 } from "@/constants/registration-offers";
 import {
+  REGISTRATION_PACKAGE_ALL,
+  REGISTRATION_SOURCE_ALL,
+} from "@/constants/registration-offers";
+import {
   buildPaginationMeta,
   type ListParams,
   type PaginatedResponse,
@@ -54,6 +58,11 @@ export interface CreateParticipantInput {
   notes?: string;
   reference_name?: string | null;
   secure_seat_interest?: SecureSeatInterest | null;
+  registration_source?: RegistrationSource | null;
+  selected_package?: RegistrationPackage | null;
+  package_price?: number | null;
+  friend_name?: string | null;
+  friend_phone?: string | null;
 }
 
 export interface UpdateParticipantInput {
@@ -70,10 +79,17 @@ export interface UpdateParticipantInput {
   notes?: string;
   reference_name?: string | null;
   secure_seat_interest?: SecureSeatInterest | null;
+  registration_source?: RegistrationSource | null;
+  selected_package?: RegistrationPackage | null;
+  package_price?: number | null;
+  friend_name?: string | null;
+  friend_phone?: string | null;
 }
 
 export type ParticipantsListParams = ListParams & {
   secureSeatInterest?: string;
+  registrationSource?: string;
+  selectedPackage?: string;
 };
 
 export async function getParticipants(programId?: string): Promise<{
@@ -108,6 +124,8 @@ export async function getParticipantsPaginated(
     search,
     status,
     secureSeatInterest,
+    registrationSource,
+    selectedPackage,
   }: ParticipantsListParams = {},
 ): Promise<{
   data: PaginatedResponse<Participant> | null;
@@ -137,6 +155,17 @@ export async function getParticipantsPaginated(
     secureSeatInterest !== SECURE_SEAT_INTEREST_ALL
   ) {
     query = query.eq("secure_seat_interest", secureSeatInterest);
+  }
+
+  if (
+    registrationSource &&
+    registrationSource !== REGISTRATION_SOURCE_ALL
+  ) {
+    query = query.eq("registration_source", registrationSource);
+  }
+
+  if (selectedPackage && selectedPackage !== REGISTRATION_PACKAGE_ALL) {
+    query = query.eq("selected_package", selectedPackage);
   }
 
   const { data, error, count } = await query

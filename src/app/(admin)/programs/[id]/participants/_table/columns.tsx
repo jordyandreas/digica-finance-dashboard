@@ -1,9 +1,11 @@
 import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
 import { formatDateTime } from "@/utils/date";
 import { StatusBadge } from "@/components/atoms/status-badge";
+import { RegistrationSourceBadge } from "@/components/atoms/registration-source-badge";
 import { Participant } from "@/services/participants.service";
 import { Button } from "@/components/atoms/button";
-import { Banknote, Copy, Pencil, Trash2 } from "lucide-react";
+import { Banknote, Copy, Mail, Pencil, Phone, Trash2, UserRound } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { emptyFallback, toTitleCase } from "@/utils/string";
 import { occupationOptions } from "@/schemas/participant-schema";
 import { Typography } from "@/components/atoms";
@@ -11,7 +13,6 @@ import { toast } from "sonner";
 import { formatSecureSeatInterest } from "@/constants/secure-seat-interest";
 import {
   formatRegistrationPackage,
-  formatRegistrationSource,
 } from "@/constants/registration-offers";
 import type { ProgramType } from "@/services/programs.service";
 import { formatCurrency } from "@/utils/currency";
@@ -19,7 +20,6 @@ import { SeeMoreText } from "@/components/molecules/see-more-text";
 
 interface ParticipantsColumnsProps {
   programType?: ProgramType | null;
-  participantNamesById?: Record<string, string>;
   onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
@@ -34,6 +34,135 @@ async function copyText(value: string, successMessage: string) {
   }
 }
 
+function CopyablePackageValue({
+  value,
+  successMessage,
+  title,
+  icon: Icon,
+}: {
+  value: string;
+  successMessage: string;
+  title: string;
+  icon?: LucideIcon;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => copyText(value, successMessage)}
+      className="group flex w-full max-w-full items-center gap-1.5 text-left"
+      title={title}
+    >
+      {Icon ? (
+        <Icon className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
+      ) : null}
+      <Typography
+        variant="label"
+        className="min-w-0 flex-1 truncate normal-case text-muted-foreground group-hover:text-primary"
+      >
+        {value}
+      </Typography>
+      <Copy className="h-3 w-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+    </button>
+  );
+}
+
+function ParticipantPackageCell({
+  participant,
+}: {
+  participant: Participant;
+}) {
+  const packageLabel = formatRegistrationPackage(participant.selected_package);
+  const priceLabel =
+    participant.package_price != null
+      ? formatCurrency(participant.package_price)
+      : null;
+  const isBarengTeman = participant.selected_package === "bareng_teman";
+  const hasPackage = packageLabel !== "—";
+  const friendName = participant.friend_name?.trim()
+    ? toTitleCase(participant.friend_name)
+    : null;
+  const friendPhone = participant.friend_phone?.trim() || null;
+
+  if (!hasPackage && priceLabel == null) {
+    return (
+      <Typography variant="body3" className="normal-case text-muted-foreground">
+        —
+      </Typography>
+    );
+  }
+
+  return (
+    <div className="min-w-0 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
+      {hasPackage ? (
+        <Typography
+          variant="body3"
+          className="font-semibold normal-case leading-snug text-primary"
+        >
+          {packageLabel}
+        </Typography>
+      ) : null}
+      {priceLabel ? (
+        <Typography
+          variant="label"
+          className="mt-0.5 font-semibold normal-case tabular-nums text-brand-royal"
+        >
+          {priceLabel}
+        </Typography>
+      ) : null}
+
+      {isBarengTeman ? (
+        <>
+          <div className="my-2 border-t border-border/40" />
+          <div className="flex flex-col gap-0.5">
+            {friendName ? (
+              <CopyablePackageValue
+                value={friendName}
+                successMessage="Friend name copied to clipboard"
+                title="Copy friend name"
+                icon={UserRound}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <UserRound
+                  className="h-3 w-3 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+                <Typography
+                  variant="label"
+                  className="normal-case text-muted-foreground"
+                >
+                  —
+                </Typography>
+              </div>
+            )}
+            {friendPhone ? (
+              <CopyablePackageValue
+                value={friendPhone}
+                successMessage="Friend WhatsApp copied to clipboard"
+                title="Copy friend WhatsApp"
+                icon={Phone}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <Phone
+                  className="h-3 w-3 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
+                <Typography
+                  variant="label"
+                  className="normal-case text-muted-foreground"
+                >
+                  —
+                </Typography>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
 function canAddPayment(participant: Participant): boolean {
   const status = participant.payment_status;
   return status !== "paid" && status !== "on_progress";
@@ -41,7 +170,6 @@ function canAddPayment(participant: Participant): boolean {
 
 export function participantsColumns({
   programType,
-  participantNamesById = {},
   onAddPayment,
   onEdit,
   onDelete,
@@ -95,9 +223,13 @@ export function participantsColumns({
                 onClick={() =>
                   copyText(participant.email!, "Email copied to clipboard")
                 }
-                className="group inline-flex max-w-full items-center gap-1 text-left"
+                className="group inline-flex max-w-full items-center gap-1.5 text-left"
                 title="Copy email"
               >
+                <Mail
+                  className="h-3 w-3 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
                 <Typography
                   variant="label"
                   className="truncate normal-case lowercase text-muted-foreground group-hover:text-primary"
@@ -113,9 +245,13 @@ export function participantsColumns({
                 onClick={() =>
                   copyText(participant.phone!, "Phone copied to clipboard")
                 }
-                className="group inline-flex max-w-full items-center gap-1 text-left"
+                className="group inline-flex max-w-full items-center gap-1.5 text-left"
                 title="Copy phone"
               >
+                <Phone
+                  className="h-3 w-3 shrink-0 text-muted-foreground"
+                  aria-hidden
+                />
                 <Typography
                   variant="label"
                   className="normal-case text-muted-foreground group-hover:text-primary"
@@ -203,75 +339,34 @@ export function participantsColumns({
         accessorKey: "registration_source",
         header: "Source",
         enableSorting: true,
-        minSize: 110,
-        maxSize: 160,
+        minSize: 100,
+        maxSize: 140,
         cell: (participant) => (
-          <Typography variant="body3" className="normal-case">
-            {formatRegistrationSource(participant.registration_source)}
-          </Typography>
+          <RegistrationSourceBadge source={participant.registration_source} />
         ),
       },
       {
         accessorKey: "selected_package",
         header: "Package",
         enableSorting: true,
-        minSize: 140,
-        maxSize: 220,
-        cell: (participant) => {
-          const packageLabel = formatRegistrationPackage(
-            participant.selected_package,
-          );
-          const priceLabel =
-            participant.package_price != null
-              ? formatCurrency(participant.package_price)
-              : null;
-
-          return (
-            <div className="flex flex-col gap-0.5">
-              <Typography variant="body3" className="normal-case">
-                {packageLabel}
-              </Typography>
-              {priceLabel ? (
-                <Typography
-                  variant="label"
-                  className="normal-case text-muted-foreground"
-                >
-                  {priceLabel}
-                </Typography>
-              ) : null}
-            </div>
-          );
-        },
+        size: 280,
+        minSize: 220,
+        maxSize: 380,
+        cell: (participant) => (
+          <ParticipantPackageCell participant={participant} />
+        ),
       },
     );
   }
 
   columns.push(
     {
-      id: "referral",
-      header: "Referral",
-      enableSorting: false,
-      minSize: 120,
-      maxSize: 200,
-      cell: (participant) => {
-        const referralId = participant.reference_name;
-        const referralName =
-          referralId && referralId !== "none"
-            ? participantNamesById[referralId] || referralId
-            : "No referral";
-        return (
-          <Typography variant="body3" className="capitalize">
-            {emptyFallback(referralName)}
-          </Typography>
-        );
-      },
-    },
-    {
       accessorKey: "notes",
       header: "Notes",
       enableSorting: true,
-      minSize: 60,
-      maxSize: 220,
+      size: 280,
+      minSize: 180,
+      maxSize: 360,
       cell: (participant) => <SeeMoreText text={participant.notes} />,
     },
     {

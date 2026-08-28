@@ -1,6 +1,6 @@
 "use client";
 
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 
 import { PAYMENT_STATUS_ALL } from "@/constants/payment-status";
 import {
@@ -30,6 +30,11 @@ export interface DataTableFiltersProps {
   secondaryFilterOptions?: DataTableFilterOption[];
   secondaryFilterPlaceholder?: string;
   secondaryFilterAllValue?: string;
+  tertiaryFilter?: string;
+  onTertiaryFilterChange?: (value: string) => void;
+  tertiaryFilterOptions?: DataTableFilterOption[];
+  tertiaryFilterPlaceholder?: string;
+  tertiaryFilterAllValue?: string;
   className?: string;
 }
 
@@ -49,6 +54,11 @@ export function DataTableFilters({
   secondaryFilterOptions,
   secondaryFilterPlaceholder = "Filter",
   secondaryFilterAllValue = "all",
+  tertiaryFilter,
+  onTertiaryFilterChange,
+  tertiaryFilterOptions,
+  tertiaryFilterPlaceholder = "Filter",
+  tertiaryFilterAllValue = "all",
   className,
 }: DataTableFiltersProps) {
   const selectedStatusLabel = statusOptions?.find(
@@ -57,11 +67,19 @@ export function DataTableFilters({
   const selectedSecondaryLabel = secondaryFilterOptions?.find(
     (option) => option.value === secondaryFilter,
   )?.label;
+  const selectedTertiaryLabel = tertiaryFilterOptions?.find(
+    (option) => option.value === tertiaryFilter,
+  )?.label;
 
   const showStatusFilter = Boolean(statusOptions && onStatusChange);
   const showSecondaryFilter = Boolean(
     secondaryFilterOptions && onSecondaryFilterChange,
   );
+  const showTertiaryFilter = Boolean(
+    tertiaryFilterOptions && onTertiaryFilterChange,
+  );
+
+  const filterSelectClassName = "w-full shrink-0 sm:w-44";
 
   return (
     <div
@@ -77,14 +95,28 @@ export function DataTableFilters({
           value={search}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder={searchPlaceholder}
-          className={cn(inputClassName, "pl-9")}
+          className={cn(
+            inputClassName,
+            "pl-9 [&::-moz-search-clear-button]:hidden [&::-webkit-search-cancel-button]:hidden",
+            search ? "pr-9" : undefined,
+          )}
         />
+        {search ? (
+          <button
+            type="button"
+            onClick={() => onSearchChange("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-royal transition-colors hover:text-brand-deep"
+            aria-label="Clear search"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
       </div>
 
-      {showStatusFilter || showSecondaryFilter ? (
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+      {showStatusFilter || showSecondaryFilter || showTertiaryFilter ? (
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
           {showStatusFilter ? (
-            <div className="w-full shrink-0 sm:w-56">
+            <div className={filterSelectClassName}>
               <Select value={status} onValueChange={onStatusChange}>
                 <SelectTrigger>
                   {status === PAYMENT_STATUS_ALL ? (
@@ -107,7 +139,7 @@ export function DataTableFilters({
           ) : null}
 
           {showSecondaryFilter ? (
-            <div className="w-full shrink-0 sm:w-56">
+            <div className={filterSelectClassName}>
               <Select
                 value={secondaryFilter}
                 onValueChange={onSecondaryFilterChange}
@@ -123,6 +155,32 @@ export function DataTableFilters({
                 </SelectTrigger>
                 <SelectContent>
                   {secondaryFilterOptions?.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
+
+          {showTertiaryFilter ? (
+            <div className={filterSelectClassName}>
+              <Select
+                value={tertiaryFilter}
+                onValueChange={onTertiaryFilterChange}
+              >
+                <SelectTrigger>
+                  {tertiaryFilter === tertiaryFilterAllValue ? (
+                    <span className="text-muted-foreground">
+                      {tertiaryFilterPlaceholder}
+                    </span>
+                  ) : (
+                    <SelectValue>{selectedTertiaryLabel}</SelectValue>
+                  )}
+                </SelectTrigger>
+                <SelectContent>
+                  {tertiaryFilterOptions?.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>

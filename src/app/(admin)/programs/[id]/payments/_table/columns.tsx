@@ -12,7 +12,6 @@ import { SeeMoreText } from "@/components/molecules/see-more-text";
 interface PaymentsColumnsProps {
   onEdit?: (payment: Payment) => void;
   onDelete?: (payment: Payment) => void;
-  participantNamesById?: Record<string, string>;
 }
 
 function formatPaidTenor(payment: Payment): string {
@@ -43,7 +42,6 @@ function formatPaymentType(payment: Payment): string {
 export function paymentsColumns({
   onEdit,
   onDelete,
-  participantNamesById = {},
 }: PaymentsColumnsProps): ColumnDef<Payment>[] {
   return [
     {
@@ -109,21 +107,6 @@ export function paymentsColumns({
       cell: (payment) => (
         <StatusBadge status={payment.status || "pending"} />
       ),
-    },
-    {
-      id: "referral",
-      header: "Referral",
-      enableSorting: true,
-      minSize: 90,
-      maxSize: 180,
-      cell: (payment) => {
-        const referralId = payment.referral_name;
-        const referralName =
-          referralId && referralId !== "none"
-            ? participantNamesById[referralId] || referralId
-            : "No referral";
-        return <Typography variant="body3">{emptyFallback(referralName)}</Typography>;
-      },
     },
     {
       accessorKey: "notes",

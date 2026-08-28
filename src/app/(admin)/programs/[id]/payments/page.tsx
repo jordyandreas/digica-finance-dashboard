@@ -25,7 +25,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency } from "@/utils/currency";
 import { usePayments, usePaymentsPaginated } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
-import { useParticipants } from "../participants/_hooks/use-participants";
 import { TenorFollowUpAlert } from "./_components/tenor-follow-up-alert";
 import { PaymentsTable } from "./_table";
 
@@ -59,7 +58,6 @@ export default function PaymentsPage() {
   const payments = paymentsResult?.data ?? [];
   const showPaymentsSkeleton = isPaymentsPending && payments.length === 0;
   const { data: allPayments = [] } = usePayments(programId);
-  const { data: participants } = useParticipants(programId);
 
   const revenuePayments = allPayments.filter(
     (payment) =>
@@ -73,13 +71,6 @@ export default function PaymentsPage() {
 
   const { handleAddClick, handleEdit, handleDelete, deleteConfirmation } =
     useAddPayment({ programId });
-
-  const participantNamesById = Object.fromEntries(
-    (participants ?? []).map((participant) => [
-      participant.id,
-      participant.name || "Unnamed participant",
-    ]),
-  );
 
   return (
     <div className="space-y-8">
@@ -135,12 +126,11 @@ export default function PaymentsPage() {
             }
           >
             {showPaymentsSkeleton ? (
-              <DataTableSkeleton rows={limit} columns={9} />
+              <DataTableSkeleton rows={limit} columns={8} />
             ) : (
               <>
                 <PaymentsTable
                   data={payments}
-                  participantNamesById={participantNamesById}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                 />

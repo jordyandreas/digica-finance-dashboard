@@ -72,6 +72,10 @@ export function formatProgramType(type?: ProgramType | null): string {
   return PROGRAM_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
 }
 
+export function isBootcampProgram(type?: ProgramType | null): boolean {
+  return type === "bootcamp" || type === "mini_bootcamp";
+}
+
 function formatShortProgramDate(value?: string | null): string {
   const parsed = parseDateString(value);
   if (!parsed) {

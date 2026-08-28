@@ -12,12 +12,16 @@ import { useModal } from "@/hooks/use-modal";
 import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
 import { useForm } from "react-hook-form";
 import {
+  buildParticipantPackageFields,
+  isParticipantPackageReady,
   participantSchema,
   type ParticipantFormState,
 } from "../_components/participant-form";
 import type { AddParticipantModalProps } from "../_modals/add-participant";
 import type { EditParticipantModalProps } from "../_modals/edit-participant";
 import type { AddPaymentModalProps } from "../../payments/_modals/add-payment";
+import { useProgram } from "../../_hooks/useProgram";
+import { isBootcampProgram } from "@/utils/programs";
 import { participantsQueryKey } from "./use-participants";
 import {
   paymentsQueryKey,
@@ -39,6 +43,10 @@ const defaultFormState = (programId: string): ParticipantFormState => ({
   notes: "",
   reference_name: "none",
   program_id: programId,
+  registration_source: "none",
+  selected_package: "none",
+  friend_name: "",
+  friend_phone: "",
 });
 
 type UseAddParticipantOptions = {
@@ -61,8 +69,8 @@ export function useAddParticipant({
   const [loading, setLoading] = React.useState(false);
   const resolvedProgramId =
     programId ?? addParticipantModal.props?.programId ?? "";
-  const resolvedOnSuccess =
-    onSuccess ?? addParticipantModal.props?.onSuccess;
+  const { data: program } = useProgram(resolvedProgramId);
+  const isPaidProgram = isBootcampProgram(program?.type);
   const form = useForm<ParticipantFormState>({
     defaultValues: defaultFormState(resolvedProgramId),
   });
@@ -70,6 +78,9 @@ export function useAddParticipant({
   const email = form.watch("email");
   const phone = form.watch("phone");
   const joinedDate = form.watch("joined_date");
+  const selectedPackage = form.watch("selected_package");
+  const friendName = form.watch("friend_name");
+  const friendPhone = form.watch("friend_phone");
 
   React.useEffect(() => {
     if (addParticipantModal.isOpen) {
@@ -107,18 +118,16 @@ export function useAddParticipant({
     await invalidateOverviewData();
   };
 
-  const handleSuccess = async () => {
-    if (resolvedOnSuccess) {
-      resolvedOnSuccess();
-      return;
-    }
+  const handleMutationSuccess = async () => {
     await invalidateParticipants();
+    if (onSuccess) {
+      await onSuccess();
+    }
   };
 
   const handleAddClick = () => {
     addParticipantModal.open({
       programId: resolvedProgramId,
-      onSuccess: handleSuccess,
     });
   };
 
@@ -134,7 +143,7 @@ export function useAddParticipant({
     editParticipantModal.open({
       participant,
       programId: resolvedProgramId,
-      onSuccess: handleSuccess,
+      onSuccess: invalidateParticipants,
     });
   };
 
@@ -179,6 +188,14 @@ export function useAddParticipant({
         joined_date: values.joined_date,
         notes: values.notes,
         reference_name: values.reference_name,
+        registration_source:
+          values.registration_source === "none"
+            ? ""
+            : values.registration_source,
+        selected_package:
+          values.selected_package === "none" ? "" : values.selected_package,
+        friend_name: values.friend_name,
+        friend_phone: values.friend_phone,
       });
 
       if (!validation.success) {
@@ -194,6 +211,21 @@ export function useAddParticipant({
 
       if (!resolvedProgramId) {
         toast.error("Program ID is missing.");
+        return;
+      }
+
+      const packageFields = buildParticipantPackageFields(
+        values,
+        {
+          promo_individual_price: program?.promo_individual_price ?? null,
+          promo_bareng_teman_price: program?.promo_bareng_teman_price ?? null,
+          price: program?.price ?? null,
+        },
+        isPaidProgram,
+      );
+
+      if ("error" in packageFields) {
+        toast.error(packageFields.error);
         return;
       }
 
@@ -218,6 +250,13 @@ export function useAddParticipant({
               ? values.reference_name
               : null,
           program_id: values.program_id || resolvedProgramId,
+          registration_source: packageFields.registration_source,
+          selected_package: packageFields.selected_package,
+          package_price: packageFields.package_price,
+          friend_name: packageFields.friend_name,
+          friend_phone: packageFields.friend_phone
+            ? normalizeParticipantPhoneForSubmit(packageFields.friend_phone)
+            : null,
         };
 
         const result = await createParticipant(participantData);
@@ -234,7 +273,7 @@ export function useAddParticipant({
         }
 
         toast.success("Participant created successfully");
-        await handleSuccess();
+        await handleMutationSuccess();
         addParticipantModal.close();
         setLoading(false);
       } catch (error) {
@@ -254,7 +293,12 @@ export function useAddParticipant({
     !name?.trim() ||
     !email?.trim() ||
     !phone?.trim() ||
-    !joinedDate?.trim();
+    !joinedDate?.trim() ||
+    !isParticipantPackageReady({
+      selected_package: selectedPackage,
+      friend_name: friendName,
+      friend_phone: friendPhone,
+    });
 
   return {
     isOpen: addParticipantModal.isOpen,

@@ -39,7 +39,7 @@ const PACKAGE_SECTION_LABELS: Record<RegistrationPackage, string> = {
 };
 
 const SOURCE_LABELS: Record<RegistrationSource, string> = {
-  workshop_promo: "Workshop promo",
+  workshop_promo: "Workshop",
   social: "Social",
 };
 
@@ -174,3 +174,22 @@ export function emptyProgramOfferPrices(): ProgramOfferPrices {
     price: null,
   };
 }
+
+export const REGISTRATION_SOURCE_ALL = "all";
+export const REGISTRATION_PACKAGE_ALL = "all";
+
+export const REGISTRATION_SOURCE_FILTER_OPTIONS = [
+  { label: "All sources", value: REGISTRATION_SOURCE_ALL },
+  ...REGISTRATION_SOURCES.map((source) => ({
+    label: SOURCE_LABELS[source],
+    value: source,
+  })),
+];
+
+export const REGISTRATION_PACKAGE_FILTER_OPTIONS = [
+  { label: "All packages", value: REGISTRATION_PACKAGE_ALL },
+  ...REGISTRATION_PACKAGES.map((selectedPackage) => ({
+    label: PACKAGE_LABELS[selectedPackage],
+    value: selectedPackage,
+  })),
+];

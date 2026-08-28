@@ -25,6 +25,12 @@ import {
   downloadCsv,
   sanitizeCsvFilename,
 } from "@/utils/export-csv";
+import {
+  REGISTRATION_PACKAGE_ALL,
+  REGISTRATION_PACKAGE_FILTER_OPTIONS,
+  REGISTRATION_SOURCE_ALL,
+  REGISTRATION_SOURCE_FILTER_OPTIONS,
+} from "@/constants/registration-offers";
 import { appendRegistrationSource } from "@/utils/registration-source-url";
 import { toTitleCase } from "@/utils/string";
 import { Copy, Download, Plus } from "lucide-react";
@@ -46,9 +52,13 @@ interface ParticipantsContentProps {
   search: string;
   status: string;
   secureSeatInterest: string;
+  registrationSource: string;
+  selectedPackage: string;
   onSearchChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onSecureSeatInterestChange: (value: string) => void;
+  onRegistrationSourceChange: (value: string) => void;
+  onSelectedPackageChange: (value: string) => void;
   onPageChange: (page: number) => void;
   onLimitChange: (limit: number) => void;
   error?: Error | null;
@@ -79,9 +89,13 @@ export function ParticipantsContent({
   search,
   status,
   secureSeatInterest,
+  registrationSource,
+  selectedPackage,
   onSearchChange,
   onStatusChange,
   onSecureSeatInterestChange,
+  onRegistrationSourceChange,
+  onSelectedPackageChange,
   onPageChange,
   onLimitChange,
   error,
@@ -96,15 +110,9 @@ export function ParticipantsContent({
     deleteConfirmation,
   } = useAddParticipant({ programId });
   const { data: allParticipants } = useParticipants(programId);
-  const participantNamesById = Object.fromEntries(
-    (allParticipants ?? []).map((participant) => [
-      participant.id,
-      participant.name || "Unnamed participant",
-    ]),
-  );
   const showSkeleton = isPending && participants.length === 0;
   const isWorkshop = programType === "workshop";
-  const skeletonColumns = isWorkshop ? 9 : 10;
+  const skeletonColumns = isWorkshop ? 8 : 9;
   const exportParticipants = allParticipants ?? [];
   const bootcampRegistrationUrl = (() => {
     const raw = bootcampRegistrationLink?.trim() ?? "";
@@ -191,7 +199,22 @@ export function ParticipantsContent({
                       secondaryFilterPlaceholder: "Secure seat",
                       secondaryFilterAllValue: SECURE_SEAT_INTEREST_ALL,
                     }
-                  : {})}
+                  : {
+                      secondaryFilter: registrationSource,
+                      onSecondaryFilterChange: onRegistrationSourceChange,
+                      secondaryFilterOptions: [
+                        ...REGISTRATION_SOURCE_FILTER_OPTIONS,
+                      ],
+                      secondaryFilterPlaceholder: "Source",
+                      secondaryFilterAllValue: REGISTRATION_SOURCE_ALL,
+                      tertiaryFilter: selectedPackage,
+                      onTertiaryFilterChange: onSelectedPackageChange,
+                      tertiaryFilterOptions: [
+                        ...REGISTRATION_PACKAGE_FILTER_OPTIONS,
+                      ],
+                      tertiaryFilterPlaceholder: "Package",
+                      tertiaryFilterAllValue: REGISTRATION_PACKAGE_ALL,
+                    })}
               />
             </div>
             <Button
@@ -254,7 +277,6 @@ export function ParticipantsContent({
                 <ParticipantsTable
                   data={participants}
                   programType={programType}
-                  participantNamesById={participantNamesById}
                   onAddPayment={handleAddPayment}
                   onEdit={handleEdit}
                   onDelete={handleDelete}

@@ -8,7 +8,6 @@ import { participantsColumns } from "./columns";
 interface ParticipantsTableProps {
   data: Participant[];
   programType?: ProgramType | null;
-  participantNamesById?: Record<string, string>;
   onAddPayment?: (participant: Participant) => void;
   onEdit?: (participant: Participant) => void;
   onDelete?: (participant: Participant) => void;
@@ -17,14 +16,12 @@ interface ParticipantsTableProps {
 export function ParticipantsTable({
   data,
   programType,
-  participantNamesById,
   onAddPayment,
   onEdit,
   onDelete,
 }: ParticipantsTableProps) {
   const columns = participantsColumns({
     programType,
-    participantNamesById,
     onAddPayment,
     onEdit,
     onDelete,

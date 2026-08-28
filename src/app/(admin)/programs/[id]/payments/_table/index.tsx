@@ -6,18 +6,16 @@ import { paymentsColumns } from "./columns";
 
 interface PaymentsTableProps {
   data: Payment[];
-  participantNamesById?: Record<string, string>;
   onEdit?: (payment: Payment) => void;
   onDelete?: (payment: Payment) => void;
 }
 
 export function PaymentsTable({
   data,
-  participantNamesById,
   onEdit,
   onDelete,
 }: PaymentsTableProps) {
-  const columns = paymentsColumns({ onEdit, onDelete, participantNamesById });
+  const columns = paymentsColumns({ onEdit, onDelete });
 
   return (
     <DataTable
