@@ -57,7 +57,6 @@ export function useAddPayment({
     programId ?? addPaymentModal.props?.programId ?? "";
   const resolvedParticipantId = addPaymentModal.props?.participantId ?? "";
   const lockParticipant = Boolean(resolvedParticipantId);
-  const resolvedOnSuccess = onSuccess ?? addPaymentModal.props?.onSuccess;
   const form = useForm<PaymentFormState>({
     defaultValues: defaultFormState(resolvedProgramId, resolvedParticipantId),
   });
@@ -127,19 +126,17 @@ export function useAddPayment({
     });
   };
 
-  const handleSuccess = async () => {
-    if (resolvedOnSuccess) {
-      resolvedOnSuccess();
-      return;
-    }
+  const handleMutationSuccess = async () => {
     await invalidatePayments();
     await invalidateParticipants();
+    if (onSuccess) {
+      await onSuccess();
+    }
   };
 
   const handleAddClick = () => {
     addPaymentModal.open({
       programId: resolvedProgramId,
-      onSuccess: handleSuccess,
     });
   };
 
@@ -147,7 +144,6 @@ export function useAddPayment({
     addPaymentModal.open({
       programId: resolvedProgramId,
       participantId,
-      onSuccess: handleSuccess,
     });
   };
 
@@ -155,7 +151,7 @@ export function useAddPayment({
     editPaymentModal.open({
       payment,
       programId: resolvedProgramId,
-      onSuccess: handleSuccess,
+      onSuccess: handleMutationSuccess,
     });
   };
 
@@ -273,8 +269,10 @@ export function useAddPayment({
         const { updateParticipant } = await import(
           "@/services/participants.service"
         );
+        const trimmedNotes = values.notes?.trim();
         await updateParticipant(values.participant_id, {
           payment_status: values.status || "pending",
+          ...(lockParticipant && trimmedNotes ? { notes: trimmedNotes } : {}),
         });
       }
 
@@ -290,7 +288,7 @@ export function useAddPayment({
       }
 
       toast.success("Payment created successfully");
-      await handleSuccess();
+      await handleMutationSuccess();
       addPaymentModal.close();
       setLoading(false);
     } catch (error) {

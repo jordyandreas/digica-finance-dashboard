@@ -114,10 +114,6 @@ export function useAddParticipant({
     await invalidateParticipants();
   };
 
-  const handlePaymentSuccess = async () => {
-    await invalidateOverviewData();
-  };
-
   const handleMutationSuccess = async () => {
     await invalidateParticipants();
     if (onSuccess) {
@@ -135,7 +131,6 @@ export function useAddParticipant({
     addPaymentModal.open({
       programId: resolvedProgramId,
       participantId: participant.id,
-      onSuccess: handlePaymentSuccess,
     });
   };
 
