@@ -10,6 +10,11 @@ export const DEFAULT_PHONE_COUNTRY: CountryCode = "ID";
 /** E.164 maximum: country code + national number (digits only, no `+`). */
 export const MAX_PHONE_DIGITS = 15;
 
+export const PHONE_MAX_DIGITS_ERROR =
+  "Phone number must not exceed 15 digits (including country code)";
+
+export const PHONE_MAX_DIGITS_ERROR_TYPE = "maxDigits";
+
 export type ParsedPhoneForInput = {
   e164: string;
   country: CountryCode;

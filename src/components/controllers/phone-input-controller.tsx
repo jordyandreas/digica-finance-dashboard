@@ -20,6 +20,10 @@ import {
   type PhoneInputPropsCompat,
 } from "@/components/molecules/phone-input";
 import { cn } from "@/lib/utils";
+import {
+  PHONE_MAX_DIGITS_ERROR,
+  PHONE_MAX_DIGITS_ERROR_TYPE,
+} from "@/utils/phone";
 
 export interface PhoneInputControllerProps<Schema extends FieldValues> {
   form: UseFormReturn<Schema>;
@@ -119,6 +123,17 @@ export function PhoneInputController<Schema extends FieldValues>({
                 value={typeof field.value === "string" ? field.value : ""}
                 onChange={(next) => {
                   field.onChange(next);
+
+                  const currentError = form.getFieldState(name).error;
+                  if (currentError?.type === PHONE_MAX_DIGITS_ERROR_TYPE) {
+                    form.clearErrors(name);
+                  }
+                }}
+                onMaxDigitsExceeded={() => {
+                  form.setError(name, {
+                    type: PHONE_MAX_DIGITS_ERROR_TYPE,
+                    message: PHONE_MAX_DIGITS_ERROR,
+                  });
                 }}
                 onBlur={field.onBlur}
                 className={cn(inputClassName)}

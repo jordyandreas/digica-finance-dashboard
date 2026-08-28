@@ -15,8 +15,10 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import {
+  countPhoneDigits,
   DEFAULT_PHONE_COUNTRY,
   isWithinMaxPhoneDigits,
+  MAX_PHONE_DIGITS,
   toE164PhoneForInput,
 } from "@/utils/phone";
 
@@ -237,22 +239,69 @@ export type PhoneInputPropsCompat = Omit<
 > & {
   value?: string;
   onChange?: (value: string) => void;
+  onMaxDigitsExceeded?: () => void;
   defaultCountry?: Country;
   id?: string;
+  numberInputProps?: React.ComponentProps<"input">;
   "aria-invalid"?: boolean | "true" | "false";
 };
+
+const navigationKeys = new Set([
+  "Backspace",
+  "Delete",
+  "Tab",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+  "ArrowDown",
+  "Home",
+  "End",
+  "Enter",
+  "Escape",
+]);
+
+function shouldBlockPhoneDigitInput(
+  currentValue: string,
+  incomingText: string,
+): boolean {
+  if (!incomingText) {
+    return false;
+  }
+
+  const incomingDigits = incomingText.replace(/\D/g, "");
+  if (!incomingDigits) {
+    return false;
+  }
+
+  return countPhoneDigits(currentValue) + incomingDigits.length > MAX_PHONE_DIGITS;
+}
 
 export function PhoneInput({
   className,
   value,
   onChange,
+  onMaxDigitsExceeded,
   defaultCountry = DEFAULT_PHONE_COUNTRY,
   disabled,
   id,
   placeholder = "812 3456 7890",
+  numberInputProps: numberInputPropsFromRest,
   ...rest
 }: PhoneInputPropsCompat) {
   const e164Value = toE164PhoneForInput(value ?? "", defaultCountry);
+  const controlledValue = e164Value ?? value ?? "";
+
+  const blockExtraDigits = React.useCallback(
+    (incomingText: string) => {
+      if (shouldBlockPhoneDigitInput(controlledValue, incomingText)) {
+        onMaxDigitsExceeded?.();
+        return true;
+      }
+
+      return false;
+    },
+    [controlledValue, onMaxDigitsExceeded],
+  );
 
   return (
     <PhoneInputWithCountry
@@ -274,6 +323,7 @@ export function PhoneInput({
         }
 
         if (!isWithinMaxPhoneDigits(next)) {
+          onMaxDigitsExceeded?.();
           return;
         }
 
@@ -281,8 +331,50 @@ export function PhoneInput({
       }}
       className={cn(phoneInputClassName, className)}
       numberInputProps={{
-        className:
+        ...numberInputPropsFromRest,
+        className: cn(
           "PhoneInputInput border-0 bg-transparent p-0 shadow-none outline-none focus-visible:ring-0",
+          numberInputPropsFromRest?.className,
+        ),
+        onBeforeInput: (event: React.InputEvent<HTMLInputElement>) => {
+          numberInputPropsFromRest?.onBeforeInput?.(event);
+          if (event.defaultPrevented) {
+            return;
+          }
+
+          if (blockExtraDigits(event.data ?? "")) {
+            event.preventDefault();
+          }
+        },
+        onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+          numberInputPropsFromRest?.onKeyDown?.(event);
+          if (event.defaultPrevented) {
+            return;
+          }
+
+          if (
+            event.ctrlKey ||
+            event.metaKey ||
+            event.altKey ||
+            navigationKeys.has(event.key)
+          ) {
+            return;
+          }
+
+          if (blockExtraDigits(event.key)) {
+            event.preventDefault();
+          }
+        },
+        onPaste: (event: React.ClipboardEvent<HTMLInputElement>) => {
+          numberInputPropsFromRest?.onPaste?.(event);
+          if (event.defaultPrevented) {
+            return;
+          }
+
+          if (blockExtraDigits(event.clipboardData.getData("text"))) {
+            event.preventDefault();
+          }
+        },
       }}
     />
   );
