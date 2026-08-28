@@ -32,7 +32,8 @@ const phoneSchema = z
   .trim()
   .min(1, "Phone number is required")
   .refine(isValidParticipantPhone, {
-    message: "Phone number must be a valid WhatsApp number",
+    message:
+      "Phone number must be a valid WhatsApp number (max 15 digits including country code)",
   });
 
 const baseParticipantRegistrationSchema = z.object({
@@ -112,7 +113,8 @@ export const paidParticipantRegistrationSchema =
         } else if (!isValidParticipantPhone(data.friend_phone)) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: "Friend phone must be a valid WhatsApp number",
+            message:
+              "Friend phone must be a valid WhatsApp number (max 15 digits including country code)",
             path: ["friend_phone"],
           });
         }

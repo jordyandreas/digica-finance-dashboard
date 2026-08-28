@@ -21,7 +21,7 @@ import { participantsQueryKey } from "./use-participants";
 import { isBootcampProgram } from "@/utils/programs";
 import {
   normalizeParticipantPhoneForSubmit,
-  parsePhoneForInput,
+  toE164PhoneForInput,
 } from "@/utils/phone";
 
 const buildFormState = (
@@ -30,8 +30,7 @@ const buildFormState = (
 ): ParticipantFormState => ({
   name: participant?.name || "",
   email: participant?.email || "",
-  phone:
-    parsePhoneForInput(participant?.phone)?.e164 || participant?.phone || "",
+  phone: toE164PhoneForInput(participant?.phone ?? "") ?? "",
   occupation: participant?.occupation || "",
   organization: participant?.organization || "",
   status: participant?.status || "active",
@@ -45,10 +44,7 @@ const buildFormState = (
   registration_source: participant?.registration_source || "none",
   selected_package: participant?.selected_package || "none",
   friend_name: participant?.friend_name || "",
-  friend_phone:
-    parsePhoneForInput(participant?.friend_phone)?.e164 ||
-    participant?.friend_phone ||
-    "",
+  friend_phone: toE164PhoneForInput(participant?.friend_phone ?? "") ?? "",
 });
 
 export function useEditParticipantModal({

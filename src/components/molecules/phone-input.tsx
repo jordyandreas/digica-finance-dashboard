@@ -14,7 +14,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { DEFAULT_PHONE_COUNTRY } from "@/utils/phone";
+import {
+  DEFAULT_PHONE_COUNTRY,
+  isWithinMaxPhoneDigits,
+  toE164PhoneForInput,
+} from "@/utils/phone";
 
 import "react-phone-number-input/style.css";
 
@@ -248,6 +252,8 @@ export function PhoneInput({
   placeholder = "812 3456 7890",
   ...rest
 }: PhoneInputPropsCompat) {
+  const e164Value = toE164PhoneForInput(value ?? "", defaultCountry);
+
   return (
     <PhoneInputWithCountry
       {...rest}
@@ -258,12 +264,20 @@ export function PhoneInput({
       addInternationalOption={false}
       countrySelectComponent={CountrySelect}
       countryCallingCodeEditable={false}
-      limitMaxLength
       disabled={disabled}
       placeholder={placeholder}
-      value={(value || undefined) as E164Number | undefined}
+      value={e164Value as E164Number | undefined}
       onChange={(next) => {
-        onChange?.(next ?? "");
+        if (!next) {
+          onChange?.("");
+          return;
+        }
+
+        if (!isWithinMaxPhoneDigits(next)) {
+          return;
+        }
+
+        onChange?.(next);
       }}
       className={cn(phoneInputClassName, className)}
       numberInputProps={{
