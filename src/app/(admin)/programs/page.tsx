@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DataTableSkeleton } from "@/components/molecules/data-table";
 import { YearFilterSelect } from "@/components/molecules/year-filter-select";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 import {
@@ -12,6 +11,7 @@ import {
 } from "@/constants/dashboard-year";
 import { useProgramsPaginated } from "./_hooks/use-programs";
 import { ProgramsPageContent } from "./_components/programs-content";
+import { ProgramsTableSkeleton } from "./_table/programs-table-skeleton";
 
 export default function ProgramsPage() {
   const [yearFilter, setYearFilter] = useState<YearFilterValue>(
@@ -45,10 +45,13 @@ export default function ProgramsPage() {
               Manage your programs and initiatives
             </p>
           </div>
-          {yearFilterControl}
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+            {yearFilterControl}
+            <div className="h-9 w-full animate-pulse rounded-md bg-muted sm:w-32" />
+          </div>
         </div>
         <Card>
-          <DataTableSkeleton rows={limit} columns={7} />
+          <ProgramsTableSkeleton rows={limit} />
         </Card>
       </div>
     );
