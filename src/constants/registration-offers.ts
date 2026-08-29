@@ -178,6 +178,13 @@ export function emptyProgramOfferPrices(): ProgramOfferPrices {
 export const REGISTRATION_SOURCE_ALL = "all";
 export const REGISTRATION_PACKAGE_ALL = "all";
 
+/** Text colors for Default / Individual / Bareng Teman prices. */
+export const PROGRAM_PRICE_TONE_CLASSES = {
+  default: "text-brand-royal",
+  individual: "text-indigo-700",
+  bareng_teman: "text-fuchsia-700",
+} as const;
+
 export const REGISTRATION_SOURCE_FILTER_OPTIONS = [
   { label: "All sources", value: REGISTRATION_SOURCE_ALL },
   ...REGISTRATION_SOURCES.map((source) => ({

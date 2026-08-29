@@ -3,10 +3,12 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   type Program,
+  type ProgramListItem,
   getActivePrograms,
   getPrograms,
   getProgramsPaginated,
 } from "@/services/programs.service";
+import { getParticipantCountsByProgramIds } from "@/services/participants.service";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
 
 export const programsQueryKey = ["programs"] as const;
@@ -49,7 +51,34 @@ export function useProgramsPaginated(
       if (error) {
         throw error;
       }
-      return data!;
+
+      const programs = data!.data;
+      const { data: counts, error: countsError } =
+        await getParticipantCountsByProgramIds(
+          programs.map((program) => program.id),
+        );
+      if (countsError) {
+        throw countsError;
+      }
+
+      const programsWithCounts: ProgramListItem[] = programs.map(
+        (program) => ({
+          ...program,
+          total_student_count: counts[program.id]?.total ?? 0,
+          paid_student_count: counts[program.id]?.paid ?? 0,
+          on_progress_student_count: counts[program.id]?.on_progress ?? 0,
+          pending_student_count: counts[program.id]?.pending ?? 0,
+          secure_seat_yes_count: counts[program.id]?.secure_seat_yes ?? 0,
+          secure_seat_undecided_count:
+            counts[program.id]?.secure_seat_undecided ?? 0,
+          secure_seat_no_count: counts[program.id]?.secure_seat_no ?? 0,
+        }),
+      );
+
+      return {
+        ...data!,
+        data: programsWithCounts,
+      };
     },
   });
 }

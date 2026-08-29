@@ -12,7 +12,11 @@ import {
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import { useModal } from "@/hooks/use-modal";
 import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
-import { Program, deleteProgram } from "@/services/programs.service";
+import {
+  Program,
+  ProgramListItem,
+  deleteProgram,
+} from "@/services/programs.service";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
@@ -22,7 +26,7 @@ import { DataTablePaginationControl } from "@/components/molecules/data-table";
 import { type PaginationMeta } from "@/types/pagination";
 
 interface ProgramsPageContentProps {
-  programs: Program[];
+  programs: ProgramListItem[];
   pagination?: PaginationMeta;
   page: number;
   limit: number;

@@ -91,6 +91,17 @@ export interface Program {
   created_at: string;
   updated_at: string;
 }
+
+export interface ProgramListItem extends Program {
+  total_student_count: number;
+  paid_student_count: number;
+  on_progress_student_count: number;
+  pending_student_count: number;
+  secure_seat_yes_count: number;
+  secure_seat_undecided_count: number;
+  secure_seat_no_count: number;
+}
+
 export interface CreateProgramInput {
   name: string;
   type: ProgramType;

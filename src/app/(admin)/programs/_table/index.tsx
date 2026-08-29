@@ -2,16 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/molecules/data-table";
-import { Program } from "@/services/programs.service";
+import { ProgramListItem } from "@/services/programs.service";
 import { programsColumns } from "./columns";
 
 interface ProgramsTableProps {
-  data: Program[];
-  onEdit?: (program: Program) => void;
-  onDelete?: (program: Program) => void;
+  data: ProgramListItem[];
+  onEdit?: (program: ProgramListItem) => void;
+  onDelete?: (program: ProgramListItem) => void;
 }
 
-function getProgramDetailPath(program: Program): string | null {
+function getProgramDetailPath(program: ProgramListItem): string | null {
   const programId =
     program.id ??
     (program as { program_id?: string }).program_id ??

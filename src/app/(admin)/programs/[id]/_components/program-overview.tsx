@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
+import { PROGRAM_PRICE_TONE_CLASSES } from "@/constants/registration-offers";
 import { formatCurrency } from "@/utils/currency";
 import { resolveRegistrationLink } from "@/utils/program-public";
 import {
@@ -221,14 +222,17 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
                   <Typography
                     variant="caption"
                     tagName="dt"
-                    className="text-muted-foreground"
+                    className={PROGRAM_PRICE_TONE_CLASSES.default}
                   >
                     Default
                   </Typography>
                   <Typography
                     variant="body2"
                     tagName="dd"
-                    className="font-medium"
+                    className={cn(
+                      "font-medium",
+                      PROGRAM_PRICE_TONE_CLASSES.default,
+                    )}
                   >
                     {program?.price != null
                       ? formatCurrency(program.price)
@@ -239,14 +243,17 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
                   <Typography
                     variant="caption"
                     tagName="dt"
-                    className="text-muted-foreground"
+                    className={PROGRAM_PRICE_TONE_CLASSES.individual}
                   >
                     Individual
                   </Typography>
                   <Typography
                     variant="body2"
                     tagName="dd"
-                    className="font-medium"
+                    className={cn(
+                      "font-medium",
+                      PROGRAM_PRICE_TONE_CLASSES.individual,
+                    )}
                   >
                     {program?.promo_individual_price != null
                       ? formatCurrency(program.promo_individual_price)
@@ -257,14 +264,17 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
                   <Typography
                     variant="caption"
                     tagName="dt"
-                    className="text-muted-foreground"
+                    className={PROGRAM_PRICE_TONE_CLASSES.bareng_teman}
                   >
                     Bareng Teman
                   </Typography>
                   <Typography
                     variant="body2"
                     tagName="dd"
-                    className="font-medium"
+                    className={cn(
+                      "font-medium",
+                      PROGRAM_PRICE_TONE_CLASSES.bareng_teman,
+                    )}
                   >
                     {program?.promo_bareng_teman_price != null
                       ? formatCurrency(program.promo_bareng_teman_price)

@@ -92,6 +92,122 @@ export type ParticipantsListParams = ListParams & {
   selectedPackage?: string;
 };
 
+export interface ParticipantProgramCounts {
+  total: number;
+  paid: number;
+  on_progress: number;
+  pending: number;
+  social: number;
+  workshop_individual: number;
+  workshop_bareng_teman: number;
+  secure_seat_yes: number;
+  secure_seat_undecided: number;
+  secure_seat_no: number;
+}
+
+const EMPTY_PARTICIPANT_COUNTS: ParticipantProgramCounts = {
+  total: 0,
+  paid: 0,
+  on_progress: 0,
+  pending: 0,
+  social: 0,
+  workshop_individual: 0,
+  workshop_bareng_teman: 0,
+  secure_seat_yes: 0,
+  secure_seat_undecided: 0,
+  secure_seat_no: 0,
+};
+
+export async function getParticipantCountsByProgramIds(
+  programIds: string[],
+): Promise<{
+  data: Record<string, ParticipantProgramCounts>;
+  error: PostgrestError | null;
+}> {
+  const countsByProgramId: Record<string, ParticipantProgramCounts> = {};
+
+  for (const programId of programIds) {
+    countsByProgramId[programId] = { ...EMPTY_PARTICIPANT_COUNTS };
+  }
+
+  if (programIds.length === 0) {
+    return { data: countsByProgramId, error: null };
+  }
+
+  const { data, error } = await fetchAllPages<{
+    program_id: string | null;
+    payment_status: string | null;
+    registration_source: string | null;
+    selected_package: string | null;
+    secure_seat_interest: string | null;
+  }>((from, to) =>
+    supabase
+      .from("participants")
+      .select(
+        "program_id, payment_status, registration_source, selected_package, secure_seat_interest",
+      )
+      .in("program_id", programIds)
+      .range(from, to),
+  );
+
+  if (error) {
+    return { data: {}, error };
+  }
+
+  for (const row of data) {
+    if (!row.program_id) continue;
+
+    const bucket = countsByProgramId[row.program_id];
+    if (!bucket) continue;
+
+    bucket.total += 1;
+
+    if (row.payment_status === "paid") {
+      bucket.paid += 1;
+    } else if (row.payment_status === "on_progress") {
+      bucket.on_progress += 1;
+    } else if (row.payment_status === "pending") {
+      bucket.pending += 1;
+    }
+
+    if (row.registration_source === "social") {
+      bucket.social += 1;
+    }
+
+    if (row.selected_package === "individual") {
+      bucket.workshop_individual += 1;
+    } else if (row.selected_package === "bareng_teman") {
+      bucket.workshop_bareng_teman += 1;
+    }
+
+    if (row.secure_seat_interest === "yes") {
+      bucket.secure_seat_yes += 1;
+    } else if (row.secure_seat_interest === "undecided") {
+      bucket.secure_seat_undecided += 1;
+    } else if (row.secure_seat_interest === "no") {
+      bucket.secure_seat_no += 1;
+    }
+  }
+
+  return { data: countsByProgramId, error: null };
+}
+
+export async function getParticipantCountsByProgramId(programId: string): Promise<{
+  data: ParticipantProgramCounts;
+  error: PostgrestError | null;
+}> {
+  const { data, error } = await getParticipantCountsByProgramIds([programId]);
+
+  if (error) {
+    return { data: { ...EMPTY_PARTICIPANT_COUNTS }, error };
+  }
+
+  return {
+    data: data[programId] ?? { ...EMPTY_PARTICIPANT_COUNTS },
+    error: null,
+  };
+}
+
 export async function getParticipants(programId?: string): Promise<{
   data: Participant[] | null;
   error: PostgrestError | null;
