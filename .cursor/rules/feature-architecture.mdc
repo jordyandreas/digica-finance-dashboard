@@ -1,0 +1,63 @@
+---
+description: Where feature logic lives — hooks vs content components
+alwaysApply: true
+---
+
+# Feature Architecture
+
+Admin features under `src/app/(admin)/{feature}/` split responsibilities by concern.
+
+## Layer responsibilities
+
+| Location | Responsibility |
+|----------|----------------|
+| `page.tsx` | Filter/pagination state, data-fetching hooks |
+| `_hooks/use-{entity}.ts` | React Query reads |
+| `_hooks/use-{entity}-mutations.ts` | React Query writes (no toasts/modals) |
+| `_hooks/use-{entity}-actions.ts` | User-action orchestration when criteria below are met |
+| `*-content.tsx` | Layout, presentational wiring, thin one-liner handlers |
+| `services/` | API calls |
+| `utils/` / `schemas/` | Pure domain rules (no React) |
+
+## Extract to `_hooks/` when
+
+- The same logic is used in more than one component
+- A handler grows beyond ~15–20 lines (try/catch, validation, multiple mutations)
+- You need to test the flow without rendering UI
+- Modal + mutation + invalidation + toasts are bundled together (see `useAddParticipant`)
+
+## Keep in `*-content.tsx` when
+
+- It's a one-liner (`router.push`, `modal.open`)
+- It's purely presentational (skeleton visibility, opacity while fetching)
+
+## Actions hook pattern
+
+When publish/delete/edit flows bundle modal + mutation + toast, create `_hooks/use-{entity}-actions.ts`:
+
+```typescript
+export function useArticlesActions() {
+  const { deleteMutation, publishMutation } = useArticleMutations();
+  const deleteConfirmation = useDeleteConfirmation<LmsArticle>({ ... });
+
+  const handlePublish = async (article: LmsArticle) => { /* orchestration */ };
+  const handleDelete = (article: LmsArticle) => { /* rules + open modal */ };
+  const handleConfirmDelete = async () => { /* mutation + toast */ };
+
+  return { handleEdit, handlePublish, handleDelete, handleConfirmDelete, publishingArticleId, deleteConfirmation };
+}
+```
+
+Content component stays thin — JSX and wiring only:
+
+```typescript
+const actions = useArticlesActions();
+<ArticlesTable onPublish={actions.handlePublish} onDelete={actions.handleDelete} />
+```
+
+Domain rules (e.g. "cannot delete published article") belong in pure functions under `utils/`, called from the actions hook — not inline in `*-content.tsx`.
+
+## Reference
+
+- **Good**: `participants/_hooks/use-add-participant.ts` — modal + mutation + invalidation + toasts
+- **Good**: `articles/_hooks/use-article-mutations.ts` — mutations separated from UI

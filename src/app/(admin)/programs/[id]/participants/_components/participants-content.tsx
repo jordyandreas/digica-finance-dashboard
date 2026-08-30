@@ -8,35 +8,23 @@ import {
   DataTablePaginationControl,
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
-import {
-  formatPaymentStatusLabel,
-  PAYMENT_STATUS_FILTER_OPTIONS,
-} from "@/constants/payment-status";
+import { PAYMENT_STATUS_FILTER_OPTIONS } from "@/constants/payment-status";
 import {
   SECURE_SEAT_INTEREST_ALL,
   SECURE_SEAT_INTEREST_FILTER_OPTIONS,
 } from "@/constants/secure-seat-interest";
-import { occupationOptions } from "@/schemas/participant-schema";
 import { type Participant } from "@/services/participants.service";
 import type { ProgramType } from "@/services/programs.service";
 import { type PaginationMeta } from "@/types/pagination";
-import {
-  buildParticipantsCsv,
-  downloadCsv,
-  sanitizeCsvFilename,
-} from "@/utils/export-csv";
 import {
   REGISTRATION_PACKAGE_ALL,
   REGISTRATION_PACKAGE_FILTER_OPTIONS,
   REGISTRATION_SOURCE_ALL,
   REGISTRATION_SOURCE_FILTER_OPTIONS,
 } from "@/constants/registration-offers";
-import { appendRegistrationSource } from "@/utils/registration-source-url";
-import { toTitleCase } from "@/utils/string";
 import { Copy, Download, Plus } from "lucide-react";
-import { toast } from "sonner";
 import { useAddParticipant } from "../_hooks/use-add-participant";
-import { useParticipants } from "../_hooks/use-participants";
+import { useParticipantsActions } from "../_hooks/use-participants-actions";
 import { ParticipantsTable } from "../_table";
 
 interface ParticipantsContentProps {
@@ -64,16 +52,6 @@ interface ParticipantsContentProps {
   error?: Error | null;
   isPending?: boolean;
   isFetching?: boolean;
-}
-
-function getOccupationLabel(occupation: string | null): string {
-  if (!occupation) {
-    return "";
-  }
-  return (
-    occupationOptions.find((option) => option.value === occupation)?.label ??
-    occupation
-  );
 }
 
 export function ParticipantsContent({
@@ -109,58 +87,21 @@ export function ParticipantsContent({
     handleDelete,
     deleteConfirmation,
   } = useAddParticipant({ programId });
-  const { data: allParticipants } = useParticipants(programId);
+  const {
+    exportParticipants,
+    bootcampRegistrationUrl,
+    handleCopyBootcampRegistrationLink,
+    handleExportCsv,
+  } = useParticipantsActions({
+    programId,
+    programSlug,
+    programName,
+    bootcampRegistrationLink,
+  });
   const showSkeleton = isPending && participants.length === 0;
   const isWorkshop = programType === "workshop";
   const skeletonColumns = isWorkshop ? 8 : 9;
-  const exportParticipants = allParticipants ?? [];
-  const bootcampRegistrationUrl = (() => {
-    const raw = bootcampRegistrationLink?.trim() ?? "";
-    if (!raw) {
-      return "";
-    }
-    return appendRegistrationSource(raw, "workshop_promo");
-  })();
   const showYesFollowUpCallout = isWorkshop && secureSeatInterest === "yes";
-
-  const handleCopyBootcampRegistrationLink = async () => {
-    if (!bootcampRegistrationUrl) {
-      toast.error("Bootcamp registration link is not configured");
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(bootcampRegistrationUrl);
-      toast.success("Bootcamp registration link copied");
-    } catch {
-      toast.error("Failed to copy registration link");
-    }
-  };
-
-  const handleExportCsv = () => {
-    if (exportParticipants.length === 0) {
-      toast.error("No participants to export");
-      return;
-    }
-
-    const rows = exportParticipants
-      .map((participant) => ({
-        name: toTitleCase(participant.name),
-        phone: participant.phone ?? "",
-        email: participant.email ?? "",
-        occupation: getOccupationLabel(participant.occupation),
-        organization: participant.organization ?? "",
-        paymentStatus: formatPaymentStatusLabel(participant.payment_status),
-      }))
-      .sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: "base" }),
-      );
-
-    const baseName = sanitizeCsvFilename(
-      programSlug || programName || "participants",
-    );
-    downloadCsv(`${baseName}-participants.csv`, buildParticipantsCsv(rows));
-  };
 
   return (
     <>

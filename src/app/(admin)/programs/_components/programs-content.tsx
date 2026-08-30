@@ -1,7 +1,5 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { Button } from "@/components/atoms/button";
 import { Card } from "@/components/ui/card";
 import { YearFilterSelect } from "@/components/molecules/year-filter-select";
@@ -10,20 +8,12 @@ import {
   type YearFilterValue,
 } from "@/constants/dashboard-year";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
-import { useModal } from "@/hooks/use-modal";
-import { useDeleteConfirmation } from "@/hooks/use-delete-confirmation";
-import {
-  Program,
-  ProgramListItem,
-  deleteProgram,
-} from "@/services/programs.service";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { ProgramListItem } from "@/services/programs.service";
 import { Plus } from "lucide-react";
-import { programsQueryKey } from "../_hooks/use-programs";
 import { ProgramsTable } from "../_table";
 import { DataTablePaginationControl } from "@/components/molecules/data-table";
 import { type PaginationMeta } from "@/types/pagination";
+import { useProgramsActions } from "../_hooks/use-programs-actions";
 
 interface ProgramsPageContentProps {
   programs: ProgramListItem[];
@@ -47,55 +37,14 @@ export function ProgramsPageContent({
   onLimitChange,
 }: ProgramsPageContentProps) {
   const yearLabel = formatYearFilterLabel(yearFilter);
-  const queryClient = useQueryClient()
-  const programModal = useModal<ProgramModalProps>("programModal")
-  const deleteConfirmation = useDeleteConfirmation<Program>({
-    title: "Do you want to delete a registered program?",
-    description: "You can't take it back when you delete it",
-  })
-  const [isDeleting, setIsDeleting] = React.useState(false)
-
-  const handleAddClick = () => {
-    programModal.open({
-      program: null,
-      onSuccess: handleModalSuccess,
-    })
-  }
-
-  const handleEdit = (program: Program) => {
-    programModal.open({
-      program,
-      onSuccess: handleModalSuccess,
-    })
-  }
-
-  const handleDeleteClick = (program: Program) => {
-    deleteConfirmation.openConfirmation(
-      program,
-      `Do you want to delete "${program.name}"?`,
-      "You can't take it back when you delete it"
-    )
-  }
-
-  const handleConfirmDelete = async () => {
-    if (!deleteConfirmation.item) return
-    
-    setIsDeleting(true)
-    try {
-      await deleteProgram(deleteConfirmation.item.id)
-      await queryClient.invalidateQueries({ queryKey: programsQueryKey })
-      toast.success("Program deleted successfully")
-    } catch (error) {
-      console.error("Error deleting program:", error)
-      toast.error("Failed to delete program. Please try again.")
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  const handleModalSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: programsQueryKey })
-  }
+  const {
+    handleAddClick,
+    handleEdit,
+    handleDelete,
+    handleConfirmDelete,
+    deleteConfirmation,
+    isDeleting,
+  } = useProgramsActions();
 
   return (
     <>
@@ -120,7 +69,7 @@ export function ProgramsPageContent({
           <ProgramsTable
             data={programs || []}
             onEdit={handleEdit}
-            onDelete={handleDeleteClick}
+            onDelete={handleDelete}
           />
           <DataTablePaginationControl
             currentPage={pagination?.page ?? page}
@@ -141,5 +90,5 @@ export function ProgramsPageContent({
         isLoading={isDeleting}
       />
     </>
-  )
+  );
 }
