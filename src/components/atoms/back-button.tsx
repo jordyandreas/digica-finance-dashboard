@@ -22,7 +22,7 @@ export function BackButton({
       type="button"
       variant="ghost"
       onClick={onPressBack || (href ? () => router.push(href) : () => router.back())}
-      className={cn("h-8 px-2", isRootPath && "hidden")}
+      className={cn("h-8 w-fit shrink-0 self-start px-2", isRootPath && "hidden")}
     >
       <ChevronLeft className="h-4 w-4" />
       <span className="text-sm font-medium">Back</span>

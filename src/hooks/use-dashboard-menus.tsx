@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactElement } from "react";
-import { FolderKanban, LayoutDashboard } from "lucide-react";
+import { BookOpen, FolderKanban, LayoutDashboard } from "lucide-react";
 import { useActivePrograms } from "@/app/(admin)/programs/_hooks/use-programs";
 import type { ProgramType } from "@/services/programs.service";
 
@@ -40,6 +40,12 @@ export function useDashboardMenus() {
         pathname: `/programs/${program.id}/participants`,
         type: program.type,
       })),
+    },
+    {
+      label: "Articles",
+      pathname: "/articles",
+      icon: <BookOpen className="h-5 w-5" />,
+      items: [],
     },
   ];
 

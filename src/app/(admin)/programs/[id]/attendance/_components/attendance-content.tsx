@@ -1,9 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Download } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,15 +17,10 @@ import type { Participant } from "@/services/participants.service";
 import type { ProgramSession } from "@/services/program-sessions.service";
 import type { AttendanceGrid } from "@/services/attendance.service";
 import type { Program } from "@/services/programs.service";
-import {
-  buildAttendanceNamesCsv,
-  downloadCsv,
-  sanitizeCsvFilename,
-} from "@/utils/export-csv";
-import { toTitleCase } from "@/utils/string";
 import { AttendanceGridTable } from "./attendance-grid";
 import { CheckInLinkCard } from "./check-in-link-card";
 import { useSessionDates } from "../_hooks/use-session-dates";
+import { useAttendanceActions } from "../_hooks/use-attendance-actions";
 
 interface AttendanceContentProps {
   programId: string;
@@ -54,52 +48,18 @@ export function AttendanceContent({
     handleDateChange,
     handleSaveDates,
   } = useSessionDates(programId, sessions);
+  const { exportNames, handleExportCsv } = useAttendanceActions({
+    program,
+    participants,
+    sessions,
+    attendance,
+  });
 
   const sessionCount = program?.session_count ?? 0;
   const showSkeleton = isLoading && sessions.length === 0;
-  const isWorkshop = program?.type === "workshop";
   const [isSessionDatesOpen, setIsSessionDatesOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search);
-
-  const presentAttendeeNames = useMemo(() => {
-    return participants
-      .filter((participant) =>
-        sessions.some(
-          (session) =>
-            attendance[participant.id]?.[session.id] === "present",
-        ),
-      )
-      .map((participant) => toTitleCase(participant.name))
-      .filter((name) => name.length > 0)
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  }, [participants, sessions, attendance]);
-
-  const allParticipantNames = useMemo(() => {
-    return participants
-      .map((participant) => toTitleCase(participant.name))
-      .filter((name) => name.length > 0)
-      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-  }, [participants]);
-
-  const exportNames = isWorkshop ? presentAttendeeNames : allParticipantNames;
-
-  const handleExportCsv = () => {
-    if (exportNames.length === 0) {
-      toast.error(
-        isWorkshop ? "No attendees to export" : "No participants to export",
-      );
-      return;
-    }
-
-    const baseName = sanitizeCsvFilename(
-      program?.public_slug || program?.name || "attendees",
-    );
-    downloadCsv(
-      `${baseName}-attendees.csv`,
-      buildAttendanceNamesCsv(exportNames),
-    );
-  };
 
   if (sessionCount === 0) {
     return (
