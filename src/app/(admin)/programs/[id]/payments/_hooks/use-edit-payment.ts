@@ -14,6 +14,7 @@ import {
   useParticipants,
 } from "../../participants/_hooks/use-participants";
 import { dashboardProgramSummaryQueryKey } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
+import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { formatDateTimeLocalString } from "@/lib/date-utils";
 
 const buildFormState = (
@@ -166,6 +167,9 @@ export function useEditPayment({
       } else if (resolvedProgramId) {
         await queryClient.invalidateQueries({
           queryKey: participantsQueryKey(resolvedProgramId),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: programParticipantCountsQueryKey(resolvedProgramId),
         });
         await queryClient.invalidateQueries({
           queryKey: dashboardProgramSummaryQueryKey(resolvedProgramId),

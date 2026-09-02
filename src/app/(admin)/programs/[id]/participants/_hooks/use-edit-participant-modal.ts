@@ -17,6 +17,7 @@ import {
 } from "../_components/participant-form";
 import type { EditParticipantModalProps } from "../_modals/edit-participant";
 import { useProgram } from "../../_hooks/useProgram";
+import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { participantsQueryKey } from "./use-participants";
 import { isBootcampProgram } from "@/utils/programs";
 import {
@@ -180,6 +181,9 @@ export function useEditParticipantModal({
         toast.success("Participant updated successfully");
         await queryClient.invalidateQueries({
           queryKey: participantsQueryKey(resolvedProgramId),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: programParticipantCountsQueryKey(resolvedProgramId),
         });
         if (onSuccess) {
           await onSuccess();

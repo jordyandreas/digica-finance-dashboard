@@ -22,6 +22,7 @@ import type { EditParticipantModalProps } from "../_modals/edit-participant";
 import type { AddPaymentModalProps } from "../../payments/_modals/add-payment";
 import { useProgram } from "../../_hooks/useProgram";
 import { isBootcampProgram } from "@/utils/programs";
+import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { participantsQueryKey } from "./use-participants";
 import {
   paymentsQueryKey,
@@ -95,6 +96,9 @@ export function useAddParticipant({
     }
     await queryClient.invalidateQueries({
       queryKey: participantsQueryKey(resolvedProgramId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: programParticipantCountsQueryKey(resolvedProgramId),
     });
   };
 

@@ -21,6 +21,7 @@ import type { AddPaymentModalProps } from "../_modals/add-payment";
 import type { EditPaymentModalProps } from "../_modals/edit-payment";
 import type { PaymentFormState } from "../_components/payment-form";
 import { formatDateTimeLocalString } from "@/lib/date-utils";
+import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { paymentsQueryKey, paymentsSummaryQueryKey, usePayments } from "./use-payments";
 
 const defaultFormState = (
@@ -123,6 +124,9 @@ export function useAddPayment({
     }
     await queryClient.invalidateQueries({
       queryKey: participantsQueryKey(resolvedProgramId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: programParticipantCountsQueryKey(resolvedProgramId),
     });
   };
 
