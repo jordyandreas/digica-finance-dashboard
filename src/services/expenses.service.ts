@@ -5,6 +5,12 @@ import {
   type PaginatedResponse,
   type PaginationParams,
 } from "@/types/pagination";
+import {
+  EXPENSE_CATEGORY_LABELS,
+  EXPENSE_CATEGORY_ORDER,
+  isExpenseCategory,
+} from "@/utils/expense-category";
+import { toIlikePattern } from "@/utils/search";
 
 export type ExpenseCategory =
   | "ads"
@@ -58,9 +64,14 @@ export async function getExpenses(programId?: string): Promise<{
   return { data, error };
 }
 
+export type ExpensesListParams = PaginationParams & {
+  search?: string;
+  category?: ExpenseCategory;
+};
+
 export async function getExpensesPaginated(
   programId: string,
-  { page = 1, limit = 10 }: PaginationParams = {},
+  { page = 1, limit = 10, search, category }: ExpensesListParams = {},
 ): Promise<{
   data: PaginatedResponse<Expense> | null;
   error: PostgrestError | null;
@@ -68,12 +79,22 @@ export async function getExpensesPaginated(
   const from = (page - 1) * limit;
   const to = from + limit - 1;
 
-  const { data, error, count } = await supabase
+  let query = supabase
     .from("expenses")
     .select("*", { count: "exact" })
     .eq("program_id", programId)
-    .order("created_at", { ascending: true })
-    .range(from, to);
+    .order("created_at", { ascending: true });
+
+  if (category) {
+    query = query.eq("category", category);
+  }
+
+  const searchPattern = search ? toIlikePattern(search) : "";
+  if (searchPattern) {
+    query = query.ilike("description", searchPattern);
+  }
+
+  const { data, error, count } = await query.range(from, to);
 
   if (error) {
     return { data: null, error };
@@ -84,6 +105,96 @@ export async function getExpensesPaginated(
       data: data ?? [],
       pagination: buildPaginationMeta(count ?? 0, page, limit),
     },
+    error: null,
+  };
+}
+
+export type ExpenseCategoryDetailItem = {
+  id: string;
+  description: string | null;
+  amount: number;
+  expenseDate: string | null;
+};
+
+export type ExpenseCategorySummaryItem = {
+  category: ExpenseCategory;
+  label: string;
+  amount: number;
+  count: number;
+  items: ExpenseCategoryDetailItem[];
+};
+
+export async function getExpensesCategorySummary(programId: string): Promise<{
+  data: {
+    items: ExpenseCategorySummaryItem[];
+    totalAmount: number;
+    totalCount: number;
+  } | null;
+  error: PostgrestError | null;
+}> {
+  const { data, error } = await supabase
+    .from("expenses")
+    .select("id, amount, category, description, expense_date")
+    .eq("program_id", programId)
+    .order("expense_date", { ascending: false });
+
+  if (error) {
+    return { data: null, error };
+  }
+
+  const buckets = new Map<
+    ExpenseCategory,
+    {
+      amount: number;
+      count: number;
+      items: ExpenseCategoryDetailItem[];
+    }
+  >();
+  for (const category of EXPENSE_CATEGORY_ORDER) {
+    buckets.set(category, { amount: 0, count: 0, items: [] });
+  }
+
+  let totalAmount = 0;
+  let totalCount = 0;
+
+  for (const row of data ?? []) {
+    const amount = Number(row.amount) || 0;
+    const key: ExpenseCategory = isExpenseCategory(row.category ?? "")
+      ? (row.category as ExpenseCategory)
+      : "other";
+    const bucket = buckets.get(key) ?? { amount: 0, count: 0, items: [] };
+    bucket.amount += amount;
+    bucket.count += 1;
+    bucket.items.push({
+      id: String(row.id),
+      description: row.description ?? null,
+      amount,
+      expenseDate: row.expense_date ?? null,
+    });
+    buckets.set(key, bucket);
+    totalAmount += amount;
+    totalCount += 1;
+  }
+
+  const items: ExpenseCategorySummaryItem[] = EXPENSE_CATEGORY_ORDER.map(
+    (category) => {
+      const bucket = buckets.get(category) ?? {
+        amount: 0,
+        count: 0,
+        items: [],
+      };
+      return {
+        category,
+        label: EXPENSE_CATEGORY_LABELS[category],
+        amount: bucket.amount,
+        count: bucket.count,
+        items: bucket.items,
+      };
+    },
+  ).filter((item) => item.count > 0 || item.amount > 0);
+
+  return {
+    data: { items, totalAmount, totalCount },
     error: null,
   };
 }

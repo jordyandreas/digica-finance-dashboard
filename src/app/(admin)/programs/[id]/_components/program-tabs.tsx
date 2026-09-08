@@ -6,6 +6,7 @@ import { Typography } from "@/components/atoms/typography";
 import { cn } from "@/lib/utils";
 
 const tabs = [
+  { label: "Overview", segment: "overview" },
   { label: "Participants", segment: "participants" },
   { label: "Payments", segment: "payments" },
   { label: "Expenses", segment: "expenses" },

@@ -111,7 +111,7 @@ export function programsColumns({
 
             return (
               <Button variant="ghost" size="icon" asChild className="h-8 w-8 shrink-0">
-                <Link href={`/programs/${normalizedProgramId}/participants`}>
+                <Link href={`/programs/${normalizedProgramId}/overview`}>
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View program details</span>
                 </Link>

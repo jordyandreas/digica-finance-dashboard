@@ -7,6 +7,7 @@ import {
   type PaginatedResponse,
   type PaginationParams,
 } from "@/types/pagination";
+import { toIlikePattern } from "@/utils/search";
 
 export type ProgramType =
   | "mini_bootcamp"
@@ -87,6 +88,7 @@ export interface Program {
   promo_individual_price: number | null;
   promo_bareng_teman_price: number | null;
   session_count: number;
+  seat_target: number | null;
   status: ProgramStatus;
   created_at: string;
   updated_at: string;
@@ -100,6 +102,9 @@ export interface ProgramListItem extends Program {
   secure_seat_yes_count: number;
   secure_seat_undecided_count: number;
   secure_seat_no_count: number;
+  total_revenue: number;
+  total_expense: number;
+  net_profit: number;
 }
 
 export interface CreateProgramInput {
@@ -120,6 +125,7 @@ export interface CreateProgramInput {
   promo_individual_price?: number | null;
   promo_bareng_teman_price?: number | null;
   session_count?: number;
+  seat_target?: number | null;
   status?: ProgramStatus; // default 'draft'
 }
 
@@ -141,6 +147,7 @@ export interface UpdateProgramInput {
   promo_individual_price?: number | null;
   promo_bareng_teman_price?: number | null;
   session_count?: number;
+  seat_target?: number | null;
   status?: ProgramStatus;
 }
 
@@ -215,12 +222,18 @@ export async function getActivePrograms(limit = 5): Promise<{
 
 export interface ProgramsListParams extends PaginationParams {
   year?: number;
+  search?: string;
+  type?: ProgramType;
+  status?: ProgramStatus;
 }
 
 export async function getProgramsPaginated({
   page = 1,
   limit = 10,
   year,
+  search,
+  type,
+  status,
 }: ProgramsListParams = {}): Promise<{
   data: PaginatedResponse<Program> | null;
   error: PostgrestError | null;
@@ -232,6 +245,19 @@ export async function getProgramsPaginated({
 
   if (year != null) {
     query = query.eq("year", year);
+  }
+
+  if (type) {
+    query = query.eq("type", type);
+  }
+
+  if (status) {
+    query = query.eq("status", status);
+  }
+
+  const searchPattern = search ? toIlikePattern(search) : "";
+  if (searchPattern) {
+    query = query.ilike("name", searchPattern);
   }
 
   const { data, error, count } = await query;

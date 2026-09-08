@@ -6,6 +6,8 @@ import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
 import { Button } from "@/components/atoms/button";
 import { StatusBadge } from "@/components/atoms/status-badge";
 import { formatCurrency } from "@/utils/currency";
+import { formatMaskedCurrency } from "@/components/molecules/financial-visibility";
+import { useFinancialVisibility } from "@/hooks/use-financial-visibility";
 import { formatPaymentStatusLabel } from "@/constants/payment-status";
 import { PROGRAM_PRICE_TONE_CLASSES } from "@/constants/registration-offers";
 import {
@@ -28,6 +30,7 @@ import {
   CircleX,
   Clock,
   Clock3,
+  Copy,
   Eye,
   GraduationCap,
   Layers,
@@ -90,15 +93,33 @@ function CountValue({ count, label }: { count: number; label: string }) {
 }
 
 function StudentsCell({ program }: { program: ProgramListItem }) {
+  const seatTarget =
+    program.seat_target != null && program.seat_target > 0
+      ? program.seat_target
+      : null;
+  const totalLabel = seatTarget
+    ? `${program.total_student_count} / ${seatTarget}`
+    : undefined;
+
   const totalRow = (
     <IconMetaRow
       icon={Users}
       label="Total students"
       value={
-        <CountValue
-          count={program.total_student_count}
-          label={program.total_student_count === 1 ? "Total student" : "Total students"}
-        />
+        seatTarget ? (
+          <>
+            <span className="font-semibold">{totalLabel}</span> seats
+          </>
+        ) : (
+          <CountValue
+            count={program.total_student_count}
+            label={
+              program.total_student_count === 1
+                ? "Total student"
+                : "Total students"
+            }
+          />
+        )
       }
     />
   );
@@ -178,13 +199,52 @@ function StudentsCell({ program }: { program: ProgramListItem }) {
   );
 }
 
+function FinancialCell({ program }: { program: ProgramListItem }) {
+  const { isVisible } = useFinancialVisibility();
+  const revenue = program.total_revenue ?? 0;
+  const net = program.net_profit ?? 0;
+
+  return (
+    <div className="flex min-w-[9rem] flex-col gap-1 py-0.5 text-sm">
+      <p>
+        <span className="text-muted-foreground">Rev </span>
+        <span
+          className={cn(
+            "font-medium tabular-nums",
+            isVisible ? "text-brand-royal" : "text-muted-foreground",
+          )}
+        >
+          {formatMaskedCurrency(revenue, isVisible)}
+        </span>
+      </p>
+      <p>
+        <span className="text-muted-foreground">Net </span>
+        <span
+          className={cn(
+            "font-medium tabular-nums",
+            isVisible
+              ? net >= 0
+                ? "text-brand-royal"
+                : "text-red-600"
+              : "text-muted-foreground",
+          )}
+        >
+          {formatMaskedCurrency(net, isVisible)}
+        </span>
+      </p>
+    </div>
+  );
+}
+
 interface ProgramsColumnsProps {
   onEdit?: (program: ProgramListItem) => void;
+  onDuplicate?: (program: ProgramListItem) => void;
   onDelete?: (program: ProgramListItem) => void;
 }
 
 export function programsColumns({
   onEdit,
+  onDuplicate,
   onDelete,
 }: ProgramsColumnsProps): ColumnDef<ProgramListItem>[] {
   return [
@@ -273,7 +333,9 @@ export function programsColumns({
       className: "text-left",
       cell: (program) => {
         if (!BOOTCAMP_TYPES.has(program.type)) {
-          return formatCurrency(0);
+          return program.price != null && program.price > 0
+            ? formatCurrency(program.price)
+            : "—";
         }
 
         return (
@@ -301,6 +363,12 @@ export function programsColumns({
       },
     },
     {
+      accessorKey: "total_revenue",
+      header: "Financials",
+      enableSorting: true,
+      cell: (program) => <FinancialCell program={program} />,
+    },
+    {
       accessorKey: "status",
       header: "Status",
       enableSorting: true,
@@ -310,10 +378,9 @@ export function programsColumns({
       id: "actions",
       header: "Actions",
       enableSorting: false,
-      // 3 icon buttons (view + edit + delete) + cell padding; default sticky width is 88px
-      size: 136,
-      minSize: 136,
-      maxSize: 136,
+      size: 168,
+      minSize: 168,
+      maxSize: 168,
       cell: (program) => (
         <div className="flex items-center gap-1">
           {(() => {
@@ -330,7 +397,12 @@ export function programsColumns({
 
             if (!isValidProgramId) {
               return (
-                <Button variant="ghost" size="icon" disabled className="h-8 w-8 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled
+                  className="h-8 w-8 shrink-0"
+                >
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View program details</span>
                 </Button>
@@ -338,8 +410,13 @@ export function programsColumns({
             }
 
             return (
-              <Button variant="ghost" size="icon" asChild className="h-8 w-8 shrink-0">
-                <Link href={`/programs/${normalizedProgramId}/participants`}>
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="h-8 w-8 shrink-0"
+              >
+                <Link href={`/programs/${normalizedProgramId}/overview`}>
                   <Eye className="h-4 w-4" />
                   <span className="sr-only">View program details</span>
                 </Link>
@@ -355,6 +432,17 @@ export function programsColumns({
             >
               <Pencil className="h-4 w-4" />
               <span className="sr-only">Edit program</span>
+            </Button>
+          )}
+          {onDuplicate && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDuplicate(program)}
+              className="h-8 w-8 shrink-0"
+            >
+              <Copy className="h-4 w-4" />
+              <span className="sr-only">Duplicate program</span>
             </Button>
           )}
           {onDelete && (

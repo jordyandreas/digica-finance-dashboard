@@ -4,7 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+  LogOut,
+} from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms/typography";
 import { SidebarProgramList } from "@/components/molecules/sidebar-program-list";
@@ -17,6 +23,7 @@ import {
 import type { AdminProfile } from "@/lib/profile-role";
 import { cn } from "@/lib/utils";
 import { useDashboardMenus, type MenuItem } from "@/hooks/use-dashboard-menus";
+import { resolvePublicAppOrigin } from "@/utils/program-public-link";
 
 interface DashboardSidebarProps {
   isCollapsed: boolean;
@@ -117,11 +124,28 @@ export function DashboardSidebar({
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-brand-periwinkle/60 pt-4">
+      <div className="mt-auto space-y-2 border-t border-brand-periwinkle/60 pt-4">
+        <a
+          href={resolvePublicAppOrigin()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={cn(
+            "flex items-center rounded-xl border border-brand-periwinkle/60 bg-background/70 text-sm font-medium shadow-sm backdrop-blur-sm transition-colors",
+            "text-foreground hover:bg-accent hover:text-accent-foreground",
+            isCollapsed ? "justify-center p-2.5" : "gap-2.5 px-3 py-2.5",
+          )}
+          aria-label="Buka Landing Page Digica"
+        >
+          <ExternalLink className="h-4 w-4 shrink-0 text-brand-muted" />
+          {!isCollapsed && (
+            <Typography variant="body2" tagName="span" className="text-inherit">
+              Landing Page
+            </Typography>
+          )}
+        </a>
+
         {userProfile ? (
-          <div className="mb-2">
-            <SidebarUserProfile profile={userProfile} isCollapsed={isCollapsed} />
-          </div>
+          <SidebarUserProfile profile={userProfile} isCollapsed={isCollapsed} />
         ) : null}
 
         <Link

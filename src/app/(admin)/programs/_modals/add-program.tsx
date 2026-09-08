@@ -7,10 +7,15 @@ import { useAddProgram } from "../_hooks/use-add-program";
 
 export interface ProgramModalProps {
   program?: Program | null;
+  duplicateFrom?: Program | null;
   onSuccess?: () => void;
 }
 
-export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
+export function ProgramModal({
+  program,
+  duplicateFrom,
+  onSuccess,
+}: ProgramModalProps) {
   const {
     isOpen,
     close,
@@ -21,7 +26,20 @@ export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
     setRegistrationBannerFile,
     promoBannerFile,
     setPromoBannerFile,
-  } = useAddProgram({ program, onSuccess });
+  } = useAddProgram({ program, duplicateFrom, onSuccess });
+
+  const isDuplicate = Boolean(duplicateFrom) && !program;
+  const title = program
+    ? "Edit Program"
+    : isDuplicate
+      ? "Duplicate Program"
+      : "Add New Program";
+  const description = program
+    ? "Update the program information below."
+    : isDuplicate
+      ? "Review the copied details, then create the new program."
+      : "Fill in the details to create a new program.";
+  const applyLabel = program ? "Update" : "Create";
 
   return (
     <Modal
@@ -31,14 +49,10 @@ export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
           close();
         }
       }}
-      title={program ? "Edit Program" : "Add New Program"}
-      description={
-        program
-          ? "Update the program information below."
-          : "Fill in the details to create a new program."
-      }
+      title={title}
+      description={description}
       onApply={handleSubmit}
-      applyLabel={program ? "Update" : "Create"}
+      applyLabel={applyLabel}
       applyDisabled={applyDisabled}
       onCancel={close}
     >
@@ -52,3 +66,4 @@ export function ProgramModal({ program, onSuccess }: ProgramModalProps) {
     </Modal>
   );
 }
+

@@ -25,7 +25,6 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatCurrency } from "@/utils/currency";
 import { usePayments, usePaymentsPaginated } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
-import { TenorFollowUpAlert } from "./_components/tenor-follow-up-alert";
 import { PaymentsTable } from "./_table";
 
 const REVENUE_STATUS_SET = new Set<string>(REVENUE_PAYMENT_STATUSES);
@@ -86,8 +85,6 @@ export default function PaymentsPage() {
       </div>
 
       <>
-        <TenorFollowUpAlert programId={programId} />
-
         <Card>
           <CardHeader>
             <CardTitle>Total Payments</CardTitle>

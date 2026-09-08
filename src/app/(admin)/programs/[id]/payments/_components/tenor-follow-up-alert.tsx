@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Phone } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { groupIncompleteTenorCounts } from "@/utils/incomplete-tenor";
@@ -15,6 +16,16 @@ type TenorFollowUpAlertProps = {
 
 function isBootcampLike(type: string | null | undefined): boolean {
   return type === "bootcamp" || type === "mini_bootcamp";
+}
+
+async function copyPhone(phone: string) {
+  try {
+    await navigator.clipboard.writeText(phone);
+    toast.success("Phone copied to clipboard");
+  } catch (error) {
+    console.error("Failed to copy phone:", error);
+    toast.error("Failed to copy phone");
+  }
 }
 
 export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
@@ -43,7 +54,7 @@ export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           aria-expanded={isOpen}
-          className="flex w-full items-center justify-between text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+          className="flex w-full items-center justify-between rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <CardTitle className="text-base font-semibold leading-none tracking-tight text-brand-deep">
             Tenor follow-up
@@ -70,10 +81,37 @@ export function TenorFollowUpAlert({ programId }: TenorFollowUpAlertProps) {
                   {count} participant{count !== 1 ? "s" : ""} still on tenor-
                   {paidTenor}
                 </p>
-                <ul className="list-disc space-y-0.5 pl-5 text-sm text-brand-deep">
+                <ul className="space-y-1.5">
                   {participants.map((participant) => (
-                    <li key={participant.participantId}>
-                      {toTitleCase(participant.name)}
+                    <li
+                      key={participant.participantId}
+                      className="flex flex-col gap-0.5 rounded-md border border-brand-periwinkle/40 bg-background/60 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <p className="text-sm font-medium text-brand-deep">
+                        {toTitleCase(participant.name)}
+                      </p>
+                      {participant.phone ? (
+                        <button
+                          type="button"
+                          onClick={() => copyPhone(participant.phone!)}
+                          className="group inline-flex max-w-full items-center gap-1.5 text-left text-sm text-brand-deep transition-colors hover:text-brand-royal"
+                          title="Copy phone"
+                        >
+                          <Phone
+                            className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                            aria-hidden
+                          />
+                          <span className="tabular-nums">
+                            {participant.phone}
+                          </span>
+                          <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100" />
+                          <span className="sr-only">Copy phone number</span>
+                        </button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          No phone number
+                        </p>
+                      )}
                     </li>
                   ))}
                 </ul>

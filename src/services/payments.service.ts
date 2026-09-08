@@ -11,6 +11,7 @@ import {
   type PaginatedResponse,
 } from "@/types/pagination";
 import { toIlikePattern } from "@/utils/search";
+import { fetchAllPages } from "@/utils/supabase-fetch-all";
 
 export type PaymentsListParams = ListParams & {
   paymentType?: string;
@@ -22,6 +23,7 @@ export interface Payment {
   payment_date: string | null;
   participant_id: string | null;
   participant_name: string | null;
+  participant_phone: string | null;
   program_id: string | null;
   program_name: string | null;
   payment_method: string | null;
@@ -65,7 +67,10 @@ export interface UpdatePaymentInput {
 }
 
 type PaymentWithParticipant = Payment & {
-  participants?: { name?: string | null } | null;
+  participants?: {
+    name?: string | null;
+    phone?: string | null;
+  } | null;
 };
 
 function mapPaymentsWithParticipants(
@@ -76,9 +81,12 @@ function mapPaymentsWithParticipants(
       const { participants, ...rest } = payment;
       const participantName =
         participants?.name || payment.participant_name || null;
+      const participantPhone =
+        participants?.phone?.trim() || payment.participant_phone || null;
       return {
         ...rest,
         participant_name: participantName,
+        participant_phone: participantPhone,
         referral_name: payment.reference_name || null,
       };
     }) ?? []
@@ -94,7 +102,8 @@ export async function getPayments(programId?: string): Promise<{
     .select(`
       *,
       participants:participant_id (
-        name
+        name,
+        phone
       )
     `)
     .order("created_at", { ascending: true });
@@ -132,13 +141,15 @@ export async function getPaymentsPaginated(
     ? `
       *,
       participants!participant_id!inner (
-        name
+        name,
+        phone
       )
     `
     : `
       *,
       participants:participant_id (
-        name
+        name,
+        phone
       )
     `;
 
@@ -199,6 +210,67 @@ export async function getPaymentsByParticipantIds(
   const { data, error } = await query;
 
   return { data, error };
+}
+
+export type PaymentPlanProgramCounts = {
+  full: number;
+  tenor: number;
+  scholarship: number;
+};
+
+const EMPTY_PAYMENT_PLAN_COUNTS: PaymentPlanProgramCounts = {
+  full: 0,
+  tenor: 0,
+  scholarship: 0,
+};
+
+export async function getPaymentPlanCountsByProgramIds(
+  programIds: string[],
+): Promise<{
+  data: Record<string, PaymentPlanProgramCounts>;
+  error: PostgrestError | null;
+}> {
+  const countsByProgramId: Record<string, PaymentPlanProgramCounts> = {};
+
+  for (const programId of programIds) {
+    countsByProgramId[programId] = { ...EMPTY_PAYMENT_PLAN_COUNTS };
+  }
+
+  if (programIds.length === 0) {
+    return { data: countsByProgramId, error: null };
+  }
+
+  const { data, error } = await fetchAllPages<{
+    program_id: string | null;
+    payment_type: string | null;
+  }>((from, to) =>
+    supabase
+      .from("payments")
+      .select("program_id, payment_type")
+      .in("program_id", programIds)
+      .order("id", { ascending: true })
+      .range(from, to),
+  );
+
+  if (error) {
+    return { data: {}, error };
+  }
+
+  for (const row of data) {
+    if (!row.program_id) continue;
+    const bucket = countsByProgramId[String(row.program_id)];
+    if (!bucket) continue;
+
+    if (row.payment_type === "full") {
+      bucket.full += 1;
+    } else if (row.payment_type === "tenor") {
+      bucket.tenor += 1;
+    } else if (row.payment_type === "scholarship") {
+      bucket.scholarship += 1;
+    }
+  }
+
+  return { data: countsByProgramId, error: null };
 }
 
 export async function getPaymentsSummary(

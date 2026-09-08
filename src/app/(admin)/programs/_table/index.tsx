@@ -8,6 +8,7 @@ import { programsColumns } from "./columns";
 interface ProgramsTableProps {
   data: ProgramListItem[];
   onEdit?: (program: ProgramListItem) => void;
+  onDuplicate?: (program: ProgramListItem) => void;
   onDelete?: (program: ProgramListItem) => void;
 }
 
@@ -24,12 +25,17 @@ function getProgramDetailPath(program: ProgramListItem): string | null {
     normalizedProgramId !== "null";
 
   if (!isValidProgramId) return null;
-  return `/programs/${normalizedProgramId}/participants`;
+  return `/programs/${normalizedProgramId}/overview`;
 }
 
-export function ProgramsTable({ data, onEdit, onDelete }: ProgramsTableProps) {
+export function ProgramsTable({
+  data,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: ProgramsTableProps) {
   const router = useRouter();
-  const columns = programsColumns({ onEdit, onDelete });
+  const columns = programsColumns({ onEdit, onDuplicate, onDelete });
 
   return (
     <DataTable

@@ -15,6 +15,7 @@ import { useModal } from "@/hooks/use-modal";
 import { useForm } from "react-hook-form";
 import type { ProgramModalProps } from "../_modals/add-program";
 import { programQueryKey } from "../[id]/_hooks/useProgram";
+import { programPublicContentQueryKey } from "../[id]/_hooks/use-program-public-content";
 import { programSessionsQueryKey } from "../[id]/attendance/_hooks/use-attendance";
 import { programPublicSlugSchema } from "@/schemas/program-public-slug-schema";
 import { normalizeScheduleDays } from "@/utils/programs";
@@ -41,6 +42,7 @@ export type ProgramFormState = {
   promo_individual_price: number | undefined;
   promo_bareng_teman_price: number | undefined;
   session_count: string;
+  seat_target: string;
   status: ProgramStatus;
 };
 
@@ -71,16 +73,24 @@ const defaultFormState = (): ProgramFormState => ({
   promo_individual_price: undefined,
   promo_bareng_teman_price: undefined,
   session_count: "0",
+  seat_target: "",
   status: "draft",
 });
 
-const buildFormState = (program?: Program | null): ProgramFormState => {
+const buildFormState = (
+  program?: Program | null,
+  options?: { asDuplicate?: boolean },
+): ProgramFormState => {
   if (!program) {
     return defaultFormState();
   }
 
+  const asDuplicate = options?.asDuplicate === true;
+
   return {
-    name: program.name || "",
+    name: asDuplicate
+      ? `${program.name || "Untitled Program"} (copy)`
+      : program.name || "",
     summary_html: "",
     og_image_url: "",
     registration_banner_url: "",
@@ -96,12 +106,14 @@ const buildFormState = (program?: Program | null): ProgramFormState => {
     registration_link: program.registration_link ?? "",
     bootcamp_registration_link: program.bootcamp_registration_link ?? "",
     wa_group_link: program.wa_group_link ?? "",
-    public_slug: program.public_slug ?? "",
+    public_slug: asDuplicate ? "" : (program.public_slug ?? ""),
     price: program.price ?? undefined,
     promo_individual_price: program.promo_individual_price ?? undefined,
     promo_bareng_teman_price: program.promo_bareng_teman_price ?? undefined,
     session_count: String(program.session_count ?? 0),
-    status: program.status || "draft",
+    seat_target:
+      program.seat_target != null ? String(program.seat_target) : "",
+    status: asDuplicate ? "draft" : program.status || "draft",
   };
 };
 
@@ -128,6 +140,18 @@ const parseBatch = (value: string): number | null => {
     return null;
   }
   return batch;
+};
+
+const parseSeatTarget = (value: string): number | null => {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const seatTarget = Number.parseInt(trimmed, 10);
+  if (!Number.isFinite(seatTarget) || seatTarget < 1) {
+    return null;
+  }
+  return seatTarget;
 };
 
 const parseOfferPrice = (value: number | undefined): number | null => {
@@ -165,11 +189,16 @@ const buildProgramInput = (
       ? parseOfferPrice(values.promo_bareng_teman_price)
       : null,
     session_count: parseSessionCount(values.session_count),
+    seat_target: parseSeatTarget(values.seat_target),
     status: values.status || undefined,
   };
 };
 
-export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
+export function useAddProgram({
+  program,
+  duplicateFrom,
+  onSuccess,
+}: ProgramModalProps) {
   const queryClient = useQueryClient();
   const { isOpen, close } = useModal<ProgramModalProps>("programModal");
   const [loading, setLoading] = React.useState(false);
@@ -184,15 +213,20 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
   const name = form.watch("name");
   const year = form.watch("year");
   const programType = form.watch("type");
+  const sourceProgram = program ?? duplicateFrom ?? null;
+  const isDuplicate = Boolean(duplicateFrom) && !program;
+  const contentSourceId = program?.id ?? duplicateFrom?.id;
 
   React.useEffect(() => {
-    form.reset(buildFormState(program));
+    form.reset(
+      buildFormState(sourceProgram, { asDuplicate: isDuplicate }),
+    );
     setRegistrationBannerFile(null);
     setPromoBannerFile(null);
-  }, [form, program, isOpen]);
+  }, [form, sourceProgram, isDuplicate, isOpen]);
 
   React.useEffect(() => {
-    if (!isOpen || !program?.id) {
+    if (!isOpen || !contentSourceId) {
       form.setValue("summary_html", "", { shouldDirty: false });
       form.setValue("og_image_url", "", { shouldDirty: false });
       form.setValue("registration_banner_url", "", { shouldDirty: false });
@@ -206,7 +240,7 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
       const { getProgramPublicContent } = await import(
         "@/services/program-public-content.service"
       );
-      const result = await getProgramPublicContent(program.id);
+      const result = await getProgramPublicContent(contentSourceId);
 
       if (!cancelled) {
         form.setValue("summary_html", result.data?.summary_html ?? "", {
@@ -229,7 +263,7 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
     return () => {
       cancelled = true;
     };
-  }, [form, isOpen, program?.id]);
+  }, [form, isOpen, contentSourceId]);
 
   const handleSubmit = form.handleSubmit(async (values: ProgramFormState) => {
     const slugValidation = programPublicSlugSchema.safeParse(values.public_slug);
@@ -364,6 +398,9 @@ export function useAddProgram({ program, onSuccess }: ProgramModalProps) {
         });
         await queryClient.invalidateQueries({
           queryKey: programSessionsQueryKey(savedProgram.id),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: programPublicContentQueryKey(savedProgram.id),
         });
         await queryClient.invalidateQueries({
           queryKey: ["programs"],

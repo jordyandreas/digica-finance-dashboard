@@ -23,6 +23,14 @@ import {
   useDashboardProgramSummaryPaginated,
   useDashboardStats,
 } from "./_hooks/use-dashboard-summary";
+import { useDashboardParticipantTrends } from "./_hooks/use-dashboard-participant-trends";
+import {
+  useDashboardExpenseBreakdown,
+  useDashboardOutstandingTenor,
+} from "./_hooks/use-dashboard-ops-summary";
+import { ParticipantTrendSection } from "./_components/participant-trend-section";
+import { ExpenseByCategorySection } from "./_components/expense-by-category-section";
+import { OutstandingTenorSection } from "./_components/outstanding-tenor-section";
 import { DashboardSummaryTable } from "./_table";
 
 export default function DashboardPage() {
@@ -36,6 +44,21 @@ export default function DashboardPage() {
   const { data: summaryResult, error, isLoading } =
     useDashboardProgramSummaryPaginated(page, limit, selectedYear);
   const { data: dashboardStats } = useDashboardStats(selectedYear);
+  const {
+    data: participantTrends = [],
+    error: participantTrendsError,
+    isLoading: isParticipantTrendsLoading,
+  } = useDashboardParticipantTrends(selectedYear);
+  const {
+    data: expenseBreakdown,
+    error: expenseBreakdownError,
+    isLoading: isExpenseBreakdownLoading,
+  } = useDashboardExpenseBreakdown(selectedYear);
+  const {
+    data: outstandingTenor,
+    error: outstandingTenorError,
+    isLoading: isOutstandingTenorLoading,
+  } = useDashboardOutstandingTenor(selectedYear);
   const { isVisible } = useFinancialVisibility();
 
   const totals = {
@@ -118,6 +141,26 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <ParticipantTrendSection
+        seriesList={participantTrends}
+        isLoading={isParticipantTrendsLoading}
+        errorMessage={participantTrendsError?.message}
+        yearLabel={yearLabel}
+      />
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        <ExpenseByCategorySection
+          data={expenseBreakdown}
+          isLoading={isExpenseBreakdownLoading}
+          errorMessage={expenseBreakdownError?.message}
+        />
+        <OutstandingTenorSection
+          data={outstandingTenor}
+          isLoading={isOutstandingTenorLoading}
+          errorMessage={outstandingTenorError?.message}
+        />
       </div>
 
       <div className="space-y-4">
