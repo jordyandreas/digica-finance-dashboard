@@ -37,7 +37,7 @@ export function useDashboardMenus() {
       isLoadingItems: isLoading,
       items: activePrograms.map((program) => ({
         label: program.name,
-        pathname: `/programs/${program.id}/participants`,
+        pathname: `/programs/${program.id}/overview`,
         type: program.type,
       })),
     },

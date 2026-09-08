@@ -3,6 +3,7 @@ import type { Payment } from "@/services/payments.service";
 export type IncompleteTenorParticipant = {
   participantId: string;
   name: string;
+  phone: string | null;
 };
 
 export type IncompleteTenorGroup = {
@@ -24,6 +25,11 @@ function resolveParticipantName(payment: Payment): string {
   return payment.participant_name?.trim() || "Unnamed participant";
 }
 
+function resolveParticipantPhone(payment: Payment): string | null {
+  const phone = payment.participant_phone?.trim();
+  return phone ? phone : null;
+}
+
 /** Groups incomplete tenor payments by current paid_tenor (ascending). */
 export function groupIncompleteTenorCounts(
   payments: Payment[],
@@ -38,6 +44,7 @@ export function groupIncompleteTenorCounts(
     participants.push({
       participantId: payment.participant_id ?? payment.id,
       name: resolveParticipantName(payment),
+      phone: resolveParticipantPhone(payment),
     });
     groups.set(payment.paid_tenor, participants);
   }

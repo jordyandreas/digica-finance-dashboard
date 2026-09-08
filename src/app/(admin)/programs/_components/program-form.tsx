@@ -158,6 +158,20 @@ export function ProgramForm({
         }}
       />
 
+      <TextInputController
+        form={form}
+        name="seat_target"
+        label="Seat target"
+        placeholder="e.g. 30"
+        description="Optional capacity goal. Shown as current students / target on the programs list."
+        componentProps={{
+          input: {
+            type: "number",
+            min: 1,
+          },
+        }}
+      />
+
       <div className="grid grid-cols-2 gap-4">
         <DatePickerController
           form={form}

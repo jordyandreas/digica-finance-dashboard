@@ -1,7 +1,4 @@
-import { BackButton } from "@/components/atoms/back-button";
-import { ProgramOverview } from "./_components/program-overview";
-import { ProgramParticipantOverview } from "./_components/program-participant-overview";
-import { ProgramSummary } from "./_components/program-summary";
+import { ProgramHeader } from "./_components/program-header";
 import { ProgramTabs } from "./_components/program-tabs";
 
 export default async function ProgramLayout({
@@ -14,13 +11,7 @@ export default async function ProgramLayout({
   const { id } = await params;
   return (
     <div className="space-y-8">
-      <div className="flex w-full flex-col items-start gap-4">
-        <BackButton href="/programs" />
-        <ProgramOverview programId={id} />
-        <ProgramParticipantOverview programId={id} />
-      </div>
-
-      <ProgramSummary programId={id} />
+      <ProgramHeader programId={id} />
 
       <ProgramTabs programId={id} />
 

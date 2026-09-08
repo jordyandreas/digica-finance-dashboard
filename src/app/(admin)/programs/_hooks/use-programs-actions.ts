@@ -29,6 +29,7 @@ export function useProgramsActions() {
   const handleAddClick = () => {
     programModal.open({
       program: null,
+      duplicateFrom: null,
       onSuccess: handleModalSuccess,
     });
   };
@@ -36,6 +37,15 @@ export function useProgramsActions() {
   const handleEdit = (program: Program) => {
     programModal.open({
       program,
+      duplicateFrom: null,
+      onSuccess: handleModalSuccess,
+    });
+  };
+
+  const handleDuplicate = (program: Program) => {
+    programModal.open({
+      program: null,
+      duplicateFrom: program,
       onSuccess: handleModalSuccess,
     });
   };
@@ -70,6 +80,7 @@ export function useProgramsActions() {
   return {
     handleAddClick,
     handleEdit,
+    handleDuplicate,
     handleDelete,
     handleConfirmDelete,
     deleteConfirmation,

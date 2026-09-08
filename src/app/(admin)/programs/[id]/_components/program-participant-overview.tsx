@@ -64,7 +64,7 @@ function OverviewStatsGrid({
 export function ProgramParticipantOverview({
   programId,
 }: ProgramParticipantOverviewProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const { data: program, isLoading: isProgramLoading } = useProgram(programId);
   const {
     data: counts,

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { ChevronDown, ChevronUp, Download } from "lucide-react";
+import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms/typography";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import {
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
 import type { Participant } from "@/services/participants.service";
 import type { ProgramSession } from "@/services/program-sessions.service";
@@ -41,6 +42,7 @@ export function AttendanceContent({
   isLoading,
   isFetching,
 }: AttendanceContentProps) {
+  const programModal = useModal<ProgramModalProps>("programModal");
   const {
     dates,
     isSaving,
@@ -76,8 +78,19 @@ export function AttendanceContent({
               This program has no sessions configured yet. Edit the program and
               set the number of sessions first.
             </Typography>
-            <Button asChild className="mt-4">
-              <Link href="/programs">Go to Programs</Link>
+            <Button
+              type="button"
+              className="mt-4"
+              onClick={() => {
+                if (!program) return;
+                programModal.open({
+                  program,
+                  duplicateFrom: null,
+                });
+              }}
+              disabled={!program}
+            >
+              Edit Program
             </Button>
           </CardContent>
         </Card>

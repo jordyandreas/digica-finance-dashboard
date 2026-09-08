@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { YearFilterSelect } from "@/components/molecules/year-filter-select";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
@@ -9,6 +9,12 @@ import {
   toYearFilterParam,
   type YearFilterValue,
 } from "@/constants/dashboard-year";
+import {
+  PROGRAM_STATUS_ALL,
+  PROGRAM_TYPE_ALL,
+} from "@/constants/program-filters";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { ProgramStatus, ProgramType } from "@/services/programs.service";
 import { useProgramsPaginated } from "./_hooks/use-programs";
 import { ProgramsPageContent } from "./_components/programs-content";
 import { ProgramsTableSkeleton } from "./_table/programs-table-skeleton";
@@ -19,16 +25,32 @@ export default function ProgramsPage() {
   );
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState(PROGRAM_TYPE_ALL);
+  const [statusFilter, setStatusFilter] = useState(PROGRAM_STATUS_ALL);
+  const debouncedSearch = useDebouncedValue(search);
   const selectedYear = toYearFilterParam(yearFilter);
-  const { data: programsResult, error, isLoading } = useProgramsPaginated(
-    page,
-    limit,
-    selectedYear,
-  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, typeFilter, statusFilter, yearFilter]);
+
+  const { data: programsResult, error, isLoading, isFetching } =
+    useProgramsPaginated(page, limit, {
+      year: selectedYear,
+      search: debouncedSearch,
+      type:
+        typeFilter === PROGRAM_TYPE_ALL
+          ? undefined
+          : (typeFilter as ProgramType),
+      status:
+        statusFilter === PROGRAM_STATUS_ALL
+          ? undefined
+          : (statusFilter as ProgramStatus),
+    });
 
   const handleYearChange = (nextYear: YearFilterValue) => {
     setYearFilter(nextYear);
-    setPage(1);
   };
 
   const yearFilterControl = (
@@ -96,7 +118,14 @@ export default function ProgramsPage() {
       page={page}
       limit={limit}
       yearFilter={yearFilter}
+      search={search}
+      typeFilter={typeFilter}
+      statusFilter={statusFilter}
+      isFetching={isFetching}
       onYearChange={handleYearChange}
+      onSearchChange={setSearch}
+      onTypeFilterChange={setTypeFilter}
+      onStatusFilterChange={setStatusFilter}
       onPageChange={setPage}
       onLimitChange={(nextLimit) => {
         setLimit(nextLimit);

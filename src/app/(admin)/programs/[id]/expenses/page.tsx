@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteConfirmationModal } from "@/components/molecules/modals/delete-confirmation-modal";
 import {
+  DataTableFilters,
   DataTablePaginationControl,
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
 import { DEFAULT_PAGE_SIZE } from "@/components/molecules/data-table/data-table-pagination-control";
+import {
+  EXPENSE_CATEGORY_ALL,
+  EXPENSE_CATEGORY_FILTER_OPTIONS,
+} from "@/constants/expense-category";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { ExpenseCategory } from "@/services/expenses.service";
 import { formatCurrency } from "@/utils/currency";
 import { useExpensesPaginated, useExpensesSummary } from "./_hooks/useExpenses";
 import { useAddExpense } from "./_hooks/use-add-expense";
@@ -18,14 +25,29 @@ import { ExpensesTable } from "./_table";
 
 export default function ExpensesPage() {
   const { id } = useParams<{ id?: string }>();
-  const programId = Array.isArray(id) ? id[0] : id ?? "";
+  const programId = Array.isArray(id) ? id[0] : (id ?? "");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState(EXPENSE_CATEGORY_ALL);
+  const debouncedSearch = useDebouncedValue(search);
+
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, category]);
+
   const {
     data: expensesResult,
     error,
     isLoading: isExpensesLoading,
-  } = useExpensesPaginated(programId, page, limit);
+    isFetching: isExpensesFetching,
+  } = useExpensesPaginated(programId, page, limit, {
+    search: debouncedSearch,
+    category:
+      category === EXPENSE_CATEGORY_ALL
+        ? undefined
+        : (category as ExpenseCategory),
+  });
   const {
     data: summary,
     error: summaryError,
@@ -37,6 +59,8 @@ export default function ExpensesPage() {
   const totalAmount = summary?.total || 0;
   const isLoading = isExpensesLoading || isSummaryLoading;
   const combinedError = error ?? summaryError;
+  const showSkeleton = isExpensesLoading && !expensesResult;
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -97,29 +121,46 @@ export default function ExpensesPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            {isExpensesLoading ? (
-              <DataTableSkeleton rows={limit} columns={5} />
-            ) : (
-              <>
-                <ExpensesTable
-                  data={expensesResult?.data ?? []}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                />
-                <DataTablePaginationControl
-                  currentPage={expensesResult?.pagination.page ?? page}
-                  totalPages={expensesResult?.pagination.total_page ?? 1}
-                  onPageChange={setPage}
-                  pageSize={limit}
-                  onPageSizeChange={(nextLimit) => {
-                    setLimit(nextLimit);
-                    setPage(1);
-                  }}
-                />
-              </>
-            )}
-          </Card>
+          <div className="space-y-3">
+            <DataTableFilters
+              search={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Search description"
+              status={category}
+              onStatusChange={setCategory}
+              statusOptions={EXPENSE_CATEGORY_FILTER_OPTIONS}
+              statusPlaceholder="Category"
+            />
+            <Card
+              className={
+                isExpensesFetching && !showSkeleton
+                  ? "opacity-60 transition-opacity"
+                  : undefined
+              }
+            >
+              {showSkeleton ? (
+                <DataTableSkeleton rows={limit} columns={5} />
+              ) : (
+                <>
+                  <ExpensesTable
+                    data={expensesResult?.data ?? []}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
+                  <DataTablePaginationControl
+                    currentPage={expensesResult?.pagination.page ?? page}
+                    totalPages={expensesResult?.pagination.total_page ?? 1}
+                    onPageChange={setPage}
+                    pageSize={limit}
+                    onPageSizeChange={(nextLimit) => {
+                      setLimit(nextLimit);
+                      setPage(1);
+                    }}
+                  />
+                </>
+              )}
+            </Card>
+          </div>
         </>
       )}
 

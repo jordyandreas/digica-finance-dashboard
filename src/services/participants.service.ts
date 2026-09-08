@@ -98,6 +98,7 @@ export interface ParticipantProgramCounts {
   on_progress: number;
   pending: number;
   social: number;
+  workshop: number;
   workshop_individual: number;
   workshop_bareng_teman: number;
   secure_seat_yes: number;
@@ -111,6 +112,7 @@ const EMPTY_PARTICIPANT_COUNTS: ParticipantProgramCounts = {
   on_progress: 0,
   pending: 0,
   social: 0,
+  workshop: 0,
   workshop_individual: 0,
   workshop_bareng_teman: 0,
   secure_seat_yes: 0,
@@ -147,6 +149,8 @@ export async function getParticipantCountsByProgramIds(
         "program_id, payment_status, registration_source, selected_package, secure_seat_interest",
       )
       .in("program_id", programIds)
+      // Stable order is required so `.range()` pagination does not skip/duplicate rows.
+      .order("id", { ascending: true })
       .range(from, to),
   );
 
@@ -172,6 +176,8 @@ export async function getParticipantCountsByProgramIds(
 
     if (row.registration_source === "social") {
       bucket.social += 1;
+    } else if (row.registration_source === "workshop_promo") {
+      bucket.workshop += 1;
     }
 
     if (row.selected_package === "individual") {
