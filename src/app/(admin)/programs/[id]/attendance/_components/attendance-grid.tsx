@@ -183,7 +183,15 @@ export function AttendanceGridTable({
           <thead>
             <tr className="border-b bg-muted">
               <th className="sticky left-0 top-0 z-30 min-w-[180px] border-r bg-muted px-4 py-3 text-left font-medium shadow-[2px_0_4px_-2px_rgba(0,0,0,0.08)]">
-                Participant
+                <div>Participant</div>
+                <div className="text-xs font-normal text-muted-foreground">
+                  {search.trim() &&
+                  visibleParticipants.length !== participants.length
+                    ? `${visibleParticipants.length} of ${participants.length}`
+                    : `${visibleParticipants.length} student${
+                        visibleParticipants.length !== 1 ? "s" : ""
+                      }`}
+                </div>
               </th>
               {sessions.map((session) => {
                 const sessionPresentCount = countParticipantsByStatus(
