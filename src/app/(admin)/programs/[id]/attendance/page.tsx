@@ -18,6 +18,9 @@ export default function AttendancePage() {
   } = useProgramSessions(programId, program?.session_count ?? 0);
   const { data: participants = [], isPending: isParticipantsPending } =
     useParticipants(programId);
+  const paidParticipants = participants.filter(
+    (participant) => participant.payment_status === "paid",
+  );
   const {
     data: attendance = {},
     isPending: isAttendancePending,
@@ -36,7 +39,7 @@ export default function AttendancePage() {
       programId={programId}
       program={program}
       sessions={sessions}
-      participants={participants}
+      participants={paidParticipants}
       attendance={attendance}
       isLoading={isLoading}
       isFetching={isFetching}

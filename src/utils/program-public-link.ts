@@ -58,6 +58,14 @@ export function buildCheckInUrl(
   return `${origin.replace(/\/$/, "")}/c/${identifier}`;
 }
 
+export function buildRecordingCheckInUrl(
+  origin: string,
+  program: ProgramPublicLinkFields,
+): string {
+  const identifier = resolvePublicIdentifier(program);
+  return `${origin.replace(/\/$/, "")}/c/${identifier}/recording`;
+}
+
 export async function resolveProgramIdByIdentifier(
   supabase: SupabaseClient,
   identifier: string,

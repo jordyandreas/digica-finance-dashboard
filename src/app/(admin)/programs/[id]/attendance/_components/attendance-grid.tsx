@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, FileCheck, X } from "lucide-react";
+import { Check, FileCheck, Play, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { Participant } from "@/services/participants.service";
@@ -21,6 +21,7 @@ interface AttendanceGridProps {
   sessions: ProgramSession[];
   attendance: AttendanceGrid;
   search?: string;
+  allowRecording?: boolean;
 }
 
 function countSessionsByStatus(
@@ -57,6 +58,7 @@ export function AttendanceGridTable({
   sessions,
   attendance,
   search = "",
+  allowRecording = false,
 }: AttendanceGridProps) {
   const visibleParticipants = React.useMemo(
     () =>
@@ -136,7 +138,8 @@ export function AttendanceGridTable({
     return (
       <div className="rounded-lg border border-dashed p-8 text-center">
         <Typography variant="body2" className="text-muted-foreground">
-          No participants yet. Add participants first to record attendance.
+          No paid participants yet. Attendance is only tracked for participants
+          with payment status Paid.
         </Typography>
       </div>
     );
@@ -173,6 +176,14 @@ export function AttendanceGridTable({
           </span>
           Leave Permit
         </span>
+        {allowRecording ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-sm bg-sky-600 text-white">
+              <Play className="h-3 w-3" />
+            </span>
+            Watched Recording
+          </span>
+        ) : null}
         <span className="text-muted-foreground/80">
           Click a cell to mark attendance
         </span>
@@ -206,6 +217,12 @@ export function AttendanceGridTable({
                   localAttendance,
                   "leave",
                 );
+                const sessionRecordingCount = countParticipantsByStatus(
+                  session.id,
+                  visibleParticipants,
+                  localAttendance,
+                  "recording",
+                );
 
                 return (
                   <th
@@ -222,6 +239,14 @@ export function AttendanceGridTable({
                       <span className="text-green-700">
                         {sessionPresentCount} present
                       </span>
+                      {allowRecording ? (
+                        <>
+                          <span className="text-muted-foreground"> · </span>
+                          <span className="text-sky-700">
+                            {sessionRecordingCount} recording
+                          </span>
+                        </>
+                      ) : null}
                       <span className="text-muted-foreground"> · </span>
                       <span className="text-amber-700">
                         {sessionLeaveCount} leave
@@ -246,6 +271,12 @@ export function AttendanceGridTable({
                 localAttendance,
                 "leave",
               );
+              const recordingCount = countSessionsByStatus(
+                participant.id,
+                sessions,
+                localAttendance,
+                "recording",
+              );
 
               return (
                 <tr key={participant.id} className="border-b last:border-b-0">
@@ -262,6 +293,14 @@ export function AttendanceGridTable({
                       <span className="text-green-700">
                         {presentCount}/{sessions.length} present
                       </span>
+                      {allowRecording ? (
+                        <>
+                          <span className="text-muted-foreground"> · </span>
+                          <span className="text-sky-700">
+                            {recordingCount} recording
+                          </span>
+                        </>
+                      ) : null}
                       <span className="text-muted-foreground"> · </span>
                       <span className="text-amber-700">
                         {leaveCount} leave
@@ -278,6 +317,7 @@ export function AttendanceGridTable({
                         <AttendanceCell
                           status={status}
                           disabled={savingKey === cellKey}
+                          allowRecording={allowRecording}
                           onChange={(nextStatus) =>
                             handleStatusChange(
                               participant.id,

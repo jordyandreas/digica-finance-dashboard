@@ -11,6 +11,7 @@ import {
   DataTableFilters,
   DataTableSkeleton,
 } from "@/components/molecules/data-table";
+import { supportsRecordingAttendance } from "@/constants/attendance-status";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useModal } from "@/hooks/use-modal";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export function AttendanceContent({
   });
 
   const sessionCount = program?.session_count ?? 0;
+  const allowRecording = supportsRecordingAttendance(program?.type);
   const showSkeleton = isLoading && sessions.length === 0;
   const [isSessionDatesOpen, setIsSessionDatesOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -103,12 +105,14 @@ export function AttendanceContent({
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
         <p className="text-muted-foreground">
-          Set session dates and mark each participant as present, absent, or
-          leave permit
+          {allowRecording
+            ? "Set session dates and mark each participant as present, absent, leave permit, or watched recording"
+            : "Set session dates and mark each participant as present, absent, or leave permit"}
         </p>
       </div>
 
       <CheckInLinkCard
+        showRecordingCheckIn={allowRecording}
         program={
           program?.public_code
             ? {
@@ -212,6 +216,7 @@ export function AttendanceContent({
               sessions={sessions}
               attendance={attendance}
               search={debouncedSearch}
+              allowRecording={allowRecording}
             />
           )}
         </div>

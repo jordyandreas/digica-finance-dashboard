@@ -28,12 +28,11 @@ export function useAttendanceActions({
 }: UseAttendanceActionsOptions) {
   const isWorkshop = program?.type === "workshop";
 
-  const presentAttendeeNames = useMemo(() => {
+  const workshopAttendeeNames = useMemo(() => {
     return participants
       .filter((participant) =>
         sessions.some(
-          (session) =>
-            attendance[participant.id]?.[session.id] === "present",
+          (session) => attendance[participant.id]?.[session.id] === "present",
         ),
       )
       .map((participant) => toTitleCase(participant.name))
@@ -48,7 +47,7 @@ export function useAttendanceActions({
       .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
   }, [participants]);
 
-  const exportNames = isWorkshop ? presentAttendeeNames : allParticipantNames;
+  const exportNames = isWorkshop ? workshopAttendeeNames : allParticipantNames;
 
   const handleExportCsv = () => {
     if (exportNames.length === 0) {

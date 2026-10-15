@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, FileCheck, Minus, X } from "lucide-react";
+import { Check, FileCheck, Minus, Play, X } from "lucide-react";
 import { Button } from "@/components/atoms/button";
 import {
   Popover,
@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 interface AttendanceCellProps {
   status: AttendanceStatus | null;
   disabled?: boolean;
+  allowRecording?: boolean;
   onChange: (status: AttendanceStatus | null) => void;
 }
 
@@ -26,12 +27,14 @@ const STATUS_CHIP_STYLES: Record<AttendanceStatus, string> = {
   absent:
     "border-destructive/30 bg-destructive text-white hover:bg-destructive/90",
   leave: "border-amber-600/30 bg-amber-600 text-white hover:bg-amber-600/90",
+  recording: "border-sky-600/30 bg-sky-600 text-white hover:bg-sky-600/90",
 };
 
 const STATUS_OPTION_STYLES: Record<AttendanceStatus, string> = {
   present: "text-green-700 hover:bg-green-50",
   absent: "text-destructive hover:bg-destructive/10",
   leave: "text-amber-700 hover:bg-amber-50",
+  recording: "text-sky-700 hover:bg-sky-50",
 };
 
 function StatusIcon({
@@ -50,15 +53,22 @@ function StatusIcon({
   if (status === "leave") {
     return <FileCheck className={className} />;
   }
+  if (status === "recording") {
+    return <Play className={className} />;
+  }
   return <Minus className={className} />;
 }
 
 export function AttendanceCell({
   status,
   disabled,
+  allowRecording = false,
   onChange,
 }: AttendanceCellProps) {
   const [open, setOpen] = React.useState(false);
+  const statusOptions = allowRecording
+    ? ATTENDANCE_STATUSES
+    : ATTENDANCE_STATUSES.filter((option) => option !== "recording");
 
   const selectStatus = (nextStatus: AttendanceStatus | null) => {
     onChange(nextStatus);
@@ -97,7 +107,7 @@ export function AttendanceCell({
         </Button>
       </PopoverTrigger>
       <PopoverContent align="center" className="w-44 gap-0.5 p-1">
-        {ATTENDANCE_STATUSES.map((option) => (
+        {statusOptions.map((option) => (
           <button
             key={option}
             type="button"
