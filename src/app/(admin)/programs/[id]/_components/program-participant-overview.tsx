@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp, Copy, Info, Phone } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PROGRAM_PRICE_TONE_CLASSES } from "@/constants/registration-offers";
 import { cn } from "@/lib/utils";
+import type { Participant } from "@/services/participants.service";
 import { isBootcampProgram } from "@/utils/programs";
+import { toTitleCase } from "@/utils/string";
 import { useProgram } from "../_hooks/useProgram";
 import { useProgramParticipantCounts } from "../_hooks/use-program-participant-counts";
+import { useParticipants } from "../participants/_hooks/use-participants";
 
 type ProgramParticipantOverviewProps = {
   programId: string;
@@ -17,12 +28,31 @@ type OverviewStat = {
   title: string;
   value: number;
   valueClassName: string;
+  titleAccessory?: ReactNode;
 };
 
-function OverviewStatCell({ title, value, valueClassName }: OverviewStat) {
+async function copyPhone(phone: string) {
+  try {
+    await navigator.clipboard.writeText(phone);
+    toast.success("Phone copied to clipboard");
+  } catch (error) {
+    console.error("Failed to copy phone:", error);
+    toast.error("Failed to copy phone");
+  }
+}
+
+function OverviewStatCell({
+  title,
+  value,
+  valueClassName,
+  titleAccessory,
+}: OverviewStat) {
   return (
     <div>
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-sm font-medium text-muted-foreground">{title}</p>
+        {titleAccessory}
+      </div>
       <p className={cn("mt-1 text-2xl font-bold tabular-nums", valueClassName)}>
         {value}
       </p>
@@ -61,16 +91,109 @@ function OverviewStatsGrid({
   );
 }
 
+function PendingParticipantsDialog({
+  open,
+  onOpenChange,
+  participants,
+  isLoading,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  participants: Participant[];
+  isLoading: boolean;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[min(90vh,100dvh)] w-[calc(100%-2rem)] flex-col gap-4 sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Pending Participants</DialogTitle>
+          <DialogDescription>
+            Participants who still have pending payment status.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {isLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={`pending-skeleton-${index}`}
+                  className="h-14 animate-pulse rounded-md bg-muted"
+                />
+              ))}
+            </div>
+          ) : participants.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No pending participants.
+            </p>
+          ) : (
+            <ul className="space-y-1.5">
+              {participants.map((participant) => {
+                const name =
+                  toTitleCase(participant.name) || "Unnamed participant";
+                const phone = participant.phone?.trim() || null;
+
+                return (
+                  <li
+                    key={participant.id}
+                    className="flex flex-col gap-0.5 rounded-md border border-border bg-muted/30 px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <p className="text-sm font-medium">{name}</p>
+                    {phone ? (
+                      <button
+                        type="button"
+                        onClick={() => copyPhone(phone)}
+                        className="group inline-flex max-w-full items-center gap-1.5 text-left text-sm text-foreground transition-colors hover:text-brand-royal"
+                        title="Copy phone"
+                      >
+                        <Phone
+                          className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+                          aria-hidden
+                        />
+                        <span className="tabular-nums">{phone}</span>
+                        <Copy className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-70 transition-opacity group-hover:opacity-100" />
+                        <span className="sr-only">Copy phone number</span>
+                      </button>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        No phone number
+                      </p>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function ProgramParticipantOverview({
   programId,
 }: ProgramParticipantOverviewProps) {
   const [isOpen, setIsOpen] = useState(true);
+  const [isPendingDialogOpen, setIsPendingDialogOpen] = useState(false);
   const { data: program, isLoading: isProgramLoading } = useProgram(programId);
   const {
     data: counts,
     error,
     isLoading: isCountsLoading,
   } = useProgramParticipantCounts(programId);
+  const {
+    data: participants = [],
+    isLoading: isParticipantsLoading,
+  } = useParticipants(programId);
+
+  const pendingParticipants = participants
+    .filter((participant) => participant.payment_status === "pending")
+    .slice()
+    .sort((a, b) =>
+      (a.name || "").localeCompare(b.name || "", undefined, {
+        sensitivity: "base",
+      }),
+    );
 
   const isLoading = isProgramLoading || isCountsLoading;
   const isBootcamp = isBootcampProgram(program?.type);
@@ -95,6 +218,16 @@ export function ProgramParticipantOverview({
       title: "Total Pending",
       value: counts?.pending ?? 0,
       valueClassName: "text-amber-700",
+      titleAccessory: (
+        <button
+          type="button"
+          aria-label="Show pending participants"
+          onClick={() => setIsPendingDialogOpen(true)}
+          className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Info className="h-3.5 w-3.5" />
+        </button>
+      ),
     },
   ];
 
@@ -181,6 +314,15 @@ export function ProgramParticipantOverview({
           </CardContent>
         )}
       </Card>
+
+      {!showWorkshopLayout && (
+        <PendingParticipantsDialog
+          open={isPendingDialogOpen}
+          onOpenChange={setIsPendingDialogOpen}
+          participants={pendingParticipants}
+          isLoading={isParticipantsLoading}
+        />
+      )}
     </div>
   );
 }

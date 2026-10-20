@@ -28,7 +28,8 @@ export const paymentSchema = z
       message: "Payment type is required",
     }),
     tenor: z.number().min(1).max(3).optional(),
-    paid_tenor: z.number().min(1).max(3).optional(),
+    paid_tenor: z.number().min(0).max(3).optional(),
+    tenor_paid_ats: z.array(z.string()).optional(),
     status: z.enum(PAYMENT_STATUSES, {
       message: "Status is required",
     }),
@@ -52,7 +53,7 @@ export const paymentSchema = z
   .refine(
     (data) => {
       if (data.payment_type === "tenor") {
-        return data.paid_tenor !== undefined && data.paid_tenor >= 1;
+        return data.paid_tenor !== undefined && data.paid_tenor >= 0;
       }
       return true;
     },
@@ -75,6 +76,18 @@ export const paymentSchema = z
     {
       message: "Paid tenor cannot exceed the selected tenor",
       path: ["paid_tenor"],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.payment_type !== "tenor" || data.tenor === undefined) {
+        return true;
+      }
+      return (data.tenor_paid_ats?.length ?? 0) === data.tenor;
+    },
+    {
+      message: "Tenor payment dates must match the selected tenor",
+      path: ["tenor_paid_ats"],
     },
   )
   .refine(

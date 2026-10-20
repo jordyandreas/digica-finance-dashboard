@@ -23,6 +23,11 @@ import type { PaymentFormState } from "../_components/payment-form";
 import { formatDateTimeLocalString } from "@/lib/date-utils";
 import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { paymentsQueryKey, paymentsSummaryQueryKey, usePayments } from "./use-payments";
+import {
+  countPaidTenorFromDates,
+  getLatestTenorPaidAt,
+  normalizeTenorPaidAtsForStorage,
+} from "@/utils/tenor-paid-ats";
 
 const defaultFormState = (
   programId: string,
@@ -33,6 +38,7 @@ const defaultFormState = (
   payment_type: "full",
   tenor: "",
   paid_tenor: "",
+  tenor_paid_ats: [],
   status: "paid",
   paid_at: formatDateTimeLocalString(new Date()),
   payment_method: "bank_transfer",
@@ -66,7 +72,6 @@ export function useAddPayment({
   const paymentType = form.watch("payment_type");
   const status = form.watch("status");
   const tenor = form.watch("tenor");
-  const paidTenor = form.watch("paid_tenor");
   const { data: participants = [], isLoading: isParticipantsLoading } =
     useParticipants(resolvedProgramId);
   const { data: payments } = usePayments(resolvedProgramId);
@@ -202,20 +207,28 @@ export function useAddPayment({
   };
 
   const handleSubmit = form.handleSubmit(async (values: PaymentFormState) => {
+    const isTenor = values.payment_type === "tenor";
+    const tenorValue =
+      isTenor && values.tenor ? parseInt(values.tenor, 10) : undefined;
+    const tenorPaidAts = isTenor ? (values.tenor_paid_ats ?? []) : [];
+    const paidTenorValue = isTenor
+      ? countPaidTenorFromDates(tenorPaidAts)
+      : undefined;
+    const latestTenorPaidAt = isTenor
+      ? getLatestTenorPaidAt(tenorPaidAts)
+      : undefined;
+
     const validation = paymentSchema.safeParse({
       participant_id: values.participant_id,
       amount: values.amount ?? null,
       payment_type: values.payment_type as PaymentType,
-      tenor:
-        values.payment_type === "tenor" && values.tenor
-          ? parseInt(values.tenor, 10)
-          : undefined,
-      paid_tenor:
-        values.payment_type === "tenor" && values.paid_tenor
-          ? parseInt(values.paid_tenor, 10)
-          : undefined,
+      tenor: tenorValue,
+      paid_tenor: paidTenorValue,
+      tenor_paid_ats: isTenor ? tenorPaidAts : undefined,
       status: values.status,
-      paid_at: values.paid_at || undefined,
+      paid_at: isTenor
+        ? latestTenorPaidAt
+        : values.paid_at || undefined,
       payment_method: values.payment_method || undefined,
       reference_name:
         values.reference_name && values.reference_name !== "none"
@@ -249,16 +262,15 @@ export function useAddPayment({
         participant_id: values.participant_id,
         program_id: values.program_id || resolvedProgramId,
         payment_type: values.payment_type as PaymentType,
-        tenor:
-          values.payment_type === "tenor" && values.tenor
-            ? parseInt(values.tenor, 10)
-            : undefined,
-        paid_tenor:
-          values.payment_type === "tenor" && values.paid_tenor
-            ? parseInt(values.paid_tenor, 10)
-            : undefined,
+        tenor: tenorValue,
+        paid_tenor: paidTenorValue,
+        tenor_paid_ats: isTenor
+          ? normalizeTenorPaidAtsForStorage(tenorPaidAts)
+          : null,
         status: values.status || undefined,
-        paid_at: values.paid_at || undefined,
+        paid_at: isTenor
+          ? latestTenorPaidAt ?? null
+          : values.paid_at || undefined,
         payment_method: values.payment_method || undefined,
         reference_name:
           values.reference_name && values.reference_name !== "none"
@@ -318,7 +330,7 @@ export function useAddPayment({
     amountInvalid ||
     !paymentType ||
     !status?.trim() ||
-    (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));
+    (paymentType === "tenor" && !tenor?.trim());
 
   return {
     isOpen: addPaymentModal.isOpen,
@@ -344,4 +356,3 @@ export function useAddPayment({
     },
   };
 }
-

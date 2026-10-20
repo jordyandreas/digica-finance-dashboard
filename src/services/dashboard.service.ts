@@ -745,6 +745,7 @@ export async function getDashboardOutstandingTenor(year?: number): Promise<{
       payment_type: row.payment_type,
       tenor: row.tenor,
       paid_tenor: row.paid_tenor,
+      tenor_paid_ats: null,
       status: null,
       reference_name: null,
       referral_name: null,

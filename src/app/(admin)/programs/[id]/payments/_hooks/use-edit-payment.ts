@@ -16,25 +16,46 @@ import {
 import { dashboardProgramSummaryQueryKey } from "@/app/(admin)/dashboard/_hooks/use-dashboard-summary";
 import { programParticipantCountsQueryKey } from "../../_hooks/use-program-participant-counts";
 import { formatDateTimeLocalString } from "@/lib/date-utils";
+import {
+  buildTenorPaidAtsFromPayment,
+  countPaidTenorFromDates,
+  getLatestTenorPaidAt,
+  normalizeTenorPaidAtsForStorage,
+} from "@/utils/tenor-paid-ats";
 
 const buildFormState = (
   payment: Payment | null | undefined,
   programId: string,
-): PaymentFormState => ({
-  participant_id: payment?.participant_id || "",
-  amount: payment?.amount ?? undefined,
-  payment_type: (payment?.payment_type as PaymentType) || "",
-  tenor: payment?.tenor?.toString() || "",
-  paid_tenor: payment?.paid_tenor?.toString() || "",
-  status: payment?.status || "paid",
-  paid_at: payment?.paid_at
-    ? formatDateTimeLocalString(new Date(payment.paid_at))
-    : "",
-  payment_method: payment?.payment_method || "",
-  reference_name: payment?.reference_name || "none",
-  notes: payment?.notes || "",
-  program_id: payment?.program_id || programId,
-});
+): PaymentFormState => {
+  const isTenor = payment?.payment_type === "tenor";
+  const tenorPaidAts = isTenor
+    ? buildTenorPaidAtsFromPayment(
+        payment?.tenor,
+        payment?.tenor_paid_ats,
+        payment?.paid_tenor,
+        payment?.paid_at,
+      )
+    : [];
+
+  return {
+    participant_id: payment?.participant_id || "",
+    amount: payment?.amount ?? undefined,
+    payment_type: (payment?.payment_type as PaymentType) || "",
+    tenor: payment?.tenor?.toString() || "",
+    paid_tenor: isTenor
+      ? String(countPaidTenorFromDates(tenorPaidAts))
+      : payment?.paid_tenor?.toString() || "",
+    tenor_paid_ats: tenorPaidAts,
+    status: payment?.status || (isTenor ? "on_progress" : "paid"),
+    paid_at: payment?.paid_at
+      ? formatDateTimeLocalString(new Date(payment.paid_at))
+      : "",
+    payment_method: payment?.payment_method || "",
+    reference_name: payment?.reference_name || "none",
+    notes: payment?.notes || "",
+    program_id: payment?.program_id || programId,
+  };
+};
 
 export function useEditPayment({
   payment,
@@ -57,7 +78,6 @@ export function useEditPayment({
   const paymentType = form.watch("payment_type");
   const status = form.watch("status");
   const tenor = form.watch("tenor");
-  const paidTenor = form.watch("paid_tenor");
 
   React.useEffect(() => {
     if (isOpen) {
@@ -67,20 +87,28 @@ export function useEditPayment({
   }, [form, payment, isOpen, resolvedProgramId]);
 
   const handleSubmit = form.handleSubmit(async (values: PaymentFormState) => {
+    const isTenor = values.payment_type === "tenor";
+    const tenorValue =
+      isTenor && values.tenor ? parseInt(values.tenor, 10) : undefined;
+    const tenorPaidAts = isTenor ? (values.tenor_paid_ats ?? []) : [];
+    const paidTenorValue = isTenor
+      ? countPaidTenorFromDates(tenorPaidAts)
+      : undefined;
+    const latestTenorPaidAt = isTenor
+      ? getLatestTenorPaidAt(tenorPaidAts)
+      : undefined;
+
     const validation = paymentSchema.safeParse({
       participant_id: values.participant_id,
       amount: values.amount ?? null,
       payment_type: values.payment_type as PaymentType,
-      tenor:
-        values.payment_type === "tenor" && values.tenor
-          ? parseInt(values.tenor, 10)
-          : undefined,
-      paid_tenor:
-        values.payment_type === "tenor" && values.paid_tenor
-          ? parseInt(values.paid_tenor, 10)
-          : undefined,
+      tenor: tenorValue,
+      paid_tenor: paidTenorValue,
+      tenor_paid_ats: isTenor ? tenorPaidAts : undefined,
       status: values.status,
-      paid_at: values.paid_at || undefined,
+      paid_at: isTenor
+        ? latestTenorPaidAt
+        : values.paid_at || undefined,
       payment_method: values.payment_method || undefined,
       reference_name:
         values.reference_name && values.reference_name !== "none"
@@ -119,18 +147,15 @@ export function useEditPayment({
         participant_id: values.participant_id || undefined,
         program_id: values.program_id || resolvedProgramId,
         payment_type: values.payment_type as PaymentType | undefined,
-        tenor:
-          values.payment_type === "tenor" && values.tenor
-            ? parseInt(values.tenor, 10)
-            : undefined,
-        paid_tenor:
-          values.payment_type === "tenor"
-            ? values.paid_tenor
-              ? parseInt(values.paid_tenor, 10)
-              : null
-            : null,
+        tenor: isTenor ? tenorValue : null,
+        paid_tenor: isTenor ? (paidTenorValue ?? 0) : null,
+        tenor_paid_ats: isTenor
+          ? normalizeTenorPaidAtsForStorage(tenorPaidAts)
+          : null,
         status: values.status || undefined,
-        paid_at: values.paid_at || undefined,
+        paid_at: isTenor
+          ? latestTenorPaidAt ?? null
+          : values.paid_at || undefined,
         payment_method: values.payment_method || undefined,
         reference_name:
           values.reference_name && values.reference_name !== "none"
@@ -200,7 +225,7 @@ export function useEditPayment({
     amountInvalid ||
     !paymentType ||
     !status?.trim() ||
-    (paymentType === "tenor" && (!tenor?.trim() || !paidTenor?.trim()));
+    (paymentType === "tenor" && !tenor?.trim());
 
   return {
     isOpen,

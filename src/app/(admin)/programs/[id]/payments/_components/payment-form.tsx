@@ -8,11 +8,17 @@ import {
   TextareaController,
 } from "@/components/controllers";
 import { Button } from "@/components/atoms/button";
+import { Typography } from "@/components/atoms/typography";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { PaymentType } from "@/schemas/payment-schema";
 import type { Participant } from "@/services/participants.service";
 import type { ProgramType } from "@/services/programs.service";
 import { formatNumber } from "@/utils/number";
+import {
+  countPaidTenorFromDates,
+  createEmptyTenorPaidAts,
+  resizeTenorPaidAts,
+} from "@/utils/tenor-paid-ats";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { type UseFormReturn } from "react-hook-form";
 import { useProgram } from "../../_hooks/useProgram";
@@ -147,6 +153,7 @@ export type PaymentFormState = {
   payment_type: PaymentType | "";
   tenor: string;
   paid_tenor: string;
+  tenor_paid_ats: string[];
   status: string;
   paid_at: string;
   payment_method: string;
@@ -175,20 +182,38 @@ export function PaymentFormFields({
   const paymentType = form.watch("payment_type");
   const status = form.watch("status");
   const selectedTenor = form.watch("tenor");
+  const tenorPaidAts = form.watch("tenor_paid_ats");
   const selectedParticipantId = form.watch("participant_id");
   const programId = form.watch("program_id");
   const { data: program } = useProgram(programId);
   const presetAmounts = getPresetAmountsForProgramType(program?.type);
   const isAmountRequired = status === "paid";
-
-  const paidTenorOptions = selectedTenor
-    ? Array.from({ length: Number.parseInt(selectedTenor, 10) }, (_, index) => {
-        const value = String(index + 1);
-        return { label: value, value };
-      })
-    : [];
+  const selectedTenorCount = selectedTenor
+    ? Number.parseInt(selectedTenor, 10)
+    : 0;
+  const paidTenorCount = countPaidTenorFromDates(tenorPaidAts ?? []);
   const participantsSource = participants ?? [];
   const participantCandidates = filteredParticipants ?? participantsSource;
+
+  const syncPaidTenorFromDates = (dates: string[]) => {
+    const nextPaidTenor = String(countPaidTenorFromDates(dates));
+    if (form.getValues("paid_tenor") === nextPaidTenor) {
+      return;
+    }
+    form.setValue("paid_tenor", nextPaidTenor, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  };
+
+  useEffect(() => {
+    if (paymentType !== "tenor") {
+      return;
+    }
+    syncPaidTenorFromDates(tenorPaidAts ?? []);
+    // Keep paid_tenor derived from date slots only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- form identity is stable; sync on dates/type
+  }, [paymentType, tenorPaidAts]);
 
   const participantOptions: Array<{
     label: string;
@@ -308,48 +333,95 @@ export function PaymentFormFields({
           selectTrigger: { className: "mt-2", id: "payment_type" },
           select: {
             onValueChange: (value) => {
-              if (value !== "tenor") {
+              if (value === "tenor") {
+                form.setValue("status", "on_progress", { shouldDirty: true });
+                form.setValue("paid_at", "", { shouldDirty: true });
                 form.setValue("tenor", "", { shouldDirty: true });
-                form.setValue("paid_tenor", "", { shouldDirty: true });
+                form.setValue("paid_tenor", "0", { shouldDirty: true });
+                form.setValue("tenor_paid_ats", [], { shouldDirty: true });
+                return;
               }
+
+              form.setValue("tenor", "", { shouldDirty: true });
+              form.setValue("paid_tenor", "", { shouldDirty: true });
+              form.setValue("tenor_paid_ats", [], { shouldDirty: true });
             },
           },
         }}
       />
 
       {paymentType === "tenor" && (
-        <div className="grid grid-cols-2 gap-4">
-          <SelectController
-            form={form}
-            name="tenor"
-            label={<>Tenor</>}
-            placeholder="Select tenor"
-            options={[
-              { label: "2", value: "2" },
-              { label: "3", value: "3" },
-            ]}
-            componentProps={{
-              selectTrigger: { className: "mt-2", id: "tenor" },
-              select: {
-                onValueChange: () => {
-                  form.setValue("paid_tenor", "1", { shouldDirty: true });
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <SelectController
+              form={form}
+              name="tenor"
+              label={<>Tenor</>}
+              placeholder="Select tenor"
+              options={[
+                { label: "2", value: "2" },
+                { label: "3", value: "3" },
+              ]}
+              componentProps={{
+                selectTrigger: { className: "mt-2", id: "tenor" },
+                select: {
+                  onValueChange: (value) => {
+                    const nextTenor = Number.parseInt(value, 10);
+                    if (!Number.isFinite(nextTenor) || nextTenor < 1) {
+                      return;
+                    }
+
+                    const nextDates = selectedTenor
+                      ? resizeTenorPaidAts(tenorPaidAts ?? [], nextTenor)
+                      : createEmptyTenorPaidAts(nextTenor);
+
+                    form.setValue("tenor_paid_ats", nextDates, {
+                      shouldDirty: true,
+                    });
+                    syncPaidTenorFromDates(nextDates);
+                  },
                 },
-              },
-            }}
-          />
-          <SelectController
-            form={form}
-            name="paid_tenor"
-            label={<>Paid Tenor</>}
-            placeholder="Select paid tenor"
-            options={paidTenorOptions}
-            componentProps={{
-              selectTrigger: { className: "mt-2", id: "paid_tenor" },
-              select: {
-                disabled: paidTenorOptions.length === 0,
-              },
-            }}
-          />
+              }}
+            />
+            <div className="space-y-2">
+              <Typography
+                variant="label"
+                className="text-sm font-medium leading-none"
+              >
+                Paid Tenor
+              </Typography>
+              <div className="mt-2 flex h-10 items-center rounded-md border border-input bg-muted/40 px-3">
+                <Typography variant="body3" className="font-medium">
+                  {selectedTenorCount > 0
+                    ? `${paidTenorCount}/${selectedTenorCount}`
+                    : "-"}
+                </Typography>
+              </div>
+            </div>
+          </div>
+
+          {selectedTenorCount > 0 && (
+            <div className="space-y-3">
+              {Array.from({ length: selectedTenorCount }, (_, index) => (
+                <div
+                  key={`tenor-paid-at-${index}`}
+                  className="grid grid-cols-[88px_1fr] items-start gap-3"
+                >
+                  <Typography
+                    variant="body3"
+                    className="mt-2 flex h-10 items-center font-medium text-muted-foreground"
+                  >
+                    Tenor-{index + 1}
+                  </Typography>
+                  <DateTimePickerController
+                    form={form}
+                    name={`tenor_paid_ats.${index}`}
+                    placeholder="Pick payment date and time"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -370,12 +442,14 @@ export function PaymentFormFields({
         }}
       />
 
-      <DateTimePickerController
-        form={form}
-        name="paid_at"
-        label="Paid At"
-        placeholder="Pick payment date and time"
-      />
+      {paymentType !== "tenor" && (
+        <DateTimePickerController
+          form={form}
+          name="paid_at"
+          label="Paid At"
+          placeholder="Pick payment date and time"
+        />
+      )}
 
       {/* <TextInputController
         form={form}
