@@ -32,6 +32,7 @@ interface AttendanceContentProps {
   attendance: AttendanceGrid;
   isLoading: boolean;
   isFetching: boolean;
+  requirePaidParticipants?: boolean;
 }
 
 export function AttendanceContent({
@@ -42,6 +43,7 @@ export function AttendanceContent({
   attendance,
   isLoading,
   isFetching,
+  requirePaidParticipants = true,
 }: AttendanceContentProps) {
   const programModal = useModal<ProgramModalProps>("programModal");
   const {
@@ -217,6 +219,7 @@ export function AttendanceContent({
               attendance={attendance}
               search={debouncedSearch}
               allowRecording={allowRecording}
+              requirePaidParticipants={requirePaidParticipants}
             />
           )}
         </div>

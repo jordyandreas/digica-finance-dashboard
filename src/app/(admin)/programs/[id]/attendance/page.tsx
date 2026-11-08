@@ -18,9 +18,15 @@ export default function AttendancePage() {
   } = useProgramSessions(programId, program?.session_count ?? 0);
   const { data: participants = [], isPending: isParticipantsPending } =
     useParticipants(programId);
-  const paidParticipants = participants.filter(
-    (participant) => participant.payment_status === "paid",
-  );
+  // Workshops are free — include all registered participants.
+  // Bootcamps / mini-bootcamps still track attendance for paid participants only.
+  const requirePaidParticipants =
+    program != null && program.type !== "workshop";
+  const attendanceParticipants = requirePaidParticipants
+    ? participants.filter(
+        (participant) => participant.payment_status === "paid",
+      )
+    : participants;
   const {
     data: attendance = {},
     isPending: isAttendancePending,
@@ -39,7 +45,8 @@ export default function AttendancePage() {
       programId={programId}
       program={program}
       sessions={sessions}
-      participants={paidParticipants}
+      participants={attendanceParticipants}
+      requirePaidParticipants={requirePaidParticipants}
       attendance={attendance}
       isLoading={isLoading}
       isFetching={isFetching}

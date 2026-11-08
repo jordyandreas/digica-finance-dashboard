@@ -24,8 +24,8 @@ VALUES
   'published',
   '2026-10-15T17:00:00.000Z'::timestamptz,
   'October 16, 2026',
-  4,
-  '4 min read'
+  2,
+  '2 min read'
 ),
 (
   'why-data-analytics-still-matters',
@@ -36,8 +36,8 @@ VALUES
   'published',
   '2026-10-14T17:00:00.000Z'::timestamptz,
   'October 15, 2026',
-  4,
-  '4 min read'
+  2,
+  '2 min read'
 ),
 (
   'what-data-science-is-actually-for',
@@ -48,8 +48,8 @@ VALUES
   'published',
   '2026-10-13T17:00:00.000Z'::timestamptz,
   'October 14, 2026',
-  4,
-  '4 min read'
+  2,
+  '2 min read'
 ),
 (
   'building-a-career-in-data-where-to-start',
@@ -60,7 +60,7 @@ VALUES
   'published',
   '2026-10-12T17:00:00.000Z'::timestamptz,
   'October 13, 2026',
-  4,
-  '4 min read'
+  2,
+  '2 min read'
 )
 ON CONFLICT (slug) DO NOTHING;

@@ -22,6 +22,7 @@ interface AttendanceGridProps {
   attendance: AttendanceGrid;
   search?: string;
   allowRecording?: boolean;
+  requirePaidParticipants?: boolean;
 }
 
 function countSessionsByStatus(
@@ -59,6 +60,7 @@ export function AttendanceGridTable({
   attendance,
   search = "",
   allowRecording = false,
+  requirePaidParticipants = true,
 }: AttendanceGridProps) {
   const visibleParticipants = React.useMemo(
     () =>
@@ -138,8 +140,9 @@ export function AttendanceGridTable({
     return (
       <div className="rounded-lg border border-dashed p-8 text-center">
         <Typography variant="body2" className="text-muted-foreground">
-          No paid participants yet. Attendance is only tracked for participants
-          with payment status Paid.
+          {requirePaidParticipants
+            ? "No paid participants yet. Attendance is only tracked for participants with payment status Paid."
+            : "No participants yet."}
         </Typography>
       </div>
     );
