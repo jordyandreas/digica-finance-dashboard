@@ -29,6 +29,7 @@ export interface LmsArticle {
   display_date: string | null;
   read_time_minutes: number | null;
   read_time_display: string | null;
+  view_count: number;
   created_at: string;
   updated_at: string;
 }

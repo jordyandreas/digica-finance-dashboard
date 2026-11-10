@@ -53,6 +53,16 @@ export function articlesColumns({
       ),
     },
     {
+      accessorKey: "view_count",
+      header: "Views",
+      enableSorting: true,
+      cell: (article) => (
+        <span className="tabular-nums text-muted-foreground">
+          {(article.view_count ?? 0).toLocaleString("en-US")}
+        </span>
+      ),
+    },
+    {
       accessorKey: "published_at",
       header: "Published",
       enableSorting: true,
