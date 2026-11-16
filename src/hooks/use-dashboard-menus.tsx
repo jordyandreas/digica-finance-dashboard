@@ -1,7 +1,13 @@
 "use client";
 
 import { ReactElement } from "react";
-import { BookOpen, FolderKanban, LayoutDashboard } from "lucide-react";
+import {
+  BookOpen,
+  FolderKanban,
+  GraduationCap,
+  KeyRound,
+  LayoutDashboard,
+} from "lucide-react";
 import { useActivePrograms } from "@/app/(admin)/programs/_hooks/use-programs";
 import type { ProgramType } from "@/services/programs.service";
 
@@ -45,6 +51,18 @@ export function useDashboardMenus() {
       label: "Articles",
       pathname: "/articles",
       icon: <BookOpen className="h-5 w-5" />,
+      items: [],
+    },
+    {
+      label: "Courses",
+      pathname: "/courses",
+      icon: <GraduationCap className="h-5 w-5" />,
+      items: [],
+    },
+    {
+      label: "Entitlements",
+      pathname: "/entitlements",
+      icon: <KeyRound className="h-5 w-5" />,
       items: [],
     },
   ];

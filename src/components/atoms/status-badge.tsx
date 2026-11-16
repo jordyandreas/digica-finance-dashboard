@@ -35,6 +35,10 @@ const STATUS_STYLES: Record<string, string> = {
   dropout: pill("bg-rose-100", "text-rose-700"),
   draft: pill("bg-slate-100", "text-slate-600"),
   published: pill("bg-emerald-100", "text-emerald-700"),
+
+  // LMS entitlements
+  revoked: pill("bg-rose-100", "text-rose-700"),
+  expired: pill("bg-amber-100", "text-amber-700"),
 };
 
 const PAYMENT_STATUS_SET = new Set<string>(PAYMENT_STATUSES);

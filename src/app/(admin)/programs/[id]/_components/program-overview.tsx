@@ -66,13 +66,15 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
       })}`
     : `/registration/${programId}`;
 
-  const workshopRegistrationUrl = registrationUrl
-    ? appendRegistrationSource(registrationUrl, "workshop_promo")
+  const isWorkshop = program?.type === "workshop";
+  const showPromoRegistrationLink = !isWorkshop;
+  const workshopRegistrationUrl =
+    showPromoRegistrationLink && registrationUrl
+      ? appendRegistrationSource(registrationUrl, "workshop_promo")
+      : "";
+  const workshopRegistrationFallback = showPromoRegistrationLink
+    ? appendRegistrationSource(registrationFallback, "workshop_promo")
     : "";
-  const workshopRegistrationFallback = appendRegistrationSource(
-    registrationFallback,
-    "workshop_promo",
-  );
 
   const waGroupUrl = program?.wa_group_link?.trim() ?? "";
   const scheduleDaysLabel = formatScheduleDays(program?.schedule_days);
@@ -269,19 +271,26 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
             </dl>
           </div>
 
-          <div className="mt-6 grid gap-4 border-t pt-6 sm:grid-cols-3">
+          <div
+            className={cn(
+              "mt-6 grid gap-4 border-t pt-6",
+              showPromoRegistrationLink ? "sm:grid-cols-3" : "sm:grid-cols-2",
+            )}
+          >
             <ParticipantLinkRow
               label="Default Registration Link"
               url={registrationUrl}
               fallback={registrationFallback}
               successMessage="Registration link copied to clipboard"
             />
-            <ParticipantLinkRow
-              label="Registration Promo Link"
-              url={workshopRegistrationUrl}
-              fallback={workshopRegistrationFallback}
-              successMessage="Promo registration link copied to clipboard"
-            />
+            {showPromoRegistrationLink ? (
+              <ParticipantLinkRow
+                label="Registration Promo Link"
+                url={workshopRegistrationUrl}
+                fallback={workshopRegistrationFallback}
+                successMessage="Promo registration link copied to clipboard"
+              />
+            ) : null}
             <ParticipantLinkRow
               label="WhatsApp Link"
               url={waGroupUrl}
