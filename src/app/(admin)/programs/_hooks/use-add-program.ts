@@ -328,10 +328,13 @@ export function useAddProgram({
         let registrationBannerUrl = nullableString(
           values.registration_banner_url,
         );
-        let promoBannerUrl =
-          values.type === "workshop"
-            ? nullableString(values.promo_banner_url)
-            : null;
+        const supportsPromoBanner =
+          values.type === "workshop" ||
+          values.type === "bootcamp" ||
+          values.type === "mini_bootcamp";
+        let promoBannerUrl = supportsPromoBanner
+          ? nullableString(values.promo_banner_url)
+          : null;
 
         if (registrationBannerFile) {
           const uploadResult = await uploadProgramBanner(
@@ -347,7 +350,7 @@ export function useAddProgram({
           await removeProgramBannerObjects(savedProgram.id, "registration");
         }
 
-        if (values.type === "workshop" && promoBannerFile) {
+        if (supportsPromoBanner && promoBannerFile) {
           const uploadResult = await uploadProgramBanner(
             savedProgram.id,
             "promo",
@@ -357,7 +360,7 @@ export function useAddProgram({
             throw uploadResult.error ?? new Error("Failed to upload promo banner");
           }
           promoBannerUrl = uploadResult.url;
-        } else if (values.type !== "workshop" || !promoBannerUrl) {
+        } else if (!supportsPromoBanner || !promoBannerUrl) {
           await removeProgramBannerObjects(savedProgram.id, "promo");
           promoBannerUrl = null;
         }

@@ -120,14 +120,18 @@ export function buildProgramSetupChecklist({
     },
   ];
 
-  if (isWorkshop) {
+  if (isWorkshop || isBootcamp) {
     items.push({
       id: "promo_banner",
       label: "Promo banner",
       ok: hasPromoBanner,
       detail: hasPromoBanner
-        ? "Configured for workshop check-in"
-        : "Upload the banner shown on workshop secure-seat promo",
+        ? isWorkshop
+          ? "Configured for workshop check-in"
+          : "Configured for registration promo slider"
+        : isWorkshop
+          ? "Upload the banner shown on workshop secure-seat promo"
+          : "Upload the second slide shown on workshop-promo registration",
       action: hasPromoBanner ? null : "edit_program",
     });
   }

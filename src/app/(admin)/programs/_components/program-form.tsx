@@ -36,6 +36,9 @@ export function ProgramForm({
   const programType = form.watch("type");
   const scheduleDays = form.watch("schedule_days") ?? [];
   const isWorkshop = programType === "workshop";
+  const isBootcamp =
+    programType === "bootcamp" || programType === "mini_bootcamp";
+  const showPromoBanner = isWorkshop || isBootcamp;
 
   return (
     <div className="space-y-4">
@@ -98,10 +101,14 @@ export function ProgramForm({
         onFileSelected={onRegistrationBannerFileChange}
       />
 
-      {isWorkshop ? (
+      {showPromoBanner ? (
         <ProgramBannerUploadField
           label="Promo banner"
-          description="Shown on workshop check-in for the secure-seat promo."
+          description={
+            isWorkshop
+              ? "Shown on workshop check-in for the secure-seat promo."
+              : "Shown as the second slide on the registration page when participants come from workshop promo."
+          }
           value={form.watch("promo_banner_url")}
           onChange={(url) =>
             form.setValue("promo_banner_url", url, { shouldDirty: true })
