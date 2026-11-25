@@ -23,6 +23,18 @@ function buildSessionDateFormState(
   }, {});
 }
 
+/** Nearest earlier session date, falling back to the program start date. */
+export function getSessionDefaultDate(
+  dates: SessionDateFormState,
+  sessionNumber: number,
+  programStartDate: string | null | undefined,
+): string | undefined {
+  for (let n = sessionNumber - 1; n >= 1; n--) {
+    if (dates[n]?.trim()) return dates[n];
+  }
+  return programStartDate ?? undefined;
+}
+
 export function useSessionDates(programId: string, sessions: ProgramSession[]) {
   const queryClient = useQueryClient();
   const [dates, setDates] = React.useState<SessionDateFormState>({});

@@ -22,6 +22,8 @@ export interface DatePickerProps {
   className?: string;
   fromDate?: Date;
   toDate?: Date;
+  /** Month shown when the calendar opens with no value selected. */
+  defaultMonth?: Date;
   /** Show clear control when a date is set. Default false. */
   clearable?: boolean;
   clearAriaLabel?: string;
@@ -36,6 +38,7 @@ export function DatePicker({
   className,
   fromDate,
   toDate,
+  defaultMonth,
   clearable = false,
   clearAriaLabel = "Clear date",
 }: DatePickerProps) {
@@ -108,7 +111,7 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={selected}
-          defaultMonth={selected}
+          defaultMonth={selected ?? defaultMonth}
           captionLayout="dropdown"
           hideNavigation
           autoFocus={false}

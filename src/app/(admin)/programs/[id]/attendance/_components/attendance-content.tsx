@@ -21,7 +21,11 @@ import type { AttendanceGrid } from "@/services/attendance.service";
 import type { Program } from "@/services/programs.service";
 import { AttendanceGridTable } from "./attendance-grid";
 import { CheckInLinkCard } from "./check-in-link-card";
-import { useSessionDates } from "../_hooks/use-session-dates";
+import { parseDateString } from "@/lib/date-utils";
+import {
+  getSessionDefaultDate,
+  useSessionDates,
+} from "../_hooks/use-session-dates";
 import { useAttendanceActions } from "../_hooks/use-attendance-actions";
 
 interface AttendanceContentProps {
@@ -162,6 +166,13 @@ export function AttendanceContent({
                       onChange={(value) =>
                         handleDateChange(session.session_number, value)
                       }
+                      defaultMonth={parseDateString(
+                        getSessionDefaultDate(
+                          dates,
+                          session.session_number,
+                          program?.start_date,
+                        ),
+                      )}
                       placeholder="Pick session date"
                       clearable
                     />
