@@ -15,6 +15,9 @@ import {
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 
+const DROPDOWN_YEARS_BEFORE = 100;
+const DROPDOWN_YEARS_AFTER = 10;
+
 function Calendar({
   className,
   classNames,
@@ -24,11 +27,18 @@ function Calendar({
   hideNavigation: hideNavigationProp,
   formatters,
   components,
+  startMonth,
+  endMonth,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
   buttonVariant?: React.ComponentProps<typeof Button>["variant"];
 }) {
   const defaultClassNames = getDefaultClassNames();
+  const currentYear = new Date().getFullYear();
+  const resolvedStartMonth =
+    startMonth ?? new Date(currentYear - DROPDOWN_YEARS_BEFORE, 0);
+  const resolvedEndMonth =
+    endMonth ?? new Date(currentYear + DROPDOWN_YEARS_AFTER, 11);
   const usesDropdownCaption =
     captionLayout === "dropdown" ||
     captionLayout === "dropdown-months" ||
@@ -46,6 +56,8 @@ function Calendar({
         className,
       )}
       captionLayout={captionLayout}
+      startMonth={resolvedStartMonth}
+      endMonth={resolvedEndMonth}
       formatters={{
         formatMonthDropdown: (date) =>
           date.toLocaleString("default", { month: "short" }),
