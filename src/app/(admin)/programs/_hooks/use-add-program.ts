@@ -296,20 +296,13 @@ export function useAddProgram({
 
       if (result.error) {
         console.error("Error saving program:", result.error);
-        const errorMessage =
-          result.error.message || JSON.stringify(result.error);
-
         if (result.error.code === "23505") {
-          form.setError("public_slug", {
-            type: "manual",
-            message: "This custom link slug is already in use",
-          });
+          const slugMessage = "This custom link slug is already in use";
+          form.setError("public_slug", { type: "manual", message: slugMessage });
+          throw new Error(slugMessage);
         }
 
-        toast.error("Error saving program", {
-          description: errorMessage,
-        });
-        throw new Error(errorMessage);
+        throw new Error(result.error.message || JSON.stringify(result.error));
       }
 
       const savedProgram = result.data;

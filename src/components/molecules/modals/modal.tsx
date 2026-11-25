@@ -48,6 +48,7 @@ export function Modal({
   const handleApply = async () => {
     if (onApply) {
       await onApply();
+      return;
     }
     onOpenChange(false);
   };
