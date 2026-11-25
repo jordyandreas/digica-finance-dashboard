@@ -22,7 +22,7 @@ import {
   PAYMENT_TYPE_FILTER_OPTIONS,
 } from "@/constants/payment-type";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { formatCurrency } from "@/utils/currency";
+import { MaskedCurrency } from "@/components/molecules/financial-visibility";
 import { usePayments, usePaymentsPaginated } from "./_hooks/use-payments";
 import { useAddPayment } from "./_hooks/use-add-payment";
 import { PaymentsTable } from "./_table";
@@ -91,7 +91,7 @@ export default function PaymentsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-brand-royal">
-              {formatCurrency(totalAmount)}
+              <MaskedCurrency value={totalAmount} />
             </div>
             <p className="text-sm text-muted-foreground">
               {revenuePaymentCount} payment

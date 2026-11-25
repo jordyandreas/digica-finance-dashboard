@@ -1,7 +1,7 @@
 import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
 import { Button } from "@/components/atoms/button";
 import { Typography } from "@/components/atoms";
-import { formatCurrency } from "@/utils/currency";
+import { MaskedCurrency } from "@/components/molecules/financial-visibility";
 import { formatDate } from "@/utils/date";
 import { emptyFallback } from "@/utils/string";
 import { Expense } from "@/services/expenses.service";
@@ -47,7 +47,7 @@ export function expensesColumns({
       enableSorting: true,
       cell: (expense) => (
         <Typography variant="body3" className="font-medium text-red-700">
-          {formatCurrency(expense.amount)}
+          <MaskedCurrency value={expense.amount} />
         </Typography>
       ),
     },

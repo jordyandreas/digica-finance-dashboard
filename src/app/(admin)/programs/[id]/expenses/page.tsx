@@ -18,7 +18,7 @@ import {
 } from "@/constants/expense-category";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import type { ExpenseCategory } from "@/services/expenses.service";
-import { formatCurrency } from "@/utils/currency";
+import { MaskedCurrency } from "@/components/molecules/financial-visibility";
 import { useExpensesPaginated, useExpensesSummary } from "./_hooks/useExpenses";
 import { useAddExpense } from "./_hooks/use-add-expense";
 import { ExpensesTable } from "./_table";
@@ -110,7 +110,7 @@ export default function ExpensesPage() {
               ) : (
                 <>
                   <div className="text-3xl font-bold text-red-700">
-                    {formatCurrency(totalAmount)}
+                    <MaskedCurrency value={totalAmount} />
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {summary?.count || 0} expense

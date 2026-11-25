@@ -205,34 +205,46 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
           <div className="mt-6 space-y-3 rounded-xl border bg-muted/20 p-4">
             <p className="text-sm font-medium text-foreground">Pricing</p>
             <dl className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <Typography
-                  variant="caption"
-                  tagName="dt"
-                  className={PROGRAM_PRICE_TONE_CLASSES.default}
-                >
-                  Early Bird
-                </Typography>
-                <Typography
-                  variant="body2"
-                  tagName="dd"
-                  className={cn(
-                    "font-medium",
-                    PROGRAM_PRICE_TONE_CLASSES.default,
-                  )}
-                >
-                  {program?.default_price != null ? (
-                    <span className="block text-xs font-normal text-muted-foreground">
-                      Default:{" "}
-                      <span className="line-through">
-                        {formatCurrency(program.default_price)}
-                      </span>
-                    </span>
-                  ) : null}
-                  {program?.price != null
-                    ? formatCurrency(program.price)
-                    : "—"}
-                </Typography>
+              <div className="space-y-2">
+                {program?.default_price != null ? (
+                  <div>
+                    <Typography
+                      variant="caption"
+                      tagName="dt"
+                      className="text-muted-foreground"
+                    >
+                      Default Price
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      tagName="dd"
+                      className="text-muted-foreground line-through"
+                    >
+                      {formatCurrency(program.default_price)}
+                    </Typography>
+                  </div>
+                ) : null}
+                <div>
+                  <Typography
+                    variant="caption"
+                    tagName="dt"
+                    className={PROGRAM_PRICE_TONE_CLASSES.default}
+                  >
+                    Early Bird
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    tagName="dd"
+                    className={cn(
+                      "font-medium",
+                      PROGRAM_PRICE_TONE_CLASSES.default,
+                    )}
+                  >
+                    {program?.price != null
+                      ? formatCurrency(program.price)
+                      : "—"}
+                  </Typography>
+                </div>
               </div>
               <div>
                 <Typography

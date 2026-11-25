@@ -1,5 +1,5 @@
 import { ColumnDef } from "@/components/molecules/data-table/data-table.types";
-import { formatCurrency } from "@/utils/currency";
+import { MaskedCurrency } from "@/components/molecules/financial-visibility";
 import { formatDate } from "@/utils/date";
 import { Payment } from "@/services/payments.service";
 import { StatusBadge } from "@/components/atoms/status-badge";
@@ -63,17 +63,15 @@ export function paymentsColumns({
       minSize: 110,
       maxSize: 160,
       className: "text-left",
-      cell: (payment) => {
-        const amount =
-          payment.amount === null || payment.amount === undefined
-            ? null
-            : formatCurrency(payment.amount);
-        return (
-          <Typography variant="body3" className="whitespace-nowrap font-medium text-brand-royal">
-            {emptyFallback(amount)}
-          </Typography>
-        );
-      },
+      cell: (payment) => (
+        <Typography variant="body3" className="whitespace-nowrap font-medium text-brand-royal">
+          {payment.amount === null || payment.amount === undefined ? (
+            emptyFallback(null)
+          ) : (
+            <MaskedCurrency value={payment.amount} />
+          )}
+        </Typography>
+      ),
     },
     {
       accessorKey: "payment_type",

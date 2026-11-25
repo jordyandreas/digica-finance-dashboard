@@ -1,6 +1,7 @@
 "use client";
 
 import { Pencil } from "lucide-react";
+import { usePathname } from "next/navigation";
 import type { ProgramModalProps } from "@/app/(admin)/programs/_modals/add-program";
 import { BackButton } from "@/components/atoms/back-button";
 import { StatusBadge } from "@/components/atoms/status-badge";
@@ -13,7 +14,12 @@ type ProgramHeaderProps = {
   programId: string;
 };
 
+const FINANCIAL_TAB_SEGMENTS = new Set(["overview", "payments", "expenses"]);
+
 export function ProgramHeader({ programId }: ProgramHeaderProps) {
+  const pathname = usePathname();
+  const activeSegment = pathname.replace(/\/$/, "").split("/")[3];
+  const showFinancialToggle = FINANCIAL_TAB_SEGMENTS.has(activeSegment ?? "");
   const { data: program, isLoading } = useProgram(programId);
   const programModal = useModal<ProgramModalProps>("programModal");
   const title = isLoading ? "Loading..." : program?.name || "Program Details";
@@ -23,7 +29,7 @@ export function ProgramHeader({ programId }: ProgramHeaderProps) {
       <div className="flex items-center justify-between gap-3">
         <BackButton href="/programs" />
         <div className="flex shrink-0 items-center gap-1">
-          <FinancialVisibilityToggle showLabel />
+          {showFinancialToggle ? <FinancialVisibilityToggle showLabel /> : null}
           <Button
             type="button"
             variant="ghost"
