@@ -15,6 +15,7 @@ import {
   formatProgramShortTimeRange,
   formatProgramType,
   formatScheduleDays,
+  hasDefaultPriceDiscount,
 } from "@/utils/programs";
 import {
   ProgramListItem,
@@ -332,19 +333,40 @@ export function programsColumns({
       enableSorting: true,
       className: "text-left",
       cell: (program) => {
+        const struckDefaultPrice = hasDefaultPriceDiscount(
+          program.price,
+          program.default_price,
+        ) ? (
+          <span className="block text-xs text-muted-foreground line-through">
+            {formatCurrency(program.default_price)}
+          </span>
+        ) : null;
+
         if (!BOOTCAMP_TYPES.has(program.type)) {
-          return program.price != null && program.price > 0
-            ? formatCurrency(program.price)
-            : "—";
+          if (program.price == null || program.price <= 0) {
+            return "—";
+          }
+
+          return (
+            <div className="flex flex-col">
+              {struckDefaultPrice}
+              <span>{formatCurrency(program.price)}</span>
+            </div>
+          );
         }
 
         return (
           <div className="flex min-w-[9rem] flex-col gap-1 py-0.5">
             <IconMetaRow
               icon={Tag}
-              label="Default"
+              label="Early Bird"
               toneClassName={PROGRAM_PRICE_TONE_CLASSES.default}
-              value={formatCurrency(program.price)}
+              value={
+                <>
+                  {struckDefaultPrice}
+                  {formatCurrency(program.price)}
+                </>
+              }
             />
             <IconMetaRow
               icon={User}

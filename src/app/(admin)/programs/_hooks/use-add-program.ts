@@ -18,7 +18,11 @@ import { programQueryKey } from "../[id]/_hooks/useProgram";
 import { programPublicContentQueryKey } from "../[id]/_hooks/use-program-public-content";
 import { programSessionsQueryKey } from "../[id]/attendance/_hooks/use-attendance";
 import { programPublicSlugSchema } from "@/schemas/program-public-slug-schema";
-import { normalizeScheduleDays } from "@/utils/programs";
+import {
+  DEFAULT_PRICE_INVALID_MESSAGE,
+  isDefaultPriceValid,
+  normalizeScheduleDays,
+} from "@/utils/programs";
 
 export type ProgramFormState = {
   name: string;
@@ -39,6 +43,7 @@ export type ProgramFormState = {
   wa_group_link: string;
   public_slug: string;
   price: number | undefined;
+  default_price: number | undefined;
   promo_individual_price: number | undefined;
   promo_bareng_teman_price: number | undefined;
   session_count: string;
@@ -70,6 +75,7 @@ const defaultFormState = (): ProgramFormState => ({
   wa_group_link: "",
   public_slug: "",
   price: undefined,
+  default_price: undefined,
   promo_individual_price: undefined,
   promo_bareng_teman_price: undefined,
   session_count: "0",
@@ -108,6 +114,7 @@ const buildFormState = (
     wa_group_link: program.wa_group_link ?? "",
     public_slug: asDuplicate ? "" : (program.public_slug ?? ""),
     price: program.price ?? undefined,
+    default_price: program.default_price ?? undefined,
     promo_individual_price: program.promo_individual_price ?? undefined,
     promo_bareng_teman_price: program.promo_bareng_teman_price ?? undefined,
     session_count: String(program.session_count ?? 0),
@@ -182,6 +189,7 @@ const buildProgramInput = (
     wa_group_link: nullableString(values.wa_group_link),
     public_slug: nullableString(values.public_slug),
     price: values.price ?? undefined,
+    default_price: parseOfferPrice(values.default_price),
     promo_individual_price: isPaidProgram
       ? parseOfferPrice(values.promo_individual_price)
       : null,
@@ -273,6 +281,11 @@ export function useAddProgram({
         "Custom link slug is invalid";
       form.setError("public_slug", { type: "manual", message });
       toast.error(message);
+      return;
+    }
+
+    if (!isDefaultPriceValid(values.price, values.default_price)) {
+      toast.error(DEFAULT_PRICE_INVALID_MESSAGE);
       return;
     }
 

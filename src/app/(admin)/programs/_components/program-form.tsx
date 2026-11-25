@@ -9,6 +9,8 @@ import { RichTextEditor } from "@/components/molecules/rich-text-editor";
 import { useNumberInput } from "@/hooks/use-number-input";
 import type { UseFormReturn } from "react-hook-form";
 import {
+  DEFAULT_PRICE_INVALID_MESSAGE,
+  isDefaultPriceValid,
   normalizeScheduleDays,
   SCHEDULE_DAY_OPTIONS,
 } from "@/utils/programs";
@@ -33,6 +35,10 @@ export function ProgramForm({
 }: ProgramFormProps) {
   const { formatNumberValue, createNumberInputHandler } = useNumberInput();
   const price = form.watch("price");
+  const defaultPrice = form.watch("default_price");
+  const defaultPriceError = isDefaultPriceValid(price, defaultPrice)
+    ? undefined
+    : DEFAULT_PRICE_INVALID_MESSAGE;
   const programType = form.watch("type");
   const scheduleDays = form.watch("schedule_days") ?? [];
   const isWorkshop = programType === "workshop";
@@ -261,10 +267,27 @@ export function ProgramForm({
       <div className="grid grid-cols-2 gap-4">
         <TextInputController
           form={form}
+          name="default_price"
+          label="Default Price"
+          placeholder="e.g. 999.000"
+          description="Harga normal. Ditampilkan dicoret di LMS jika lebih besar dari Early Bird Price. Kosongkan jika tidak ada diskon."
+          error={defaultPriceError}
+          componentProps={{
+            input: {
+              type: "text",
+              value: formatNumberValue(defaultPrice),
+              onChange: createNumberInputHandler(form, "default_price", true),
+            },
+          }}
+        />
+
+        <TextInputController
+          form={form}
           name="price"
-          label="Price"
+          label="Early Bird Price"
           required
           placeholder="Enter price"
+          description="Harga yang dibayar peserta saat ini."
           componentProps={{
             input: {
               type: "text",
@@ -274,21 +297,21 @@ export function ProgramForm({
             },
           }}
         />
-
-        <TextInputController
-          form={form}
-          name="session_count"
-          label="Sessions"
-          placeholder="e.g. 6"
-          componentProps={{
-            input: {
-              type: "number",
-              min: 0,
-              max: 52,
-            },
-          }}
-        />
       </div>
+
+      <TextInputController
+        form={form}
+        name="session_count"
+        label="Sessions"
+        placeholder="e.g. 6"
+        componentProps={{
+          input: {
+            type: "number",
+            min: 0,
+            max: 52,
+          },
+        }}
+      />
 
       {programType === "bootcamp" || programType === "mini_bootcamp" ? (
         <div className="space-y-3 rounded-xl border bg-muted/20 p-4">
@@ -299,7 +322,7 @@ export function ProgramForm({
             <p className="text-xs text-muted-foreground">
               Used when participants register via workshop check-in
               (`source=workshop_promo`). Social / standard registration uses the
-              program Price above. Leave blank to hide that promo package.
+              program Early Bird Price above. Leave blank to hide that promo package.
             </p>
           </div>
 

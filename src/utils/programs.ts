@@ -72,6 +72,28 @@ export function formatProgramType(type?: ProgramType | null): string {
   return PROGRAM_TYPE_LABELS[type] ?? type.replace(/_/g, " ");
 }
 
+export const DEFAULT_PRICE_INVALID_MESSAGE =
+  "Default Price harus lebih besar dari Early Bird Price.";
+
+/** Empty default price is valid; otherwise it must be positive and above the early bird price. */
+export function isDefaultPriceValid(
+  price: number | null | undefined,
+  defaultPrice: number | null | undefined,
+): boolean {
+  if (defaultPrice == null) {
+    return true;
+  }
+
+  return defaultPrice > 0 && (price == null || defaultPrice > price);
+}
+
+export function hasDefaultPriceDiscount(
+  price: number | null | undefined,
+  defaultPrice: number | null | undefined,
+): defaultPrice is number {
+  return defaultPrice != null && price != null && defaultPrice > price;
+}
+
 export function isBootcampProgram(type?: ProgramType | null): boolean {
   return type === "bootcamp" || type === "mini_bootcamp";
 }

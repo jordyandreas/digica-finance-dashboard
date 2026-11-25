@@ -211,7 +211,7 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
                   tagName="dt"
                   className={PROGRAM_PRICE_TONE_CLASSES.default}
                 >
-                  Default
+                  Early Bird
                 </Typography>
                 <Typography
                   variant="body2"
@@ -221,6 +221,14 @@ export function ProgramOverview({ programId }: ProgramOverviewProps) {
                     PROGRAM_PRICE_TONE_CLASSES.default,
                   )}
                 >
+                  {program?.default_price != null ? (
+                    <span className="block text-xs font-normal text-muted-foreground">
+                      Default:{" "}
+                      <span className="line-through">
+                        {formatCurrency(program.default_price)}
+                      </span>
+                    </span>
+                  ) : null}
                   {program?.price != null
                     ? formatCurrency(program.price)
                     : "—"}

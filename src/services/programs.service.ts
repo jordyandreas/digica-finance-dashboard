@@ -85,6 +85,7 @@ export interface Program {
   public_code: string;
   public_slug: string | null;
   price: number;
+  default_price: number | null;
   promo_individual_price: number | null;
   promo_bareng_teman_price: number | null;
   session_count: number;
@@ -122,6 +123,7 @@ export interface CreateProgramInput {
   wa_group_link?: string | null;
   public_slug?: string | null;
   price: number;
+  default_price?: number | null;
   promo_individual_price?: number | null;
   promo_bareng_teman_price?: number | null;
   session_count?: number;
@@ -144,6 +146,7 @@ export interface UpdateProgramInput {
   wa_group_link?: string | null;
   public_slug?: string | null;
   price?: number;
+  default_price?: number | null;
   promo_individual_price?: number | null;
   promo_bareng_teman_price?: number | null;
   session_count?: number;
